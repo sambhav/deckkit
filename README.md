@@ -99,12 +99,15 @@ Entering a slide shows its first step. Coming back to it from the next slide sho
 
 ## Reading
 
-On a narrow screen deckkit opens in read view: one column, like a blog post.
+On a phone or a portrait tablet, deckkit opens in read view: one column, like a blog post. On a laptop, press R.
 
 - Markdown slides reflow into article typography, each with a small chapter label.
 - **Speaker notes become the prose** under each slide. Timing cues such as `[~60s]` are dropped.
 - Builds show their finished state.
 - Hand-built HTML slides can't reflow, so they appear as figures scaled to the column. Tap one to present it.
+- On a wide screen the article becomes a visual essay: hand-built slides are pinned beside their prose as you scroll.
+
+Presenting on a touch screen adds a dock with ‹ › and a button back to reading, at a size you can tap. Swipe left and right to move through steps and slides.
 
 Press R or use the button in the top bar to switch views. Force one with `?view=read` or `?view=present`.
 

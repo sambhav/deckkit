@@ -33,7 +33,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 script[type="text/markdown"] { display: none; }
 
 /* ================= present view: a 1280×720 stage scaled to the window ================= */
-#stage { position: absolute; width: 1280px; height: 720px; left: 50%; top: 50%; transform-origin: center; }
+#stage { position: fixed; width: 1280px; height: 720px; left: 50%; top: 50%; transform-origin: center; }   /* fixed: the stage never widens the page */
 [data-view=present] body { touch-action: pinch-zoom; }   /* horizontal swipes change slides instead of panning */
 .frame { display: contents; }
 .frame > .rh, .frame > .prose { display: none; }
@@ -66,6 +66,21 @@ aside.notes { display: none; }
 #pager #stepNav button:disabled { opacity: .35; cursor: default; }
 #stepCount { min-width: 56px; text-align: center; }
 #help { position: fixed; left: 18px; bottom: 16px; color: var(--faint); font: 11.5px var(--mono); z-index: 10; }
+
+/* touch screens present with a native-size dock instead of the scaled-down pager */
+#dock { display: none; }
+@media (pointer: coarse), (max-width: 760px) {
+  [data-view=present] #pager, [data-view=present] #help { display: none; }
+  [data-view=present] #dock { display: flex; position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 15;
+                              align-items: center; gap: 2px; padding: 5px; border-radius: 999px; border: 1px solid var(--line); font: 13px var(--mono); color: var(--muted);
+                              background: color-mix(in srgb, var(--surface) 86%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 10px 30px rgba(0,0,0,.14); }
+  #dock button { width: 42px; height: 42px; border-radius: 999px; display: grid; place-items: center; color: var(--fg); font-size: 20px; }
+  #dock button:active { background: var(--surface-2); }
+  #dock #dRead { border-left: 1px solid var(--line); border-radius: 0 999px 999px 0; margin-left: 4px; width: 48px; }
+  #dCount { min-width: 60px; text-align: center; }
+  #dock .hint { display: none; position: absolute; bottom: calc(100% + 16px); left: 50%; transform: translateX(-50%); white-space: nowrap; font: 12px var(--mono); color: var(--faint); letter-spacing: .04em; }
+}
+@media (orientation: portrait) and (max-width: 760px) { [data-view=present] #dock .hint { display: block; } }
 
 /* ================= type + components ================= */
 .kicker { font: 500 14px var(--mono); color: var(--accent); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 12px; }
@@ -171,7 +186,7 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 /* ================= read view: the deck as a long-form article ================= */
 [data-view=read], [data-view=read] body { height: auto; overflow: visible; background: var(--bg); }
 [data-view=read] body { overflow-x: clip; }   /* clip, not hidden: a scroll container here would break the sticky bar */
-[data-view=read] #stage { position: static; width: auto; height: auto; transform: none; max-width: 772px; margin: 0 auto; padding: 0 24px 22vh; }
+[data-view=read] #stage { position: static; width: auto; height: auto; transform: none !important; max-width: 772px; margin: 0 auto; padding: 0 24px 22vh; }
 [data-view=read] #bar { position: sticky; top: 0; height: 52px; margin: 0 calc(50% - 50vw) 0; padding: 0 max(14px, calc(50vw - 50% - 4px)) 0 max(24px, calc(50vw - 50%));
                         background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px); }
 [data-view=read] #progress { position: fixed; top: 0; bottom: auto; height: 2px; z-index: 50; transition: none; }
@@ -234,6 +249,18 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 [data-view=read] .layout-statement .content > p, [data-view=read] .layout-section p, [data-view=read] .layout-title h1 + p { max-width: none; }
 [data-view=read] .layout-center .content { text-align: left; }
 [data-view=read] [data-build] [data-step]:not(.shown) { opacity: 1; transform: none; }
+
+/* wide screens: a visual essay, with hand-built slides pinned beside their prose */
+@media (min-width: 1180px) {
+  [data-view=read] #stage { max-width: 1336px; padding-inline: 48px; }
+  [data-view=read] .frame { max-width: 680px; }
+  [data-view=read] .frame:has(.layout-title) { max-width: none; }
+  [data-view=read] .layout-title h1 + p { max-width: 24em; }
+  [data-view=read] .frame:has(.slide.fixed) { max-width: none; display: grid; grid-template-columns: minmax(0, 680px) minmax(0, 1fr); column-gap: 56px; align-items: start; }
+  [data-view=read] .frame:has(.slide.fixed) > .rh { grid-column: 1; grid-row: 1; }
+  [data-view=read] .frame:has(.slide.fixed) > .prose { grid-column: 1; grid-row: 2; margin-top: 0; }
+  [data-view=read] .frame:has(.slide.fixed) > .slide { grid-column: 2; grid-row: 1 / span 2; position: sticky; top: calc(84px / var(--fit, .5)); }
+}
 
 @media (max-width: 760px) {
   [data-view=read] #bar .section { display: none; }

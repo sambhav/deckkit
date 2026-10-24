@@ -1,6 +1,6 @@
 /* deckkit — slide decks written in Markdown (or HTML), presented on a 16:9 stage, read like an article on a phone.
  *
- * Present view                               Read view (default on phones, R to switch)
+ * Present view                               Read view (default on phones and portrait tablets, R to switch)
  *   ← → Space PgUp PgDn   slides               one scrolling column; speaker notes become the prose,
  *   ↑ ↓ Enter             steps, then slides   builds show finished, fixed-layout slides become figures
  *   1–9                   jump to a step       ← → hop between slides
@@ -25,7 +25,7 @@
 
   /* ---------- theme + view, set before first paint ---------- */
   const q = new URLSearchParams(location.search);
-  const small = matchMedia('(max-width: 760px), (max-height: 520px) and (pointer: coarse)');
+  const small = matchMedia('(max-width: 760px), (max-height: 520px) and (pointer: coarse), (orientation: portrait) and (pointer: coarse)');
   root.dataset.theme = q.get('theme') || store.get('theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
   root.dataset.view = q.get('view') || (small.matches ? 'read' : 'present');
   let viewChosen = q.has('view');
@@ -244,7 +244,7 @@
     const all = slides(), s = all[cur];
     $('overview').querySelectorAll('button').forEach((b, j) => b.classList.toggle('cur', j === cur));
     $('sectionLabel').textContent = s.dataset.section || '';
-    $('count').textContent = `${cur + 1} / ${all.length}`;
+    $('count').textContent = $('dCount').textContent = `${cur + 1} / ${all.length}`;
     if (!reading()) $('progress').style.width = `${(cur + 1) / all.length * 100}%`;
     $('notesTitle').textContent = `SPEAKER NOTES · ${s.dataset.name || ''}`;
     $('notesTk').textContent = s.dataset.takeaway ? 'Takeaway: ' + s.dataset.takeaway : '';
@@ -268,8 +268,9 @@
     if (chosen) viewChosen = true;
     const i = Math.max(cur, 0);
     root.dataset.view = v;
+    fit();
     if (v === 'read') { finishForReading(); fitRead(); cur = -1; go(i); cur = i; announce(); }
-    else { fit(); cur = -1; go(i, 0); }
+    else { cur = -1; go(i, 0); }
     icons();
   }
 
@@ -284,8 +285,15 @@
     $('progress').style.width = `${max > 0 ? scrollY / max * 100 : 100}%`;
   }
 
-  function fit() { $('stage').style.transform = reading() ? '' : `translate(-50%,-50%) scale(${Math.min(innerWidth / W, innerHeight / H)})`; }
-  function fitRead() { const st = $('stage'), cs = getComputedStyle(st); root.style.setProperty('--fit', Math.min(1, (st.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)) / W)); }
+  function fit() { $('stage').style.transform = reading() ? '' : `translate(-50%,-50%) scale(${Math.min(root.clientWidth / W, root.clientHeight / H)})`; }
+  // read view scales fixed slides to the column they sit in: the whole column, or the figure column of a wide layout
+  function fitRead() {
+    if (!reading()) return;
+    const st = $('stage'), cs = getComputedStyle(st), f = document.querySelector('.slide.fixed')?.parentElement;
+    const cols = f && getComputedStyle(f).display === 'grid' ? getComputedStyle(f).gridTemplateColumns.split(' ') : null;
+    const w = cols ? parseFloat(cols.at(-1)) : st.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    root.style.setProperty('--fit', Math.min(1, w / W));
+  }
 
   /* ================= chrome ================= */
   const ICON = {
@@ -339,6 +347,7 @@
     document.body.insertAdjacentHTML('beforeend', `
       <div id="notes"><h4 id="notesTitle">SPEAKER NOTES</h4><div class="tk" id="notesTk"></div><div id="notesBody"></div></div>
       <div id="overview"></div>
+      <div id="dock"><span class="hint">Rotate for a larger slide</span><button id="dPrev" title="Back">‹</button><span id="dCount"></span><button id="dNext" title="Next">›</button><button id="dRead" title="Read as an article">${svg('read')}</button></div>
       <div id="help">← → slides · ↑ ↓ steps · O overview · R read · T theme · ? keys</div>
       <div id="keys"><div class="kcard"><h3>Keyboard</h3>
         <p><kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd> previous / next slide · <kbd>Home</kbd> <kbd>End</kbd> first / last</p>
@@ -353,6 +362,9 @@
     $('next').onclick = () => go(cur + 1);
     $('up').onclick = prev;
     $('down').onclick = next;
+    $('dPrev').onclick = prev;
+    $('dNext').onclick = next;
+    $('dRead').onclick = () => setView('read');
     $('keys').onclick = () => $('keys').classList.remove('on');
     const ov = $('overview');
     slides().forEach((s, i) => {
