@@ -25,6 +25,7 @@
 
   /* ---------- theme + view, set before first paint ---------- */
   const q = new URLSearchParams(location.search);
+  const portrait = matchMedia('(orientation: portrait) and (max-width: 900px)');   // present view becomes slide-over-notes
   const small = matchMedia('(max-width: 760px), (max-height: 520px) and (pointer: coarse), (orientation: portrait) and (pointer: coarse)');
   root.dataset.theme = q.get('theme') || store.get('theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
   root.dataset.view = q.get('view') || (small.matches ? 'read' : 'present');
@@ -111,7 +112,7 @@
       } else if (LI.test(l)) {
         let html; [i, html] = list(L, i); out += html;
       } else if (/^\s*\|.*\|\s*$/.test(l) && /^\s*\|?\s*:?-{2,}/.test(L[i + 1] || '')) {
-        const cells = r => r.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+        const cells = r => r.trim().replace(/^\||(?<!\\)\|$/g, '').split(/(?<!\\)\|/).map(c => c.trim().replace(/\\\|/g, '|'));
         const head = cells(l), al = cells(L[i + 1]).map(c => /^:-+:$/.test(c) ? 'center' : /-:$/.test(c) ? 'right' : '');
         const td = (tg, c, j) => `<${tg}${al[j] ? ` style="text-align:${al[j]}"` : ''}>${inline(c)}</${tg}>`;
         const rows = []; i += 2; while (i < L.length && /^\s*\|/.test(L[i])) rows.push(cells(L[i++]));
@@ -245,6 +246,10 @@
     $('overview').querySelectorAll('button').forEach((b, j) => b.classList.toggle('cur', j === cur));
     $('sectionLabel').textContent = s.dataset.section || '';
     $('count').textContent = $('dCount').textContent = `${cur + 1} / ${all.length}`;
+    $('mSec').textContent = s.dataset.section || '';
+    $('mProg').style.width = `${(cur + 1) / all.length * 100}%`;
+    $('mNotes').innerHTML = s.closest('.frame').querySelector('.prose')?.innerHTML || '';
+    $('mNotes').scrollTop = 0;
     if (!reading()) $('progress').style.width = `${(cur + 1) / all.length * 100}%`;
     $('notesTitle').textContent = `SPEAKER NOTES · ${s.dataset.name || ''}`;
     $('notesTk').textContent = s.dataset.takeaway ? 'Takeaway: ' + s.dataset.takeaway : '';
@@ -285,7 +290,17 @@
     $('progress').style.width = `${max > 0 ? scrollY / max * 100 : 100}%`;
   }
 
-  function fit() { $('stage').style.transform = reading() ? '' : `translate(-50%,-50%) scale(${Math.min(root.clientWidth / W, root.clientHeight / H)})`; }
+  function fit() {
+    const st = $('stage');
+    st.style.top = '';
+    if (reading()) { st.style.transform = ''; return; }
+    if (!portrait.matches) { st.style.transform = `translate(-50%,-50%) scale(${Math.min(root.clientWidth / W, root.clientHeight / H)})`; return; }
+    // portrait phone: the slide spans the width under a native header, its own bar tucked behind it; notes fill the rest
+    const k = root.clientWidth / W, head = $('mhead').offsetHeight, band = 58 * k;
+    st.style.top = `${head - band}px`;
+    st.style.transform = `translateX(-50%) scale(${k})`;
+    root.style.setProperty('--slide-bottom', `${head + (H - 58) * k}px`);
+  }
   // read view scales fixed slides to the column they sit in: the whole column, or the figure column of a wide layout
   function fitRead() {
     if (!reading()) return;
@@ -353,7 +368,9 @@
     document.body.insertAdjacentHTML('beforeend', `
       <div id="notes"><h4 id="notesTitle">SPEAKER NOTES</h4><div class="tk" id="notesTk"></div><div id="notesBody"></div></div>
       <div id="overview"></div>
-      <div id="dock"><span class="hint">Rotate for a larger slide</span><button id="dPrev" title="Back">‹</button><span id="dCount"></span><button id="dNext" title="Next">›</button><button id="dRead" title="Read as an article">${svg('read')}</button></div>
+      <div id="mhead"><b>${esc($('bar').querySelector('.title')?.textContent || document.title)}</b><span id="mSec"></span><i id="mProg"></i></div>
+      <div id="mNotes"></div>
+      <div id="dock"><button id="dPrev" title="Back">‹</button><span id="dCount"></span><button id="dNext" title="Next">›</button><button id="dRead" title="Read as an article">${svg('read')}</button></div>
       <div id="help">← → slides · ↑ ↓ steps · O overview · R read · T theme · ? keys</div>
       <div id="keys"><div class="kcard"><h3>Keyboard</h3>
         <p><kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd> previous / next slide · <kbd>Home</kbd> <kbd>End</kbd> first / last</p>
@@ -425,8 +442,11 @@
   }
 
   function swipe() {
-    let x0 = null, y0;
-    addEventListener('touchstart', e => { x0 = !reading() && e.touches.length === 1 ? e.touches[0].clientX : null; y0 = e.touches[0].clientY; }, { passive: true });
+    let x0 = null, y0, idle;
+    // in landscape the dock sits over the slide, so it fades after a few seconds and returns on the next touch
+    const wake = () => { $('dock').classList.remove('idle'); clearTimeout(idle); idle = setTimeout(() => $('dock').classList.add('idle'), 2500); };
+    addEventListener('touchstart', e => { wake(); x0 = !reading() && e.touches.length === 1 ? e.touches[0].clientX : null; y0 = e.touches[0].clientY; }, { passive: true });
+    wake();
     addEventListener('touchend', e => {
       if (x0 == null || reading()) return;
       const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;

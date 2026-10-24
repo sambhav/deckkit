@@ -6,8 +6,8 @@
 <title>deckkit</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="deck.css?v=0.2.1">
-<script src="deck.js?v=0.2.1"></script>
+<link rel="stylesheet" href="deck.css?v=0.3.0">
+<script src="deck.js?v=0.3.0"></script>
 <style>
   /* the one hand-built slide */
   .pipe { display: flex; align-items: center; gap: 14px; margin-top: 64px; }
@@ -114,28 +114,13 @@ kicker: Layouts
 ---
 ## Five layouts cover most slides
 
-::: grid
-::: card
-### title
-A big title, a subtitle, a line of metadata.
-:::
-::: card
-### section
-A numbered chapter divider.
-:::
-::: card
-### statement
-One sentence, set large.
-:::
-::: card
-### default
-A heading and content. Add `|||` for columns.
-:::
-::: card accent
-### center
-Everything centred, for a closing slide.
-:::
-:::
+| Layout | For |
+|---|---|
+| `title` | A big title, a subtitle and a line of metadata |
+| `section` | A numbered chapter divider |
+| `statement` | One sentence, set large |
+| `default` | A heading and content; add `\|\|\|` for columns |
+| `center` | Everything centred, for a closing slide |
 
 <!--
 Pick a layout with one line of frontmatter. The defaults are deliberately few: a title slide, a numbered section divider, a statement slide for a single big sentence, a default slide for a heading and content, and a centred layout. Anything else is a class name away.

@@ -78,9 +78,31 @@ aside.notes { display: none; }
   #dock button:active { background: var(--surface-2); }
   #dock #dRead { border-left: 1px solid var(--line); border-radius: 0 999px 999px 0; margin-left: 4px; width: 48px; }
   #dCount { min-width: 60px; text-align: center; }
-  #dock .hint { display: none; position: absolute; bottom: calc(100% + 16px); left: 50%; transform: translateX(-50%); white-space: nowrap; font: 12px var(--mono); color: var(--faint); letter-spacing: .04em; }
 }
-@media (orientation: portrait) and (max-width: 760px) { [data-view=present] #dock .hint { display: block; } }
+
+@media (pointer: coarse) and (orientation: landscape) {
+  [data-view=present] #dock { bottom: 10px; padding: 3px; transition: opacity .4s; }
+  #dock button { width: 36px; height: 36px; font-size: 17px; }
+  #dock #dRead { width: 42px; }
+  [data-view=present] #dock.idle { opacity: 0; pointer-events: none; }
+}
+
+/* portrait phones present the slide across the top, its notes below, the dock at the bottom */
+#mhead, #mNotes { display: none; }
+@media (orientation: portrait) and (max-width: 900px) {
+  [data-view=present] #stage { transform-origin: top center; }
+  [data-view=present] #bar, [data-view=present] #progress { display: none; }
+  [data-view=present] #mhead { display: flex; align-items: center; gap: 12px; position: fixed; top: 0; left: 0; right: 0; z-index: 6; height: 52px; padding: 0 20px;
+                               background: var(--bg); border-bottom: 1px solid var(--line); }
+  #mhead b { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #mSec { margin-left: auto; font: 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  #mProg { position: absolute; left: 0; bottom: -1px; height: 2px; background: var(--accent); transition: width .3s; }
+  [data-view=present] #mNotes { display: block; position: fixed; left: 0; right: 0; top: var(--slide-bottom, 50vh); bottom: 0; overflow: auto; z-index: 4;
+                                padding: 22px 22px 120px; background: var(--bg); border-top: 1px solid var(--line); }
+  #mNotes p { font-size: 17px; line-height: 1.65; color: var(--muted); max-width: 40em; }
+  #mNotes p + p { margin-top: 14px; }
+  #mNotes:empty { border-top: 0; }
+}
 
 /* ================= type + components ================= */
 .kicker { font: 500 14px var(--mono); color: var(--accent); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 12px; }
@@ -135,11 +157,18 @@ p, li { font-size: 16px; line-height: 1.5; }
 .md figure img, .md p > img { display: block; max-width: 100%; max-height: 420px; border-radius: var(--radius); }
 .md figcaption { font: 14px var(--mono); color: var(--faint); margin-top: 12px; letter-spacing: .02em; }
 .md table { border-collapse: collapse; width: 100%; font-size: 22px; }
-.md th { font: 500 13px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--faint); text-align: left; padding: 10px 16px; border-bottom: 1.5px solid var(--fg); }
+.md th { font: 500 13px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--faint); text-align: left; padding: 10px 16px; border-bottom: 1.5px solid color-mix(in srgb, var(--fg) 55%, transparent); }
 .md td { padding: 13px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.md td:first-child > code:only-child { background: none; border: 0; padding: 0; color: var(--accent); }   /* a term column */
+.md tbody tr:last-child td { border-bottom: 0; }
 .md .cols { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 56px; align-items: start; }
 .md .cols > div { min-width: 0; }
-.md .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
+.md .grid { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: 18px; }
+/* balanced rows: the column count follows the number of items, so no row is left with a lone orphan */
+.md .grid:has(> :nth-child(2):last-child) { --cols: 2; }
+.md .grid:has(> :nth-child(4):last-child), .md .grid:has(> :nth-child(7):last-child), .md .grid:has(> :nth-child(8):last-child) { --cols: 4; }
+.md .grid:has(> :nth-child(5):last-child) { --cols: 5; }
+.md .grid:has(> :nth-child(5):last-child) .card { padding: 22px 22px; }
 .md .grid > * + * { margin-top: 0; }
 .md .card { padding: 26px 28px; }
 .md .card p, .md .card li { font-size: 21px; }
@@ -235,6 +264,7 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 [data-view=read] .md figure img { max-height: none; border-radius: 12px; }
 [data-view=read] .md .cols { grid-auto-flow: row; gap: 18px; }
 [data-view=read] .md .grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+@media (max-width: 760px) { [data-view=read] .md .grid { grid-template-columns: 1fr; } }
 [data-view=read] .md .card { padding: 18px 20px; border-radius: 12px; }
 [data-view=read] .md .card p, [data-view=read] .md .card li { font-size: 16.5px; line-height: 1.6; }
 [data-view=read] .md .lede { font-size: 22px; line-height: 1.5; }

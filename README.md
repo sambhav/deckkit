@@ -54,7 +54,7 @@ Open it in a browser. That's the setup.
 | `key: value` lines between two `---` | Frontmatter for the next slide (see below) |
 | `<!-- … -->` | Speaker notes |
 | `\|\|\|` on its own line | Starts a column. Text before the first `\|\|\|` spans the slide |
-| `::: card` … `:::` | Wraps blocks in `<div class="card">`. Any class works; containers nest |
+| `::: card` … `:::` | Wraps blocks in `<div class="card">`. Any class works; containers nest. `::: grid` lays its children out in balanced rows |
 | `{.step}` at the end of a block | Reveals that block on ↓ |
 | `{.class #id}` at the end of a block | Adds a class or id |
 | `==text==` | Accent-coloured text |
@@ -107,7 +107,7 @@ On a phone or a portrait tablet, deckkit opens in read view: one column, like a 
 - Hand-built HTML slides can’t reflow, so they appear as figures scaled to the column, each with a **Present** button that opens it full-screen.
 - On a wide screen the article becomes a visual essay: hand-built slides are pinned beside their prose as you scroll.
 
-Presenting on a touch screen adds a dock with ‹ › and a button back to reading, at a size you can tap. Swipe left and right to move through steps and slides.
+Presenting on a touch screen adds a dock with ‹ › and a button back to reading, at a size you can tap; swipe left and right to move through steps and slides. On a phone held upright, the slide sits across the top with its notes underneath, like a presenter view. In landscape it fills the screen and the dock fades until you touch it.
 
 Press R or use the button in the top bar to switch views. Force one with `?view=read` or `?view=present`.
 
