@@ -2,7 +2,7 @@
 
 Slides you write in Markdown, present on a 16:9 stage, and send to a phone as an essay.
 
-Two files, no dependencies, no build step. **[See the demo →](https://sambhav.github.io/deckkit/)**
+Two files, no dependencies, no build step. **[See the demo →](https://sambhav.dev/deckkit/)**
 
 - **Write in Markdown.** `---` between slides, `<!-- comments -->` for speaker notes.
 - **Present** with the keyboard: ← → for slides, ↑ ↓ for the steps within a slide. Swipe on touch screens.
