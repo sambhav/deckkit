@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>deckkit</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="deck.css?v=0.4.0">
-<script src="deck.js?v=0.4.0"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="deck.css?v=0.5.0">
+<script src="deck.js?v=0.5.0"></script>
 <style>
   /* the one hand-built slide */
   .pipe { display: flex; align-items: center; gap: 14px; margin-top: 64px; }
@@ -19,6 +19,12 @@
   .pipe i { color: var(--faint); font-style: normal; font-size: 22px; }
   .caption { margin-top: 36px; font-size: 24px; color: var(--muted); min-height: 2.8em; max-width: 34em; }
   .caption b { color: var(--fg); font-weight: 600; }
+  .hand { padding: 60px 88px; }
+  .hand h2 { font-size: 54px; letter-spacing: -.02em; }
+  /* on a phone held upright the diagram wraps, so the slide can go vertical */
+  [data-tall] .pipe { flex-wrap: wrap; gap: 12px; margin-top: 36px; }
+  [data-tall] .pipe .n { flex: 1 1 40%; height: 108px; }
+  [data-tall] .pipe i { display: none; }
 </style>
 </head>
 <body>
@@ -170,9 +176,9 @@ You can switch views at any time with the R key or the button in the top bar, an
 </script>
 
 <section class="slide" data-section="Reading" data-name="Escape hatch: HTML slides">
-  <div class="content" style="padding:60px 88px">
+  <div class="content hand">
     <div class="kicker">Escape hatch</div>
-    <h2 style="font-size:54px;letter-spacing:-.03em">Some slides want to be built by hand</h2>
+    <h2>Some slides want to be built by hand</h2>
     <div class="pipe" id="pipe">
       <div class="n"><b>Markdown</b><span>the words</span></div><i>→</i>
       <div class="n"><b>HTML slide</b><span>the diagram</span></div><i>→</i>

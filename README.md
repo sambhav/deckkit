@@ -107,7 +107,7 @@ On a phone or a portrait tablet, deckkit opens in read view: one column, like a 
 - Hand-built HTML slides can’t reflow, so they appear as figures scaled to the column, each with a **Present** button that opens it full-screen.
 - Text sits in one centred column, about 70 characters wide, on a single type scale. On wide screens, hand-built slides break out into wider figures.
 
-Presenting on a touch screen adds a dock with ‹ › and a button back to reading, at a size you can tap; swipe left and right to move through steps and slides. On a phone held upright, the slide sits across the top with its notes underneath, like a presenter view. In landscape it fills the screen and the dock fades until you touch it.
+Presenting on a touch screen adds a dock with ‹ › and a button back to reading, at a size you can tap; swipe left and right to move through steps and slides. On a phone held upright, slides go vertical: a canvas the width of the phone, as tall as the content, with the notes underneath when it's short. Markdown slides always do this; an HTML slide does when it's marked `flow`, or when its content fits a narrow canvas without absolutely positioned parts (style it under `[data-tall]` to help it fit). Fixed 16:9 layouts stay horizontal. In landscape it fills the screen and the dock fades until you touch it.
 
 Press R or use the button in the top bar to switch views. Force one with `?view=read` or `?view=present`.
 
@@ -184,6 +184,12 @@ Every colour is a CSS custom property. Override them after `deck.css`:
 | `--red` `--green` `--blue` `--orange` | Status colours |
 | `--sans` `--display` `--mono` | Body, heading and mono typefaces |
 | `--grid` | Set to a colour to draw a background grid on slides |
+
+For large headings, load Inter with its optical-size axis so big type uses the Display cut:
+
+```html
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+```
 
 The theme follows the system setting until someone presses T; the choice is remembered. Force one with `?theme=dark`. Add `class="lineart"` to dark-on-transparent drawings to invert them in dark mode.
 

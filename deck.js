@@ -255,7 +255,7 @@
     $('notesTk').textContent = s.dataset.takeaway ? 'Takeaway: ' + s.dataset.takeaway : '';
     $('notesBody').textContent = s.querySelector('.notes')?.textContent.trim() || '—';
     handlers.slide.forEach(f => f(s, cur));
-    if (reading()) history.replaceState(null, '', '#' + (cur + 1));
+    if (reading()) history.replaceState(null, '', '#' + (cur + 1)); else if (portrait.matches) fit();
   }
 
   const label = s => s.querySelectorAll('[data-next]').forEach(b => { if (b.dataset.next !== 'keep') b.textContent = at(s) >= total(s) - 1 ? 'Reset ↺' : 'Next →'; });
@@ -292,14 +292,37 @@
 
   function fit() {
     const st = $('stage');
-    st.style.top = '';
+    st.style.top = st.style.width = st.style.height = '';
+    delete root.dataset.tall;
     if (reading()) { st.style.transform = ''; return; }
     if (!portrait.matches) { st.style.transform = `translate(-50%,-50%) scale(${Math.min(root.clientWidth / W, root.clientHeight / H)})`; return; }
-    // portrait phone: the slide spans the width under a native header, its own bar tucked behind it; notes fill the rest
-    const k = root.clientWidth / W, head = $('mhead').offsetHeight, band = 58 * k;
+    const s = slides()[cur], head = $('mhead').offsetHeight;
+    if (s && tall(s, st, head)) return;
+    // a fixed 16:9 slide spans the width under a native header, its own bar tucked behind it; notes fill the rest
+    const k = root.clientWidth / W, band = 58 * k;
     st.style.top = `${head - band}px`;
     st.style.transform = `translateX(-50%) scale(${k})`;
     root.style.setProperty('--slide-bottom', `${head + (H - 58) * k}px`);
+  }
+
+  // portrait phone: give a slide that can reflow a vertical canvas the width of the phone and as tall as its content,
+  // leaving room for its notes when it's short. Markdown and .flow slides reflow; other slides do if they fit unaided.
+  const PW = 720;
+  function tall(s, st, head) {
+    const k = root.clientWidth / PW, avail = (root.clientHeight - head - 76) / k;
+    root.dataset.tall = '';
+    st.style.width = `${PW}px`; st.style.height = `${avail}px`;
+    const c = s.querySelector('.content');
+    const fits = s.classList.contains('md') || s.classList.contains('flow')
+      || (c && c.scrollWidth <= c.clientWidth + 1 && c.scrollHeight <= c.clientHeight + 1
+          && ![...c.querySelectorAll('*')].some(e => getComputedStyle(e).position === 'absolute'));
+    if (!fits || !c) { delete root.dataset.tall; st.style.width = st.style.height = ''; return false; }
+    c.style.bottom = 'auto'; const need = c.offsetHeight; c.style.bottom = '';
+    const h = Math.min(avail, Math.max(need, PW * .6));
+    st.style.height = `${h}px`; st.style.top = `${head}px`;
+    st.style.transform = `translateX(-50%) scale(${k})`;
+    root.style.setProperty('--slide-bottom', `${head + h * k}px`);
+    return true;
   }
   // read view scales fixed slides to the width of their figure
   function fitRead() {
