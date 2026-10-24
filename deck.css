@@ -35,8 +35,8 @@ script[type="text/markdown"] { display: none; }
 /* ================= present view: a 1280×720 stage scaled to the window ================= */
 #stage { position: fixed; width: 1280px; height: 720px; left: 50%; top: 50%; transform-origin: center; }   /* fixed: the stage never widens the page */
 [data-view=present] body { touch-action: pinch-zoom; }   /* horizontal swipes change slides instead of panning */
-.frame { display: contents; }
-.frame > .rh, .frame > .prose { display: none; }
+.frame, .fig { display: contents; }
+.frame > .rh, .frame > .prose, .present-btn { display: none; }
 .slide {
   position: absolute; inset: 0; display: none; overflow: hidden; background-color: var(--bg);
   background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
@@ -201,14 +201,19 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 [data-view=read] .slide.md, [data-view=read] .slide.flow { background: none; border: 0; }
 [data-view=read] .slide .content { position: static; padding: 0; }
 
-/* fixed-layout slides become figures, scaled to the column; tap to present */
-[data-view=read] .slide.fixed { width: 1280px; height: 662px; zoom: var(--fit, .5); overflow: hidden; cursor: zoom-in;
-                                border: 1px solid var(--line); border-radius: calc(16px / var(--fit, .5)); box-shadow: 0 1px 0 var(--line); }
+/* fixed-layout slides become figures, scaled to the column, with a button that presents them */
+[data-view=read] .fig { display: block; position: relative; cursor: pointer; border-radius: 16px; transition: transform .2s ease, box-shadow .2s ease; }
+[data-view=read] .fig:hover { transform: translateY(-2px); box-shadow: 0 14px 36px -12px rgba(0,0,0,.22); }
+[data-view=read] .slide.fixed { width: 1280px; height: 662px; zoom: var(--fit, .5); overflow: hidden;
+                                border: 1px solid var(--line); border-radius: calc(16px / var(--fit, .5)); transition: border-color .2s; }
+[data-view=read] .fig:hover .slide.fixed { border-color: var(--accent); }
 [data-view=read] .slide.fixed > .content { top: 0; }
 [data-view=read] .slide.fixed * { pointer-events: none; }
-[data-view=read] .slide.fixed::after { content: 'Tap to present'; position: absolute; right: 24px; bottom: 22px; font: 500 calc(12px / var(--fit, .5)) var(--mono); letter-spacing: .06em;
-                                       padding: .45em .9em; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); opacity: 0; transition: opacity .2s; }
-[data-view=read] .slide.fixed:hover::after { opacity: 1; }
+[data-view=read] .present-btn { display: flex; align-items: center; gap: 7px; position: absolute; right: 12px; bottom: 12px; padding: 7px 14px 7px 11px;
+                                border-radius: 999px; background: var(--fg); color: var(--bg); font: 600 13px var(--sans); letter-spacing: .01em;
+                                box-shadow: 0 4px 14px rgba(0,0,0,.18); transition: background .15s, transform .15s; }
+[data-view=read] .present-btn svg { width: 16px; height: 16px; }
+[data-view=read] .fig:hover .present-btn, [data-view=read] .present-btn:focus-visible { background: var(--accent); color: var(--on-accent); transform: scale(1.04); }
 
 /* Markdown slides reflow into article typography */
 [data-view=read] .md .content { display: block; }
@@ -259,7 +264,7 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
   [data-view=read] .frame:has(.slide.fixed) { max-width: none; display: grid; grid-template-columns: minmax(0, 680px) minmax(0, 1fr); column-gap: 56px; align-items: start; }
   [data-view=read] .frame:has(.slide.fixed) > .rh { grid-column: 1; grid-row: 1; }
   [data-view=read] .frame:has(.slide.fixed) > .prose { grid-column: 1; grid-row: 2; margin-top: 0; }
-  [data-view=read] .frame:has(.slide.fixed) > .slide { grid-column: 2; grid-row: 1 / span 2; position: sticky; top: calc(84px / var(--fit, .5)); }
+  [data-view=read] .frame:has(.slide.fixed) > .fig { grid-column: 2; grid-row: 1 / span 2; position: sticky; top: 84px; }
 }
 
 @media (max-width: 760px) {

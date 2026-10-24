@@ -289,7 +289,7 @@
   // read view scales fixed slides to the column they sit in: the whole column, or the figure column of a wide layout
   function fitRead() {
     if (!reading()) return;
-    const st = $('stage'), cs = getComputedStyle(st), f = document.querySelector('.slide.fixed')?.parentElement;
+    const st = $('stage'), cs = getComputedStyle(st), f = document.querySelector('.slide.fixed')?.closest('.frame');
     const cols = f && getComputedStyle(f).display === 'grid' ? getComputedStyle(f).gridTemplateColumns.split(' ') : null;
     const w = cols ? parseFloat(cols.at(-1)) : st.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
     root.style.setProperty('--fit', Math.min(1, w / W));
@@ -338,7 +338,13 @@
           : notes.textContent.replace(cue, '').trim().split(/\n\s*\n/).map(p => `<p>${esc(p.trim())}</p>`).join('');
         f.insertAdjacentHTML('beforeend', `<div class="prose">${prose}</div>`);
       }
-      if (s.classList.contains('fixed')) s.addEventListener('click', () => { if (reading()) { setView('present'); go(i, 0); } });
+      if (s.classList.contains('fixed')) {
+        // in read view a fixed slide is a figure with a button that presents it
+        const fig = document.createElement('div'); fig.className = 'fig';
+        s.before(fig); fig.append(s);
+        fig.insertAdjacentHTML('beforeend', `<button class="present-btn" aria-label="Present slide ${i + 1}">${svg('present')}<span>Present</span></button>`);
+        fig.addEventListener('click', () => { if (reading()) { setView('present'); go(i, 0); } });
+      }
     });
 
     stage.insertAdjacentHTML('beforeend', `
