@@ -168,7 +168,7 @@
     const body = blocks(cols[0]) + (cols.length > 1 ? `<div class="cols">${cols.slice(1).map(c => `<div>${blocks(c)}</div>`).join('')}</div>` : '');
     const el = document.createElement('section');
     el.className = `slide md layout-${layout} ${meta.class || ''}`.trim();
-    el.innerHTML = `<div class="content">${layout === 'section' ? `<div class="num">${String(++part).padStart(2, '0')}</div>` : ''}`
+    el.innerHTML = `<div class="content">${layout === 'section' ? `<div class="num">Part ${String(++part).padStart(2, '0')}</div>` : ''}`
       + `${meta.kicker ? `<div class="kicker">${inline(meta.kicker)}</div>` : ''}${body}</div>`
       + (notes.length ? `<aside class="notes">${blocks(notes.join('\n\n').split('\n'))}</aside>` : '');
     const heading = el.querySelector('h1, h2, h3')?.textContent.trim() || '';
@@ -301,13 +301,11 @@
     st.style.transform = `translateX(-50%) scale(${k})`;
     root.style.setProperty('--slide-bottom', `${head + (H - 58) * k}px`);
   }
-  // read view scales fixed slides to the column they sit in: the whole column, or the figure column of a wide layout
+  // read view scales fixed slides to the width of their figure
   function fitRead() {
     if (!reading()) return;
-    const st = $('stage'), cs = getComputedStyle(st), f = document.querySelector('.slide.fixed')?.closest('.frame');
-    const cols = f && getComputedStyle(f).display === 'grid' ? getComputedStyle(f).gridTemplateColumns.split(' ') : null;
-    const w = cols ? parseFloat(cols.at(-1)) : st.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-    root.style.setProperty('--fit', Math.min(1, w / W));
+    const fig = document.querySelector('.fig');
+    if (fig) root.style.setProperty('--fit', Math.min(1, fig.clientWidth / W));
   }
 
   /* ================= chrome ================= */
