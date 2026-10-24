@@ -6,8 +6,8 @@
 <title>deckkit</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="deck.css?v=0.5.1">
-<script src="deck.js?v=0.5.1"></script>
+<link rel="stylesheet" href="deck.css?v=0.6.0">
+<script src="deck.js?v=0.6.0"></script>
 <style>
   /* the one hand-built slide */
   .pipe { display: flex; align-items: center; gap: 14px; margin-top: 64px; }
@@ -23,7 +23,12 @@
   .hand h2 { font-size: 54px; letter-spacing: -.02em; }
   /* on a phone held upright the diagram wraps, so the slide can go vertical */
   [data-tall] .pipe { flex-wrap: wrap; gap: 12px; margin-top: 36px; }
-  [data-tall] .pipe .n { flex: 1 1 40%; height: 108px; }
+  [data-tall] .hand h2 { font-size: 40px; }
+  [data-tall] .pipe .n { flex: 1 1 40%; height: 96px; padding: 16px 18px; }
+  [data-tall] .pipe .n b { font-size: 21px; }
+  [data-tall] .pipe .n span { font-size: 15px; }
+  [data-tall] .caption { font-size: 22px; margin-top: 26px; }
+  @media (prefers-reduced-motion: reduce) { .pipe .n { transition: none; } }
   [data-tall] .pipe i { display: none; }
 </style>
 </head>

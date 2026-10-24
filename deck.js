@@ -38,6 +38,8 @@
   const indent = l => l.match(/^\s*/)[0].length;
   const dedent = L => { const n = Math.min(...L.filter(l => l.trim()).map(indent)); return isFinite(n) ? L.map(l => l.slice(n)) : L; };
   const LI = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/;
+  const FENCE = /^(`{3,}|~{3,})/;
+  const pad2 = n => String(n).padStart(2, '0');
   const isStart = l => /^(#{1,6}\s|`{3}|~{3}|:::|>|([-*+]|\d+[.)])\s|<[a-zA-Z!/]|!\[)/.test(l.trimStart());
 
   // trailing {.class #id} on a heading, paragraph, list item or image
@@ -51,8 +53,8 @@
   function inline(s) {
     const keep = [], hold = h => `\u0001${keep.push(h) - 1}\u0002`;
     s = s.replace(/`([^`]+)`/g, (_, c) => hold(`<code>${esc(c)}</code>`))
-         .replace(/<\/?[a-zA-Z][^>]*>|&(?:[a-zA-Z]+|#\d+);/g, hold)          // inline HTML and entities pass through
-         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+         .replace(/<\/?[a-zA-Z][^>]*>|&(?:[a-zA-Z]+|#\d+);/g, hold);         // inline HTML and entities pass through
+    s = esc(s)
          .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, a, u) => hold(`<img src="${u}" alt="${qesc(a)}">`))
          .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, t, u) => hold(`<a href="${u}"${/^https?:/.test(u) ? ' target="_blank" rel="noopener"' : ''}>`) + t + hold('</a>'))
          .replace(/\*\*(?=\S)(.+?)\*\*/g, '<strong>$1</strong>')
@@ -138,7 +140,7 @@
   function split(L, sep) {
     const out = [[]]; let fence = null;
     for (const l of L) {
-      const f = l.match(/^(`{3,}|~{3,})/);
+      const f = l.match(FENCE);
       if (f) fence = fence ? (l.startsWith(fence) ? null : fence) : f[1];
       !fence && sep.test(l) ? out.push([]) : out.at(-1).push(l);
     }
@@ -168,7 +170,7 @@
     const body = blocks(cols[0]) + (cols.length > 1 ? `<div class="cols">${cols.slice(1).map(c => `<div>${blocks(c)}</div>`).join('')}</div>` : '');
     const el = document.createElement('section');
     el.className = `slide md layout-${layout} ${meta.class || ''}`.trim();
-    el.innerHTML = `<div class="content">${layout === 'section' ? `<div class="num">Part ${String(++part).padStart(2, '0')}</div>` : ''}`
+    el.innerHTML = `<div class="content">${layout === 'section' ? `<div class="num">Part ${pad2(++part)}</div>` : ''}`
       + `${meta.kicker ? `<div class="kicker">${inline(meta.kicker)}</div>` : ''}${body}</div>`
       + (notes.length ? `<aside class="notes">${blocks(notes.join('\n\n').split('\n'))}</aside>` : '');
     const heading = el.querySelector('h1, h2, h3')?.textContent.trim() || '';
@@ -190,19 +192,21 @@
   const steppers = new Map();          // slide -> [stepper, …] in registration order
   const handlers = { slide: [], ready: [] };
   const customKeys = {};
-  let cur = -1, started = false;
-  const slides = () => [...document.querySelectorAll('.slide')];
+  let cur = -1, started = false, all = null;
+  const slides = () => all || [...document.querySelectorAll('.slide')];   // fixed once the deck is assembled
+  const slide = () => slides()[cur];
 
   function steps(el, n, show, { read } = {}) {
-    const slide = el.closest('.slide');
+    const owner = el.closest('.slide');
     const st = {
-      n, i: 0, slide, read,
-      go(k) { st.i = Math.max(0, Math.min(n - 1, k)); show(st.i); if (started && slide === slides()[cur]) sync(); return st; },
+      n, i: 0, read,
+      // quiet: a batch caller (setAt) syncs the chrome once at the end
+      go(k, quiet) { st.i = Math.max(0, Math.min(n - 1, k)); show(st.i); if (!quiet && started && owner === slide()) sync(); return st; },
       next() { return st.i < n - 1 && (st.go(st.i + 1), true); },
       prev() { return st.i > 0 && (st.go(st.i - 1), true); },
     };
-    if (!steppers.has(slide)) steppers.set(slide, []);
-    steppers.get(slide).push(st);
+    if (!steppers.has(owner)) steppers.set(owner, []);
+    steppers.get(owner).push(st);
     show(0);
     if (started && reading() && read === 'end') st.go(n - 1);
     return st;
@@ -224,43 +228,45 @@
   const stepsOf = s => steppers.get(s) || [];
   const at = s => stepsOf(s).reduce((a, st) => a + st.i, 0);
   const total = s => stepsOf(s).reduce((a, st) => a + st.n - 1, 0) + 1;
-  function setAt(s, k) { for (const st of stepsOf(s)) { const take = Math.min(k, st.n - 1); st.go(take); k -= take; } }
-  const finishForReading = () => slides().forEach(s => stepsOf(s).forEach(st => st.read === 'end' && st.go(st.n - 1)));
+  const done = s => at(s) >= total(s) - 1;
+  function setAt(s, k) { for (const st of stepsOf(s)) { const take = Math.min(k, st.n - 1); st.go(take, true); k -= take; } if (started && s === slide()) sync(); }
+  const finishForReading = () => slides().forEach(s => stepsOf(s).forEach(st => st.read === 'end' && st.go(st.n - 1, true)));
 
   /* ================= navigation ================= */
-  function go(i, step) {
-    const all = slides(), from = cur;
-    cur = Math.max(0, Math.min(all.length - 1, i));
-    const s = all[cur];
-    if (reading()) { s.closest('.frame').scrollIntoView({ behavior: from < 0 ? 'auto' : 'smooth' }); return; }
+  // force: re-render the chrome even if the slide hasn't changed (after a view switch, or at startup)
+  function go(i, step, force) {
+    const list = slides(), from = cur;
+    cur = Math.max(0, Math.min(list.length - 1, i));
+    const s = list[cur];
+    if (reading()) { s.closest('.frame').scrollIntoView({ behavior: force ? 'auto' : 'smooth' }); if (force) announce(); return; }
     if (cur !== from || step != null) setAt(s, step ?? (cur === from - 1 ? Infinity : 0));
-    if (cur !== from) { all.forEach((x, j) => x.classList.toggle('active', j === cur)); announce(); }
+    if (cur !== from || force) { list[from]?.classList.remove('active'); s.classList.add('active'); announce(); }
     sync();
   }
-  function next() { if (!stepsOf(slides()[cur]).some(st => st.next())) go(cur + 1); }
-  function prev() { if (![...stepsOf(slides()[cur])].reverse().some(st => st.prev())) go(cur - 1); }
+  function next() { if (!stepsOf(slide()).some(st => st.next())) go(cur + 1); }
+  function prev() { if (![...stepsOf(slide())].reverse().some(st => st.prev())) go(cur - 1); }
 
   // the current slide changed: update the chrome around it
+  let ovCur;
   function announce() {
-    const all = slides(), s = all[cur];
-    $('overview').querySelectorAll('button').forEach((b, j) => b.classList.toggle('cur', j === cur));
-    $('sectionLabel').textContent = s.dataset.section || '';
-    $('count').textContent = $('dCount').textContent = `${cur + 1} / ${all.length}`;
-    $('mSec').textContent = s.dataset.section || '';
-    $('mProg').style.width = `${(cur + 1) / all.length * 100}%`;
-    $('mNotes').innerHTML = s.closest('.frame').querySelector('.prose')?.innerHTML || '';
-    $('mNotes').scrollTop = 0;
-    if (!reading()) $('progress').style.width = `${(cur + 1) / all.length * 100}%`;
+    const s = slide(), n = slides().length, pct = (cur + 1) / n;
+    ovCur?.classList.remove('cur'); ovCur = $('overview').children[cur]; ovCur?.classList.add('cur');
+    $('sectionLabel').textContent = $('mSec').textContent = s.dataset.section || '';
+    $('count').textContent = $('dCount').textContent = `${cur + 1} / ${n}`;
+    $('mProg').style.transform = `scaleX(${pct})`;
+    if (!reading()) $('progress').style.transform = `scaleX(${pct})`;
+    if ('notes' in root.dataset) fillNotes();
     $('notesTitle').textContent = `SPEAKER NOTES · ${s.dataset.name || ''}`;
     $('notesTk').textContent = s.dataset.takeaway ? 'Takeaway: ' + s.dataset.takeaway : '';
     $('notesBody').textContent = s.querySelector('.notes')?.textContent.trim() || '—';
     handlers.slide.forEach(f => f(s, cur));
     if (reading()) history.replaceState(null, '', '#' + (cur + 1)); else if (portrait.matches) fit();
   }
+  const fillNotes = () => { $('mNotes').innerHTML = slide().closest('.frame').querySelector('.prose')?.innerHTML || ''; $('mNotes').scrollTop = 0; };
 
-  const label = s => s.querySelectorAll('[data-next]').forEach(b => { if (b.dataset.next !== 'keep') b.textContent = at(s) >= total(s) - 1 ? 'Reset ↺' : 'Next →'; });
+  const label = s => s.querySelectorAll('[data-next]').forEach(b => b.textContent = done(s) ? 'Reset ↺' : 'Next →');
   function sync() {
-    const s = slides()[cur], n = total(s), k = at(s);
+    const s = slide(), n = total(s), k = at(s);
     $('stepNav').classList.toggle('on', n > 1);
     $('stepCount').textContent = `step ${k + 1}/${n}`;
     $('up').disabled = k === 0; $('down').disabled = k === n - 1;
@@ -273,72 +279,83 @@
     if (chosen) viewChosen = true;
     const i = Math.max(cur, 0);
     root.dataset.view = v;
+    if (v === 'read') finishForReading();
     fit();
-    if (v === 'read') { finishForReading(); fitRead(); cur = -1; go(i); cur = i; announce(); }
-    else { cur = -1; go(i, 0); }
+    go(i, v === 'read' ? undefined : 0, true);
     icons();
   }
+  const toggleView = () => setView(reading() ? 'present' : 'read');
 
   // read view: the current slide is the one crossing the top third of the screen
+  let frames = [], scrolling = false;
   function onScroll() {
+    scrolling = false;
     if (!reading()) return;
-    const frames = [...document.querySelectorAll('.frame')], y = innerHeight * .35;
+    const y = innerHeight * .35;
     let i = frames.findIndex(f => f.getBoundingClientRect().bottom > y);
     if (i < 0) i = frames.length - 1;
-    if (i !== cur) { cur = i; announce(); }
     const max = root.scrollHeight - innerHeight;
-    $('progress').style.width = `${max > 0 ? scrollY / max * 100 : 100}%`;
+    $('progress').style.transform = `scaleX(${max > 0 ? scrollY / max : 1})`;
+    if (i !== cur) { cur = i; announce(); }
   }
 
+  /* ================= fitting the stage ================= */
+  const DOCK_GAP = 24;
   function fit() {
     const st = $('stage');
     st.style.top = st.style.width = st.style.height = '';
     delete root.dataset.tall;
-    if (reading()) { st.style.transform = ''; return; }
+    if (reading()) {
+      // fixed slides are scaled to the width of their figures
+      st.style.transform = '';
+      const fig = document.querySelector('.fig');
+      if (fig) root.style.setProperty('--fit', Math.min(1, fig.clientWidth / W));
+      return;
+    }
     if (!portrait.matches) { st.style.transform = `translate(-50%,-50%) scale(${Math.min(root.clientWidth / W, root.clientHeight / H)})`; return; }
-    const s = slides()[cur], head = $('mhead').offsetHeight;
+    const s = slide(), head = $('mhead').offsetHeight;
     if (s && tall(s, st, head)) return;
     // a fixed 16:9 slide spans the width under a native header, its own bar tucked behind it
-    const k = root.clientWidth / W;
-    place(st, head, (H - 58) * k, -58 * k, k);
+    const k = root.clientWidth / W, bar = $('bar').offsetHeight;
+    place(st, head, (H - bar) * k, -bar * k, k);
   }
 
   // portrait: the slide sits under the header, centred above the dock, or at the top with its notes below
-  const DOCK = 76;
   function place(st, head, h, shift, k) {
-    const room = root.clientHeight - head - DOCK, top = 'notes' in root.dataset ? head : head + Math.max(0, (room - h) / 2);
+    const room = root.clientHeight - head - $('dock').offsetHeight - DOCK_GAP;
+    const top = 'notes' in root.dataset ? head : head + Math.max(0, (room - h) / 2);
     st.style.top = `${top + shift}px`;
     st.style.transform = `translateX(-50%) scale(${k})`;
     root.style.setProperty('--slide-bottom', `${top + h}px`);
   }
   function toggleNotes() {
-    if (portrait.matches && !reading()) { root.toggleAttribute('data-notes'); $('dNotes').classList.toggle('on', 'notes' in root.dataset); fit(); }
+    if (portrait.matches && !reading()) { root.toggleAttribute('data-notes'); $('dNotes').classList.toggle('on', 'notes' in root.dataset); fillNotes(); fit(); }
     else $('notes').classList.toggle('on');
   }
 
-  // portrait phone: give a slide that can reflow a vertical canvas the width of the phone and as tall as its content,
-  // leaving room for its notes when it's short. Markdown and .flow slides reflow; other slides do if they fit unaided.
-  const PW = 720;
+  // portrait phone: slides that can reflow go vertical, as tall as their content.
+  // Markdown slides are responsive: laid out at the phone's own width in the article type scale.
+  // Hand-built slides are styled in canvas pixels, so they get a 540px canvas scaled to fit (~0.75× on a phone).
+  const PW = 540;
+  const positioned = new WeakMap();    // slide -> has absolutely positioned content (static, so measured once)
   function tall(s, st, head) {
-    const k = root.clientWidth / PW, avail = (root.clientHeight - head - DOCK) / k;
-    root.dataset.tall = '';
-    st.style.width = `${PW}px`; st.style.height = `${avail}px`;
     const c = s.querySelector('.content');
-    const fits = s.classList.contains('md') || s.classList.contains('flow')
-      || (c && c.scrollWidth <= c.clientWidth + 1 && c.scrollHeight <= c.clientHeight + 1
-          && ![...c.querySelectorAll('*')].some(e => getComputedStyle(e).position === 'absolute'));
-    if (!fits || !c) { delete root.dataset.tall; st.style.width = st.style.height = ''; return false; }
+    if (!c) return false;
+    const md = s.classList.contains('md'), w = md ? root.clientWidth : PW, k = root.clientWidth / w;
+    const avail = (root.clientHeight - head - $('dock').offsetHeight - DOCK_GAP) / k;
+    root.dataset.tall = md ? 'fluid' : 'scaled';
+    st.style.width = `${w}px`; st.style.height = `${avail}px`;
+    if (!md && s.classList.contains('fixed')) {
+      if (!positioned.has(s)) positioned.set(s, [...c.querySelectorAll('*')].some(e => getComputedStyle(e).position === 'absolute'));
+      if (positioned.get(s) || c.scrollWidth > c.clientWidth + 1 || c.scrollHeight > c.clientHeight + 1) {
+        delete root.dataset.tall; st.style.width = st.style.height = ''; return false;
+      }
+    }
     c.style.bottom = 'auto'; const need = c.offsetHeight; c.style.bottom = '';
-    const h = Math.min(avail, Math.max(need, PW * .6));
+    const h = Math.min(avail, Math.max(need, w * .6));
     st.style.height = `${h}px`;
     place(st, head, h * k, 0, k);
     return true;
-  }
-  // read view scales fixed slides to the width of their figure
-  function fitRead() {
-    if (!reading()) return;
-    const fig = document.querySelector('.fig');
-    if (fig) root.style.setProperty('--fit', Math.min(1, fig.clientWidth / W));
   }
 
   /* ================= chrome ================= */
@@ -362,9 +379,9 @@
     let stage = $('stage');
     if (!stage) { stage = document.createElement('div'); stage.id = 'stage'; document.body.prepend(stage); }
     for (const n of document.querySelectorAll('script[type="text/markdown"], body > section.slide')) {
-      const made = n.tagName === 'SCRIPT' ? mdSlides(n.textContent) : [n];
-      if (n.tagName === 'SCRIPT' && n.closest('#stage')) n.before(...made); else stage.append(...made);
-      if (n.tagName === 'SCRIPT') n.remove();
+      const isMd = n.tagName === 'SCRIPT', made = isMd ? mdSlides(n.textContent) : [n];
+      if (isMd && n.closest('#stage')) n.before(...made); else stage.append(...made);
+      if (isMd) n.remove();
     }
     if (!$('bar')) stage.insertAdjacentHTML('afterbegin', `<div id="bar"><div class="title">${esc(document.title)}</div></div>`);
     const bar = $('bar');
@@ -373,11 +390,12 @@
 
     // each slide sits in a frame with a label and its notes-as-prose, both shown only in read view
     const cue = /\[~?[\d.]+\s*(?:s|sec|secs|m|min|mins)\b[^\]]*\]\s*/gi;
-    slides().forEach((s, i) => {
+    all = [...document.querySelectorAll('.slide')];
+    all.forEach((s, i) => {
       if (!s.classList.contains('md') && !s.classList.contains('flow')) s.classList.add('fixed');
       const f = document.createElement('article'); f.className = 'frame';
       s.before(f);
-      f.insertAdjacentHTML('beforeend', `<div class="rh"><span>${String(i + 1).padStart(2, '0')}</span>${esc(s.dataset.section || '')}</div>`);
+      f.insertAdjacentHTML('beforeend', `<div class="rh"><span>${pad2(i + 1)}</span>${esc(s.dataset.section || '')}</div>`);
       f.append(s);
       const notes = s.querySelector('.notes');
       if (notes) {
@@ -393,6 +411,7 @@
         fig.addEventListener('click', () => { if (reading()) { setView('present'); go(i, 0); } });
       }
     });
+    frames = [...document.querySelectorAll('.frame')];
 
     stage.insertAdjacentHTML('beforeend', `
       <div id="progress"></div>
@@ -400,7 +419,7 @@
     document.body.insertAdjacentHTML('beforeend', `
       <div id="notes"><h4 id="notesTitle">SPEAKER NOTES</h4><div class="tk" id="notesTk"></div><div id="notesBody"></div></div>
       <div id="overview"></div>
-      <div id="mhead"><b>${esc($('bar').querySelector('.title')?.textContent || document.title)}</b><span id="mSec"></span><i id="mProg"></i></div>
+      <div id="mhead"><b>${esc(bar.querySelector('.title')?.textContent || document.title)}</b><span id="mSec"></span><i id="mProg"></i></div>
       <div id="mNotes"></div>
       <div id="dock"><button id="dPrev" title="Back">‹</button><span id="dCount"></span><button id="dNext" title="Next">›</button><button id="dNotes" title="Speaker notes (N)">${svg('notes')}</button><button id="dRead" title="Read as an article">${svg('read')}</button></div>
       <div id="help">← → slides · ↑ ↓ steps · O overview · R read · T theme · ? keys</div>
@@ -410,20 +429,18 @@
         <p><kbd>R</kbd> read as an article / present · <kbd>T</kbd> light / dark · <kbd>O</kbd> overview · <kbd>N</kbd> notes · <kbd>F</kbd> fullscreen · <kbd>Esc</kbd> close</p>
       </div></div>`);
 
-    $('viewBtn').onclick = () => setView(reading() ? 'present' : 'read');
+    $('viewBtn').onclick = toggleView;
     $('themeBtn').onclick = toggleTheme;
     $('ovBtn').onclick = toggleOverview;
     $('prev').onclick = () => go(cur - 1);
     $('next').onclick = () => go(cur + 1);
-    $('up').onclick = prev;
-    $('down').onclick = next;
-    $('dPrev').onclick = prev;
-    $('dNext').onclick = next;
+    $('up').onclick = $('dPrev').onclick = prev;
+    $('down').onclick = $('dNext').onclick = next;
     $('dRead').onclick = () => setView('read');
     $('dNotes').onclick = toggleNotes;
     $('keys').onclick = () => $('keys').classList.remove('on');
     const ov = $('overview');
-    slides().forEach((s, i) => {
+    all.forEach((s, i) => {
       const b = document.createElement('button');
       b.innerHTML = `<div class="i">${i + 1} · ${esc(s.dataset.section || '')}</div><div class="n">${esc(s.dataset.name || '')}</div>`;
       b.onclick = () => { ov.classList.remove('on'); go(i, 0); };
@@ -438,25 +455,25 @@
   /* ================= input ================= */
   function onKey(e) {
     if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
-    const t = e.target, k = e.key;
+    const t = e.target, k = e.key, lk = k.toLowerCase();
     if (t.isContentEditable || /^(TEXTAREA|SELECT)$/.test(t.tagName) || (t.tagName === 'INPUT' && !/^(range|checkbox|radio)$/.test(t.type))) return;
 
     const ov = $('overview');
     if (ov.classList.contains('on')) {
-      const bs = [...ov.querySelectorAll('button')], i = Math.max(0, bs.indexOf(document.activeElement));
+      const bs = [...ov.children], i = Math.max(0, bs.indexOf(document.activeElement));
       const cols = Math.max(1, Math.round(ov.clientWidth / (bs[0].offsetWidth + 14)));
       const mv = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: cols, ArrowUp: -cols }[k];
       if (mv) { e.preventDefault(); bs[Math.min(bs.length - 1, Math.max(0, i + mv))].focus(); }
       else if (k === 'Enter') { e.preventDefault(); bs[i].click(); }
-      else if (k === 'Escape' || k === 'o' || k === 'O') ov.classList.remove('on');
+      else if (k === 'Escape' || lk === 'o') ov.classList.remove('on');
       return;
     }
     if ($('keys').classList.contains('on')) { $('keys').classList.remove('on'); if (k === '?' || k === 'Escape') return; }
     if (customKeys[k]) { customKeys[k](e); return; }
 
-    if (k === 'r' || k === 'R') setView(reading() ? 'present' : 'read');
-    else if (k === 't' || k === 'T') toggleTheme();
-    else if (k === 'o' || k === 'O') toggleOverview();
+    if (lk === 'r') toggleView();
+    else if (lk === 't') toggleTheme();
+    else if (lk === 'o') toggleOverview();
     else if (k === '?') $('keys').classList.add('on');
     else if (k === 'Escape') { ov.classList.remove('on'); $('notes').classList.remove('on'); }
     else if (reading()) {                                   // the page scrolls; ← → hop between slides
@@ -467,11 +484,11 @@
     else if (['ArrowLeft', 'PageUp'].includes(k)) { e.preventDefault(); go(cur - 1); }
     else if (k === 'ArrowDown' || (k === 'Enter' && t.tagName !== 'BUTTON')) { e.preventDefault(); next(); }
     else if (k === 'ArrowUp') { e.preventDefault(); prev(); }
-    else if (/^[1-9]$/.test(k) && +k <= total(slides()[cur])) setAt(slides()[cur], +k - 1);
+    else if (/^[1-9]$/.test(k) && +k <= total(slide())) setAt(slide(), +k - 1);
     else if (k === 'Home') go(0);
     else if (k === 'End') go(slides().length - 1);
-    else if (k === 'n' || k === 'N') toggleNotes();
-    else if (k === 'f' || k === 'F') document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen();
+    else if (lk === 'n') toggleNotes();
+    else if (lk === 'f') document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen();
   }
 
   function swipe() {
@@ -481,7 +498,7 @@
     addEventListener('touchstart', e => { wake(); x0 = !reading() && e.touches.length === 1 ? e.touches[0].clientX : null; y0 = e.touches[0].clientY; }, { passive: true });
     wake();
     addEventListener('touchend', e => {
-      if (x0 == null || reading()) return;
+      if (x0 == null) return;
       const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
       if (Math.abs(dx) > 40 && Math.abs(dx) > 1.5 * Math.abs(dy)) dx < 0 ? next() : prev();
     }, { passive: true });
@@ -495,25 +512,24 @@
     document.querySelectorAll('[data-build]').forEach(build);
     document.querySelectorAll('[data-next]').forEach(b => b.addEventListener('click', () => {
       const s = b.closest('.slide');
-      if (at(s) >= total(s) - 1) setAt(s, 0); else stepsOf(s).some(st => st.next());
+      if (done(s)) setAt(s, 0); else stepsOf(s).some(st => st.next());
     }));
     // a clicked button keeps focus, so Space / Enter would press it again; hand the keys back to the deck
     document.addEventListener('click', e => { const b = e.target.closest('#stage button'); if (b) b.blur(); });
     addEventListener('keydown', onKey);
     addEventListener('hashchange', () => { const [sl, sp] = fromHash(); if (sl) go(sl - 1, reading() ? undefined : sp - 1); });
-    addEventListener('resize', () => { fit(); fitRead(); });
-    addEventListener('scroll', () => requestAnimationFrame(onScroll), { passive: true });
+    let resizing = false;
+    addEventListener('resize', () => { if (!resizing) { resizing = true; requestAnimationFrame(() => { resizing = false; fit(); }); } });
+    addEventListener('scroll', () => { if (!scrolling) { scrolling = true; requestAnimationFrame(onScroll); } }, { passive: true });
     small.addEventListener('change', e => { if (!viewChosen) setView(e.matches ? 'read' : 'present', false); });
     swipe();
     handlers.ready.forEach(f => f());
     started = true;
     const [sl, sp] = fromHash();
-    fit(); fitRead();
     if (reading()) finishForReading();
-    slides().forEach(label);
-    if (reading() && !sl) { cur = 0; announce(); onScroll(); }         // an article opens at the top
-    else go(sl - 1, reading() ? undefined : sp - 1);
-    if (reading()) announce();
+    all.forEach(label);
+    if (reading() && !sl) { cur = 0; announce(); fit(); onScroll(); }      // an article opens at the top
+    else { cur = Math.max(0, sl - 1); fit(); go(cur, reading() ? undefined : sp - 1, true); }
   }
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : setTimeout(start);
 
@@ -521,7 +537,7 @@
     steps, tabs, build, go, next, prev, store, setView, markdown: s => blocks(dedent(s.split('\n'))),
     get cur() { return cur; },
     get slides() { return slides(); },
-    get slide() { return slides()[cur]; },
+    get slide() { return slide(); },
     on(ev, f) { handlers[ev].push(f); },
     key(k, f) { customKeys[k] = f; },
   };
