@@ -298,18 +298,29 @@
     if (!portrait.matches) { st.style.transform = `translate(-50%,-50%) scale(${Math.min(root.clientWidth / W, root.clientHeight / H)})`; return; }
     const s = slides()[cur], head = $('mhead').offsetHeight;
     if (s && tall(s, st, head)) return;
-    // a fixed 16:9 slide spans the width under a native header, its own bar tucked behind it; notes fill the rest
-    const k = root.clientWidth / W, band = 58 * k;
-    st.style.top = `${head - band}px`;
+    // a fixed 16:9 slide spans the width under a native header, its own bar tucked behind it
+    const k = root.clientWidth / W;
+    place(st, head, (H - 58) * k, -58 * k, k);
+  }
+
+  // portrait: the slide sits under the header, centred above the dock, or at the top with its notes below
+  const DOCK = 76;
+  function place(st, head, h, shift, k) {
+    const room = root.clientHeight - head - DOCK, top = 'notes' in root.dataset ? head : head + Math.max(0, (room - h) / 2);
+    st.style.top = `${top + shift}px`;
     st.style.transform = `translateX(-50%) scale(${k})`;
-    root.style.setProperty('--slide-bottom', `${head + (H - 58) * k}px`);
+    root.style.setProperty('--slide-bottom', `${top + h}px`);
+  }
+  function toggleNotes() {
+    if (portrait.matches && !reading()) { root.toggleAttribute('data-notes'); $('dNotes').classList.toggle('on', 'notes' in root.dataset); fit(); }
+    else $('notes').classList.toggle('on');
   }
 
   // portrait phone: give a slide that can reflow a vertical canvas the width of the phone and as tall as its content,
   // leaving room for its notes when it's short. Markdown and .flow slides reflow; other slides do if they fit unaided.
   const PW = 720;
   function tall(s, st, head) {
-    const k = root.clientWidth / PW, avail = (root.clientHeight - head - 76) / k;
+    const k = root.clientWidth / PW, avail = (root.clientHeight - head - DOCK) / k;
     root.dataset.tall = '';
     st.style.width = `${PW}px`; st.style.height = `${avail}px`;
     const c = s.querySelector('.content');
@@ -319,9 +330,8 @@
     if (!fits || !c) { delete root.dataset.tall; st.style.width = st.style.height = ''; return false; }
     c.style.bottom = 'auto'; const need = c.offsetHeight; c.style.bottom = '';
     const h = Math.min(avail, Math.max(need, PW * .6));
-    st.style.height = `${h}px`; st.style.top = `${head}px`;
-    st.style.transform = `translateX(-50%) scale(${k})`;
-    root.style.setProperty('--slide-bottom', `${head + h * k}px`);
+    st.style.height = `${h}px`;
+    place(st, head, h * k, 0, k);
     return true;
   }
   // read view scales fixed slides to the width of their figure
@@ -333,6 +343,7 @@
 
   /* ================= chrome ================= */
   const ICON = {
+    notes: '<path d="M3.5 4.5h11M3.5 9h11M3.5 13.5h7"/>',
     grid: '<rect x="2.5" y="2.5" width="5" height="5" rx="1"/><rect x="10.5" y="2.5" width="5" height="5" rx="1"/><rect x="2.5" y="10.5" width="5" height="5" rx="1"/><rect x="10.5" y="10.5" width="5" height="5" rx="1"/>',
     read: '<path d="M2 3.5h4.5A2.5 2.5 0 0 1 9 6v8.5a2 2 0 0 0-2-2H2zM16 3.5h-4.5A2.5 2.5 0 0 0 9 6v8.5a2 2 0 0 1 2-2h5z"/>',
     present: '<rect x="2" y="3" width="14" height="9.5" rx="1.5"/><path d="M9 12.5V16M6 16h6"/>',
@@ -391,7 +402,7 @@
       <div id="overview"></div>
       <div id="mhead"><b>${esc($('bar').querySelector('.title')?.textContent || document.title)}</b><span id="mSec"></span><i id="mProg"></i></div>
       <div id="mNotes"></div>
-      <div id="dock"><button id="dPrev" title="Back">‹</button><span id="dCount"></span><button id="dNext" title="Next">›</button><button id="dRead" title="Read as an article">${svg('read')}</button></div>
+      <div id="dock"><button id="dPrev" title="Back">‹</button><span id="dCount"></span><button id="dNext" title="Next">›</button><button id="dNotes" title="Speaker notes (N)">${svg('notes')}</button><button id="dRead" title="Read as an article">${svg('read')}</button></div>
       <div id="help">← → slides · ↑ ↓ steps · O overview · R read · T theme · ? keys</div>
       <div id="keys"><div class="kcard"><h3>Keyboard</h3>
         <p><kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd> previous / next slide · <kbd>Home</kbd> <kbd>End</kbd> first / last</p>
@@ -409,6 +420,7 @@
     $('dPrev').onclick = prev;
     $('dNext').onclick = next;
     $('dRead').onclick = () => setView('read');
+    $('dNotes').onclick = toggleNotes;
     $('keys').onclick = () => $('keys').classList.remove('on');
     const ov = $('overview');
     slides().forEach((s, i) => {
@@ -458,7 +470,7 @@
     else if (/^[1-9]$/.test(k) && +k <= total(slides()[cur])) setAt(slides()[cur], +k - 1);
     else if (k === 'Home') go(0);
     else if (k === 'End') go(slides().length - 1);
-    else if (k === 'n' || k === 'N') $('notes').classList.toggle('on');
+    else if (k === 'n' || k === 'N') toggleNotes();
     else if (k === 'f' || k === 'F') document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen();
   }
 

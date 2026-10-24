@@ -91,7 +91,7 @@ build: true
 | R | Switch between presenting and reading |
 | T | Light / dark |
 | O | Overview of every slide |
-| N | Speaker notes |
+| N | Speaker notes (on a phone held upright, below the slide) |
 | F | Fullscreen |
 | ? | Keyboard help |
 
@@ -107,7 +107,7 @@ On a phone or a portrait tablet, deckkit opens in read view: one column, like a 
 - Hand-built HTML slides can’t reflow, so they appear as figures scaled to the column, each with a **Present** button that opens it full-screen.
 - Text sits in one centred column, about 70 characters wide, on a single type scale. On wide screens, hand-built slides break out into wider figures.
 
-Presenting on a touch screen adds a dock with ‹ › and a button back to reading, at a size you can tap; swipe left and right to move through steps and slides. On a phone held upright, slides go vertical: a canvas the width of the phone, as tall as the content, with the notes underneath when it's short. Markdown slides always do this; an HTML slide does when it's marked `flow`, or when its content fits a narrow canvas without absolutely positioned parts (style it under `[data-tall]` to help it fit). Fixed 16:9 layouts stay horizontal. In landscape it fills the screen and the dock fades until you touch it.
+Presenting on a touch screen adds a dock with ‹ › and a button back to reading, at a size you can tap; swipe left and right to move through steps and slides. On a phone held upright, slides go vertical: a canvas the width of the phone, as tall as the content, centred on the screen. The dock's notes button (or N) shows the slide's speaker notes underneath. Markdown slides always do this; an HTML slide does when it's marked `flow`, or when its content fits a narrow canvas without absolutely positioned parts (style it under `[data-tall]` to help it fit). Fixed 16:9 layouts stay horizontal. In landscape it fills the screen and the dock fades until you touch it.
 
 Press R or use the button in the top bar to switch views. Force one with `?view=read` or `?view=present`.
 
