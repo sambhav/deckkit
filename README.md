@@ -6,7 +6,7 @@
 
 **Write slides in Markdown. Present them on a stage. Send the same link to a phone and it reads like an essay.**
 
-Two files · No build step · 23 themes, light and dark · MIT
+One file · Instant preview · No build · Host on GitHub Pages
 
 [**Live demo**](https://sambhav.dev/talkdown/) &nbsp;·&nbsp; [Quick start](#-quick-start) &nbsp;·&nbsp; [Syntax](#-writing-slides) &nbsp;·&nbsp; [Widgets](#-widgets) &nbsp;·&nbsp; [Themes](#-themes) &nbsp;·&nbsp; [API](#-api)
 
@@ -30,7 +30,7 @@ talkdown keeps your speaker notes in the deck. Present it and the notes stay wit
 |---|---|---|---|
 | **You get** | A 16:9 stage, driven from the keyboard | A scrolling article, with your notes as the prose | One Markdown file, so changes are a normal diff |
 
-And it stays out of your way: no install, no bundler, no framework. Link two files, write Markdown, open the page.
+And it stays out of your way: no install, no bundler, no framework. Write one file, open it, refresh to preview, and push it to GitHub Pages.
 
 ## ✨ Features
 
@@ -185,6 +185,13 @@ Each widget is a few lines of Markdown. Each one takes part in ↑ ↓ navigatio
 | **Footnotes** | `text[^1]` and a `[^1]: source` line anywhere on the slide; set small at its foot |
 | **Maths** | `$x^2$` inline or a `$$ … $$` block, typeset by [KaTeX](https://katex.org/) |
 | **Image slides** | `layout: image` and `image: path.jpg` in the frontmatter: a full-bleed picture with the text over it |
+| **Terminal** | A ` ```terminal ` block: each `$ command` line types out on ↓, and the lines after it are its output |
+| **Recordings** | `![title](demo.cast)` plays an [asciinema](https://asciinema.org/) recording in the same window, without the asciinema player |
+| **Video** | `![title](youtube, vimeo or .mp4 link)` embeds a player |
+| **Accordion** | `::: accordion`, then a `###` heading per item; ↓ opens them in turn |
+| **Feature cards** | `::: features`, then a `###` heading per card. An emoji at the start of the heading becomes its icon |
+| **Agenda** | An empty `::: agenda` lists every section slide, each linking to it |
+| **QR code** | `::: qr` draws a QR code of the deck's link, or of a URL written inside it |
 
 ```md
 ::: tabs
@@ -200,7 +207,7 @@ One column. Notes become the prose.
 
 <br>
 
-Fenced code is highlighted by [highlight.js](https://highlightjs.org/), [Mermaid](https://mermaid.js.org/) draws diagrams, and [KaTeX](https://katex.org/) typesets maths. Both use the theme's colours and fonts, and redraw when the theme or mode changes. Each library is fetched from jsDelivr only if the deck needs it. To self-host one or turn it off:
+Fenced code is highlighted by [highlight.js](https://highlightjs.org/), [Mermaid](https://mermaid.js.org/) draws diagrams, and [KaTeX](https://katex.org/) typesets maths. Both use the theme's colours and fonts, and redraw when the theme or mode changes. Each library, and the QR code generator, is fetched from jsDelivr only if the deck needs it. To self-host one or turn it off:
 
 ```html
 <html data-highlight="/vendor/highlight.min.js" data-diagrams="off" data-math="off">
@@ -278,6 +285,8 @@ Every colour, typeface and size is a CSS custom property. Override them after `d
 | `R` | Read view ⇄ present view |
 | `T` | Light ⇄ dark |
 | `O` · `N` · `F` · `?` | Overview · speaker notes · fullscreen · all keys |
+| `P` | Presenter view: a second window with the next slide, your notes and a timer, kept in step with the audience screen |
+| `L` · `D` | Laser pointer · draw on the slide (cleared on the next slide) |
 
 On touch screens a dock replaces the keyboard, with buttons for back, next, notes and read view, and you can swipe between slides and steps.
 

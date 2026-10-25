@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>talkdown</title>
-<meta name="description" content="Slides you write in Markdown, present on a 16:9 stage, and send to a phone as an essay. Two files, no build step.">
+<meta name="description" content="Slides you write in Markdown, present on a 16:9 stage, and send to a phone as an essay. Write one file, preview it instantly, host it on GitHub Pages.">
 <link rel="icon" href="docs/logo.svg">
-<link rel="stylesheet" href="deck.css?v=0.1.0">
-<script src="deck.js?v=0.1.0"></script>
+<link rel="stylesheet" href="deck.css?v=0.1.0-5">
+<script src="deck.js?v=0.1.0-5"></script>
 <style>
   /* quick start: what the Markdown on the left turns into */
   .mini { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--surface); box-shadow: 0 24px 60px -28px color-mix(in srgb, var(--fg) 45%, transparent); }
@@ -53,7 +53,7 @@ layout: title
 
 Slides you write in Markdown, present on a stage, and send to a phone as an essay.
 
-v0.1 · MIT · Two files, no build step {.meta}
+One file · Instant preview · No build · Host on GitHub Pages {.meta}
 
 <!--
 talkdown is a small, dependency-free engine for HTML slide decks. You write the deck in Markdown, present it full-screen from the keyboard, and when someone opens the same link on a phone it becomes a long-form article, with your speaker notes as the prose between the slides.
@@ -251,7 +251,7 @@ kicker: Widgets
 | Plain text you can diff | ◐ | ✗ | ✓ | A talkdown deck is one Markdown block in an HTML file, so a review is an ordinary diff. |
 | Reads well on a phone | ✗ | ◐ | ✓ | Read view reflows Markdown slides and turns the speaker notes into the prose. |
 | Custom interactive diagrams | ✓ | ✗ | ✓ | Any slide can drop to HTML and register its walkthrough with Deck.steps(). |
-| No build step | ✓ | ✓ | ✓ | Two files and a browser. |
+| No build step | ✓ | ✓ | ✓ | Write one file, refresh the browser, push to GitHub Pages. |
 {.explain}
 
 <!--
@@ -292,7 +292,7 @@ kicker: Widgets
 ::: grid
 ::: flip
 ### Does it need a build step?
-No. Two files and a browser.
+No. Write one file and open it; refresh to see changes.
 :::
 ::: flip
 ### Can I still write HTML?
@@ -401,7 +401,7 @@ kicker: Widgets
 ## Numbers that land
 
 ::: stats
-- **2** files, and no build step
+- **1** file to write, and no build step
 - **23** themes, each light and dark
 - **0** dependencies to install
 - **1** link for the stage, the phone and the review
@@ -719,7 +719,7 @@ The API is deliberately small. Register a stepper for any interaction and it joi
 layout: center
 section: Start
 ---
-## Two files. No build step.
+## Write it once. Present it. Send the link.
 
 [Get started](#start) · [Source on GitHub](https://github.com/sambhav/talkdown) · MIT licensed
 

@@ -36,6 +36,11 @@
  *   text[^1] and a "[^1]: source" line  footnotes, set small at the foot of the slide
  *   $x^2$ and $$ … $$                   maths (KaTeX, fetched only if the deck has some; <html data-math="off"> to skip)
  *   layout: image + image: url          a full-bleed picture with the text over it
+ *   ```terminal                         "$ command" lines type out one per ↓, the rest is their output
+ *   ![title](demo.cast)                 plays an asciinema recording; ![](youtube / vimeo / .mp4 link) embeds a video
+ *   ::: accordion / ::: features        ### items that open one per ↓ / a grid of cards (a leading emoji is the icon)
+ *   ::: agenda / ::: qr                 a contents slide linking every section / a QR code of the deck's link (or the URL inside)
+ * Presenting: P presenter view (next slide, notes, timer, in a second window) · L laser pointer · D draw on the slide
  *   ::: present-only / ::: read-only   content for one view only (or {.present-only} / {.read-only} on a block)
  */
 (() => {
@@ -57,6 +62,7 @@
   const qLook = lookOf(q);
   root.dataset.mode = qLook.mode || store.get('mode', store.get('theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
   const picker = root.hasAttribute('data-theme-picker');
+  if (q.has('presenter')) root.dataset.presenter = '';
   const chosen = qLook.look || (picker && store.get('look', null));
   root.dataset.theme = chosen || root.dataset.theme || 'paper';
 
@@ -174,7 +180,8 @@
         while (i < L.length && !L[i].startsWith(m[1])) body.push(L[i++]);
         i++;
         const src = esc(body.join('\n')), diagram = `<div class="w-diagram"><pre class="code w-diagram-src">${src}</pre></div>`;
-        out += m[2] === 'mermaid' && m[4] ? `<div class="w-with-source"><pre class="code"><code>${src}</code></pre>${diagram}</div>`   // {source}: the text beside its diagram
+        out += m[2] === 'terminal' ? `<div class="w-term" data-lines="${qesc(esc(JSON.stringify(body)))}"></div>`
+          : m[2] === 'mermaid' && m[4] ? `<div class="w-with-source"><pre class="code"><code>${src}</code></pre>${diagram}</div>`   // {source}: the text beside its diagram
           : m[2] === 'mermaid' ? diagram
           : `<pre class="code"${m[2] ? ` data-lang="${m[2]}"` : ''}${m[3] ? ` data-steps="${qesc(m[3])}"` : ''}><code>${esc(body.join('\n'))}</code></pre>`;
       } else if (/^\$\$/.test(l)) {
@@ -201,7 +208,8 @@
         const rows = []; i += 2; while (i < L.length && /^\s*\|/.test(L[i])) rows.push(cells(L[i++]));
         out += `<table><thead><tr>${head.map((c, j) => td('th', c, j)).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map((c, j) => td('td', c, j)).join('')}</tr>`).join('')}</tbody></table>`;
       } else if ((m = l.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)\s*(\{[^}]*\})?\s*$/))) {
-        const [, a] = attrs(l);
+        const [, a] = attrs(l), media = embed(m[2], m[1]);
+        if (media) { out += `<figure${a} class="w-media">${media}${m[3] ? `<figcaption>${inline(m[3])}</figcaption>` : ''}</figure>`; i++; continue; }
         out += `<figure${a}><img src="${m[2]}" alt="${qesc(m[1])}">${m[3] ? `<figcaption>${inline(m[3])}</figcaption>` : ''}</figure>`; i++;
       } else if (/^<[a-zA-Z!/]/.test(l)) {
         const body = []; while (i < L.length && L[i].trim()) body.push(L[i++]);
@@ -213,6 +221,17 @@
       }
     }
     return out;
+  }
+
+  // ![](…) of a video or an asciinema recording becomes a player
+  function embed(u, alt) {
+    let m;
+    if ((m = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/))) u = `https://www.youtube-nocookie.com/embed/${m[1]}`;
+    else if ((m = u.match(/vimeo\.com\/(?:video\/)?(\d+)/))) u = `https://player.vimeo.com/video/${m[1]}`;
+    else if (/\.(mp4|webm|mov)(\?|#|$)/i.test(u)) return `<video src="${u}" controls playsinline preload="metadata" aria-label="${qesc(esc(alt))}"></video>`;
+    else if (/\.cast(\?|#|$)/i.test(u)) return `<div class="w-term w-cast" data-src="${u}" data-title="${qesc(esc(alt))}"></div>`;
+    else return '';
+    return `<div class="w-frame"><iframe src="${u}" title="${qesc(esc(alt || 'Video'))}" loading="lazy" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
   }
 
   /* a Markdown deck: slides split by ---; a chunk of only `key: value` lines is the next slide's frontmatter */
@@ -291,13 +310,25 @@
     c.querySelectorAll('td, th').forEach(marks);
     c.querySelectorAll('pre[data-steps]').forEach(codeSteps);
     c.querySelectorAll('.flip').forEach(flip);
+    c.querySelectorAll('.accordion').forEach(accordion);
+    c.querySelectorAll('.features').forEach(features);
+    c.querySelectorAll('.w-term:not(.w-cast)').forEach(terminal);
+    c.querySelectorAll('.w-cast').forEach(cast);
+    c.querySelectorAll('.qr').forEach(b => { b.className = 'w w-qr'; b.dataset.url = b.textContent.trim(); b.textContent = ''; });
+    c.querySelectorAll('.agenda').forEach(b => b.className = 'w w-agenda');
+  }
+
+  // a container's children, split into groups at each ### heading
+  function byHeading(box) {
+    const groups = [];
+    for (const ch of [...box.children]) { if (ch.tagName === 'H3' || !groups.length) groups.push([]); groups.at(-1).push(ch); }
+    return groups;
   }
 
   // ::: tabs / ::: toggle / ::: steps — each ### heading starts a pane
   function panes(box) {
     const kind = ['tabs', 'toggle', 'steps'].find(k => box.classList.contains(k));
-    const groups = [];
-    for (const ch of [...box.children]) { if (ch.tagName === 'H3' || !groups.length) groups.push([]); groups.at(-1).push(ch); }
+    const groups = byHeading(box);
     const titles = groups.map(g => g[0].tagName === 'H3' ? g[0].innerHTML : '');
     const w = document.createElement('div');
     w.className = `w w-${kind} ${[...box.classList].filter(k => k !== kind).join(' ')}`.trim();
@@ -458,8 +489,7 @@
 
   // ::: timeline — each ### heading is a milestone; ↓ walks them
   function timeline(box) {
-    const items = [];
-    for (const ch of [...box.children]) { if (ch.tagName === 'H3' || !items.length) items.push([]); items.at(-1).push(ch); }
+    const items = byHeading(box);
     const w = document.createElement('ol'); w.className = 'w w-timeline';
     for (const g of items) { const li = document.createElement('li'); li.append(...g); w.append(li); }
     box.replaceWith(w);
@@ -547,6 +577,104 @@
       const parts = j => w.querySelectorAll(`.w-s.s${j % 6}, .w-legend > .s${j % 6}`);
       steps(w, series.length, i => series.forEach((_, j) => parts(j).forEach(el => el.classList.toggle('w-off', j > i))), { read: 'end' });
     }
+  }
+
+  // ::: accordion — each ### heading opens its section; ↓ opens them in turn
+  function accordion(box) {
+    const w = document.createElement('div'); w.className = 'w w-accordion';
+    for (const g of byHeading(box)) {
+      const d = document.createElement('div'); d.className = 'w-acc';
+      const head = g[0].tagName === 'H3' ? g.shift() : null;
+      d.innerHTML = `<button class="w-acc-h" aria-expanded="false">${head ? head.innerHTML : ''}</button><div class="w-acc-b"><div></div></div>`;
+      d.querySelector('.w-acc-b > div').append(...g);
+      w.append(d);
+    }
+    box.replaceWith(w);
+    const items = [...w.children];
+    const st = steps(w, items.length, i => items.forEach((d, j) => { d.classList.toggle('on', j === i); d.firstChild.setAttribute('aria-expanded', j === i); }));
+    items.forEach((d, j) => d.firstChild.addEventListener('click', () => st.go(j)));
+  }
+
+  // ::: features — a grid of cards, one per ### heading; an emoji at the start of the heading becomes its icon
+  function features(box) {
+    const w = document.createElement('div'); w.className = 'w w-features';
+    w.innerHTML = byHeading(box).map(g => {
+      const h = g[0].tagName === 'H3' ? g.shift() : null, m = h?.innerHTML.match(/^\s*(\p{Extended_Pictographic}[\u{FE0F}\u{200D}\p{Extended_Pictographic}]*)\s*/u);
+      const icon = m ? m[1] : '';
+      return `<div class="w-feature">${icon ? `<span class="w-icon">${icon}</span>` : ''}<h3>${h ? h.innerHTML.slice(icon ? m[0].length : 0) : ''}</h3>${g.map(x => x.outerHTML).join('')}</div>`;
+    }).join('');
+    w.style.setProperty('--n', Math.min(3, w.children.length));
+    box.replaceWith(w);
+  }
+
+  /* terminals: ```terminal fences type each "$ command" on ↓ and print its output; ![](x.cast) plays an asciinema recording */
+  const termShell = (title, body) => `<div class="w-term-bar"><i></i><i></i><i></i><span>${title || 'Terminal'}</span></div><pre class="w-term-out">${body}</pre>`;
+  function terminal(w) {
+    const lines = JSON.parse(w.dataset.lines), cmds = [];
+    for (const l of lines) { if (/^\$ /.test(l) || !cmds.length) cmds.push({ cmd: /^\$ /.test(l) ? l.slice(2) : null, out: [] }); if (!/^\$ /.test(l)) cmds.at(-1).out.push(l); }
+    w.className = 'w w-term';
+    w.innerHTML = termShell('', '');
+    const out = w.lastChild, row = c => (c.cmd != null ? `<span class="t-p">$</span> <span class="t-c">${esc(c.cmd)}</span>\n` : '') + c.out.map(o => `<span class="t-o">${esc(o)}</span>\n`).join('');
+    let timer;
+    steps(w, cmds.length, i => {
+      clearInterval(timer);
+      const done = cmds.slice(0, i).map(row).join(''), c = cmds[i];
+      if (!started || reading() || matchMedia('(prefers-reduced-motion: reduce)').matches || c.cmd == null || w.closest('.slide') !== slide()) { out.innerHTML = done + row(c); return; }
+      let k = 0;                                   // type the command, then print what it printed
+      timer = setInterval(() => {
+        k++;
+        out.innerHTML = done + `<span class="t-p">$</span> <span class="t-c">${esc(c.cmd.slice(0, k))}</span><span class="t-cur"></span>`;
+        if (k >= c.cmd.length) { clearInterval(timer); setTimeout(() => { if (out.isConnected) out.innerHTML = done + row(c); }, 260); }
+      }, 34);
+    }, { read: 'end' });
+  }
+
+  // asciinema v2: a JSON header line, then [time, "o", text] events. Plays when its slide opens; click to replay.
+  const SGR = { 1: 'b', 2: 'dim', 30: 'k', 31: 'r', 32: 'g', 33: 'y', 34: 'bl', 35: 'm', 36: 'cy', 37: 'w', 90: 'k', 91: 'r', 92: 'g', 93: 'y', 94: 'bl', 95: 'm', 96: 'cy', 97: 'w' };
+  function screen() {
+    const rows = [[]]; let x = 0, y = 0, cls = '';
+    const put = ch => { const r = rows[y]; while (r.length < x) r.push([' ', '']); r[x++] = [ch, cls]; };
+    return {
+      write(t) {
+        for (const m of t.matchAll(/\x1b\[([\d;?]*)([A-Za-z])|\x1b[()][\dA-Z]|\x1b.|\r\n|[\n\r\b]|[^\x1b\r\n\b]/g)) {
+          const [tok, args, cmd] = m;
+          if (cmd === 'm') { cls = (args || '0').split(';').reduce((c, n) => +n === 0 ? '' : SGR[+n] ? `${c} t-${SGR[+n]}` : c, cls).trim(); }
+          else if (cmd === 'K') rows[y].length = x;
+          else if (cmd === 'J' && args.startsWith('2')) { rows.length = 0; rows.push([]); x = y = 0; }
+          else if (cmd === 'H') { x = 0; y = 0; }
+          else if (cmd || tok[0] === '\x1b') {}
+          else if (tok === '\n' || tok === '\r\n') { y++; x = 0; if (!rows[y]) rows.push([]); }
+          else if (tok === '\r') x = 0;
+          else if (tok === '\b') x = Math.max(0, x - 1);
+          else put(tok);
+        }
+      },
+      html: () => rows.map(r => { let h = '', c = null; for (const [ch, k] of r) { if (k !== c) { if (c !== null) h += '</span>'; h += `<span class="${k}">`; c = k; } h += esc(ch); } return h + (c !== null ? '</span>' : ''); }).join('\n'),
+    };
+  }
+  function cast(w) {
+    w.className = 'w w-term w-cast';
+    w.innerHTML = termShell(w.dataset.title, `<a href="${w.dataset.src}">${esc(w.dataset.src)}</a>`);
+    const out = w.lastChild;
+    let events = null, run = 0;
+    const show = (upTo = Infinity) => { const sc = screen(); for (const [t, , d] of events) if (t <= upTo) sc.write(d); out.innerHTML = sc.html(); };
+    const play = async () => {
+      if (!events) {
+        try {
+          const [head, ...rest] = (await (await fetch(w.dataset.src)).text()).trim().split('\n');
+          const limit = JSON.parse(head).idle_time_limit || 1.5;
+          let t0 = 0, at = 0;                       // squash long pauses, like asciinema's idle_time_limit
+          events = rest.map(l => JSON.parse(l)).filter(e => e[1] === 'o').map(e => { at += Math.min(limit, e[0] - t0); t0 = e[0]; return [at, 'o', e[2]]; });
+        } catch { return; }                        // offline or file://: the link stays
+      }
+      if (reading() || matchMedia('(prefers-reduced-motion: reduce)').matches) return show();
+      const me = ++run, start = performance.now();
+      const tick = () => { if (me !== run) return; const t = (performance.now() - start) / 1000; show(t); if (t <= events.at(-1)[0]) requestAnimationFrame(tick); };
+      tick();
+    };
+    w.addEventListener('click', play);
+    handlers.slide.push(s => { if (s.contains(w)) play(); else run++; });
+    w.play = play;
   }
 
   // ::: flip — the ### heading is the front, the rest is the back
@@ -647,6 +775,7 @@
     $('up').disabled = k === 0; $('down').disabled = k === n - 1;
     label(s);
     if (!reading()) history.replaceState(null, '', '#' + (cur + 1) + (n > 1 && k ? '.' + (k + 1) : ''));
+    broadcast();
   }
 
   /* ================= views ================= */
@@ -690,6 +819,12 @@
       st.style.transform = '';
       const fig = document.querySelector('.fig');
       if (fig) root.style.setProperty('--fit', Math.min(1, fig.clientWidth / W));
+      return;
+    }
+    if (presenter) {                                   // the slide on the left, the presenter panel on the right
+      const w = root.clientWidth * .62 - 48, h = root.clientHeight - 48;
+      st.style.left = `${24 + w / 2}px`;
+      st.style.transform = `translate(-50%,-50%) scale(${Math.min(w / W, h / H)})`;
       return;
     }
     if (!portrait.matches) { st.style.transform = `translate(-50%,-50%) scale(${Math.min(root.clientWidth / W, root.clientHeight / H)})`; return; }
@@ -808,6 +943,7 @@
         <p><kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd> previous / next slide · <kbd>Home</kbd> <kbd>End</kbd> first / last</p>
         <p><kbd>↑</kbd> <kbd>↓</kbd> <kbd>Enter</kbd> previous / next step, then on to the next slide · <kbd>1</kbd>–<kbd>9</kbd> jump to a step</p>
         <p><kbd>R</kbd> read as an article / present · <kbd>T</kbd> light / dark · <kbd>O</kbd> overview · <kbd>N</kbd> notes · <kbd>F</kbd> fullscreen · <kbd>Esc</kbd> close</p>
+        <p><kbd>P</kbd> presenter view · <kbd>L</kbd> laser pointer · <kbd>D</kbd> draw on the slide</p>
       </div></div>`);
 
     $('viewBtn').onclick = toggleView;
@@ -886,7 +1022,7 @@
     else if (lk === 't') toggleTheme();
     else if (lk === 'o') toggleOverview();
     else if (k === '?') $('keys').classList.add('on');
-    else if (k === 'Escape') { ov.classList.remove('on'); $('notes').classList.remove('on'); $('looks')?.classList.remove('on'); }
+    else if (k === 'Escape') { delete root.dataset.laser; delete root.dataset.draw; ov.classList.remove('on'); $('notes').classList.remove('on'); $('looks')?.classList.remove('on'); }
     else if (reading()) {                                   // the page scrolls; ← → hop between slides
       if (k === 'ArrowRight') { e.preventDefault(); go(cur + 1); }
       else if (k === 'ArrowLeft') { e.preventDefault(); go(cur - 1); }
@@ -899,6 +1035,9 @@
     else if (k === 'Home') go(0);
     else if (k === 'End') go(slides().length - 1);
     else if (lk === 'n') toggleNotes();
+    else if (lk === 'p') openPresenter();
+    else if (lk === 'l') toggleMode('laser');
+    else if (lk === 'd') toggleMode('draw');
     else if (lk === 'f') document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen();
   }
 
@@ -923,8 +1062,93 @@
     return i >= 0 ? [i + 1, 1] : [0, 1];
   }
 
+  // ::: agenda lists the section slides, each linking to its slide
+  function agendas() {
+    const parts = slides().map((s, i) => [s, i]).filter(([s]) => s.classList.contains('layout-section'));
+    document.querySelectorAll('.w-agenda').forEach(w => w.innerHTML = `<ol>${parts.map(([s, i]) =>
+      `<li><a href="#${i + 1}"><b>${esc(s.querySelector('h1, h2')?.textContent || s.dataset.section || '')}</b>${s.querySelector('h1 + p, h2 + p') ? `<span>${esc(s.querySelector('h1 + p, h2 + p').textContent)}</span>` : ''}</a></li>`).join('')}</ol>`);
+  }
+
+  // ::: qr — a QR code of the URL inside, or of this deck without its slide number (qrcode-generator, fetched when used)
+  const QRLIB = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js';
+  function qrs() {
+    const ws = [...document.querySelectorAll('.w-qr')];
+    if (!ws.length) return;
+    const draw = () => ws.forEach(w => {
+      const url = w.dataset.url || location.origin + location.pathname, q = qrcode(0, 'M');
+      q.addData(url); q.make();
+      w.innerHTML = `<div class="w-qr-code">${q.createSvgTag({ cellSize: 4, margin: 0, scalable: true })}</div><a href="${url}">${esc(url.replace(/^https?:\/\//, ''))}</a>`;
+    });
+    window.qrcode ? draw() : load(QRLIB, draw);
+  }
+
+  /* laser pointer (L) and pen (D): both live on the stage, so they line up with the slide at any scale */
+  function ink() {
+    const st = $('stage');
+    st.insertAdjacentHTML('beforeend', `<canvas id="ink" width="${W * 2}" height="${H * 2}"></canvas><div id="laser"></div>`);
+    const cv = $('ink'), g = cv.getContext('2d'), dot = $('laser');
+    g.scale(2, 2); g.lineCap = g.lineJoin = 'round';
+    const local = e => { const r = st.getBoundingClientRect(); return [(e.clientX - r.left) * W / r.width, (e.clientY - r.top) * H / r.height]; };
+    let pen = null;
+    st.addEventListener('pointermove', e => {
+      const [x, y] = local(e);
+      if ('laser' in root.dataset) dot.style.transform = `translate(${x}px, ${y}px)`;
+      if (pen) { g.lineTo(x, y); g.stroke(); }
+    });
+    cv.addEventListener('pointerdown', e => {
+      const [x, y] = local(e); pen = true; cv.setPointerCapture(e.pointerId);
+      g.strokeStyle = getComputedStyle(root).getPropertyValue('--accent'); g.lineWidth = 4;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + .1, y); g.stroke();
+    });
+    cv.addEventListener('pointerup', () => pen = null);
+    handlers.slide.push(() => g.clearRect(0, 0, W, H));
+  }
+  const toggleMode = k => { const on = !(k in root.dataset); delete root.dataset.laser; delete root.dataset.draw; if (on) root.dataset[k] = ''; };
+
+  /* presenter view (P): a second window shows the slide, the next one, the notes and a timer. The two windows follow
+     each other over a BroadcastChannel, so either can drive. */
+  const presenter = q.has('presenter');
+  let channel, remote = false;
+  function link() {
+    if (!window.BroadcastChannel) return;
+    channel = new BroadcastChannel('talkdown:' + location.pathname);
+    channel.onmessage = ({ data }) => {
+      if (reading() || (data.i === cur && data.k === at(slide()))) return;
+      remote = true; go(data.i, data.k); remote = false;
+    };
+  }
+  function broadcast() { if (channel && !remote && started && !reading()) channel.postMessage({ i: cur, k: at(slide()) }); }
+  function presenterView() {
+    document.body.insertAdjacentHTML('beforeend', `<div id="presenter">
+      <div class="p-top"><span id="pTimer">0:00</span><button id="pReset" title="Restart the timer">Restart</button><span id="pClock"></span><span id="pCount"></span></div>
+      <h5>Next</h5><div id="pNext"></div><h5>Notes</h5><div id="pNotes"></div></div>`);
+    let t0 = Date.now();
+    const clock = () => {
+      const sec = Math.floor((Date.now() - t0) / 1000);
+      $('pTimer').textContent = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+      $('pClock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+    setInterval(clock, 1000); clock();
+    $('pReset').onclick = () => { t0 = Date.now(); clock(); };
+    handlers.slide.push((s, i) => {
+      const nx = slides()[i + 1], box = $('pNext');
+      box.innerHTML = '';
+      box.style.setProperty('--k', box.clientWidth / W);
+      if (nx) { const c = nx.cloneNode(true); c.classList.add('active'); c.removeAttribute('id'); c.querySelectorAll('[id]').forEach(e => e.removeAttribute('id')); box.append(c); }
+      else box.innerHTML = '<p class="p-end">End of the deck</p>';
+      $('pNotes').innerHTML = s.closest('.frame').querySelector('.prose')?.innerHTML || '<p class="p-end">No notes for this slide.</p>';
+      $('pCount').textContent = `${i + 1} / ${slides().length}`;
+    });
+  }
+  const openPresenter = () => { const u = new URL(location.href); u.searchParams.set('presenter', ''); u.searchParams.set('view', 'present'); window.open(u, 'talkdown-presenter', 'width=1280,height=800'); };
+
   function start() {
     assemble();
+    agendas();
+    qrs();
+    ink();
+    link();
+    if (presenter) presenterView();
     highlight();
     diagrams();
     maths();
