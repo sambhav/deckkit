@@ -204,11 +204,24 @@ aside.notes { display: none; }
 #bar .section { margin-left: auto; font: 11.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #bar .tools { display: flex; gap: 2px; margin-left: 8px; flex: none; }
 /* links an author puts in their own #bar sit beside the title as small pills */
-#bar > a { display: inline-flex; align-items: center; gap: 6px; flex: none; padding: 4px 11px; border: 1px solid var(--line); border-radius: 999px;
+#bar > a, #mLinks > a { display: inline-flex; align-items: center; gap: 6px; flex: none; padding: 4px 11px; border: 1px solid var(--line); border-radius: 999px;
   font-size: 12.5px; font-weight: 500; color: var(--muted); text-decoration: none; white-space: nowrap; transition: color .15s, border-color .15s; }
-#bar > a:hover { color: var(--fg); border-color: var(--accent); }
-#bar > a svg { width: 14px; height: 14px; flex: none; }
-@media (max-width: 560px) { #bar > a { padding: 6px; } #bar > a > span { display: none; } }
+#bar > a:hover, #mLinks > a:hover { color: var(--fg); border-color: var(--accent); }
+#bar > a svg, #mLinks > a svg { width: 14px; height: 14px; flex: none; }
+#mLinks { display: flex; gap: 8px; flex: none; max-width: 50%; overflow-x: auto; }
+#mLinks[hidden] { display: none; }
+#mLinks > a { min-height: 44px; min-width: 44px; justify-content: center; }
+#mLinks > a > span { display: none; }
+#mLinks > a::after { content: attr(data-mobile-label); }
+@media (max-width: 900px) { #bar > a { min-height: 44px; } }
+@media (max-width: 560px) {
+  #bar > a { min-height: 44px; min-width: 44px; padding: 6px; justify-content: center; }
+  #bar > a > span { display: none; }
+  #bar > a::after { content: attr(data-mobile-label); }
+  [data-view=read] #bar { gap: 4px; padding: 0 6px; }
+  [data-view=read] #bar .title { min-width: 0; }
+  [data-view=read] #bar .tools { margin-left: 0; }
+}
 #bar .section:empty + .tools { margin-left: auto; }
 .ib { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; color: var(--muted); transition: background .15s, color .15s; }
 .ib:hover { background: var(--surface-2); color: var(--fg); }
@@ -920,4 +933,5 @@ aside.article { display: none; }
   .w-pane { visibility: visible !important; opacity: 1 !important; }
   @page { size: 1280px 720px; margin: 0; }
 }
+
 
