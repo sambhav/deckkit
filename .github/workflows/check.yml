@@ -1,6 +1,7 @@
-name: Parser checks
+name: Checks
 on:
   push:
+    branches: [main]
   pull_request:
 permissions:
   contents: read
@@ -12,10 +13,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: node --check deck.js
       - run: npm ci
       - run: npm run build
-      - run: git diff --exit-code -- dist/ deck.js deck.css
+      - run: git diff --exit-code -- deck.js
       - run: npm test
   single-file:
     runs-on: ubuntu-latest

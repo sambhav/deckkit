@@ -450,13 +450,13 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
       if (!['auto', 'chart', 'table', 'both'].includes(initial)) throw new Error('Unknown chart view: ' + initial);
       const unknown = [...source.attributes].find(a => a.name.startsWith('data-') && !['data-type','data-chart','data-view','data-chart-view','data-title','data-series'].includes(a.name));
       if (unknown) throw new Error('Unknown chart option: ' + unknown.name.slice(5));
-      model = chartDataset(headers, rows, kind, source.dataset.series);
+      model = chartDataset(headers, rows, kind, source.dataset.series, old);
     } catch (e) { error = e.message; }
     const box = document.createElement('figure'); box.className = 'w-chart-box';
-    box.id = source.id;
+    if (source.id) box.id = source.id;
     box.classList.add(...[...source.classList].filter(c => !['chart','bar','hbar','line','donut'].includes(c)));
     const id = `td-chart-${++chartId}`; box.dataset.chartView = error ? 'table' : initial;
-    box.innerHTML = `<figcaption id="${id}-title">${esc(title)}</figcaption><div class="w-chart-tools" aria-label="Chart display"><label>View <select aria-label="Chart view"><option value="auto">Auto</option><option value="chart">Chart</option><option value="table">Table</option><option value="both">Both</option></select></label><button type="button" class="w-csv-download">Download CSV</button></div>`;
+    box.innerHTML = `<figcaption id="${id}-title">${esc(title)}</figcaption><div class="w-chart-tools" role="group" aria-label="Chart display"><label>View <select><option value="auto">Auto</option><option value="chart">Chart</option><option value="table">Table</option><option value="both">Both</option></select></label><button type="button" class="w-csv-download">Download CSV</button></div>`;
     if (!source.dataset.title && !source.querySelector(':scope > figcaption') && !table?.caption) box.firstChild.className = 'w-chart-caption';
     const select = box.querySelector('select'); select.value = error ? 'table' : initial;
     select.disabled = !!error;
@@ -473,14 +473,15 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     const download = box.querySelector('button'); download.disabled = !headers.length;
     download.addEventListener('click', () => {
       const blob = new Blob([csvDownload(headers, rows)], { type: 'text/csv;charset=utf-8' });
-      const url = URL.createObjectURL(blob), anchor = document.createElement('a'); anchor.href = url; anchor.download = 'chart-data.csv';
+      const url = URL.createObjectURL(blob), anchor = document.createElement('a'); anchor.href = url; anchor.download = (title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'chart-data') + '.csv';
       document.body.append(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
     const w = document.createElement('div'); w.className = `w w-chart w-${kind}`; w.setAttribute('role', 'img'); w.setAttribute('aria-labelledby', `${id}-title`);
     if (model) {
       const labels = model.labels.map(v => esc(String(v)));
       const series = model.series.map(s => ({ name: esc(s.name), shown: rows.map(r => esc(String(r[s.index]))), v: s.values }));
-      const values = series.flatMap(s => s.v), min = -niceMax(-Math.min(0, ...values)) * (values.some(v => v < 0) ? 1 : 0), max = Math.max(0, ...values) > 0 ? niceMax(Math.max(...values)) : 0;
+      const values = series.flatMap(s => s.v), lo = Math.min(0, ...values), hi = Math.max(0, ...values);
+      const min = lo < 0 ? -niceMax(-lo) : 0, max = hi > 0 ? niceMax(hi) : 0;
       const range = max - min || 1, pct = v => ((v - min) / range * 100).toFixed(2);
       const legend = items => `<div class="w-legend">${items.map(([name, j, extra = '']) => `<span class="s${j % 6}"><i></i>${name}${extra}</span>`).join('')}</div>`;
     if (kind === 'donut') {

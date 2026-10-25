@@ -10,19 +10,16 @@ const context = {
   URLSearchParams, matchMedia: () => ({ matches: false }),
   MutationObserver: class { observe() {} }, window: {},
 };
-vm.runInNewContext(fs.readFileSync(require.resolve('../dist/deck.js'), 'utf8'), context);
+vm.runInNewContext(fs.readFileSync(require.resolve('../deck.js'), 'utf8'), context);
 const md = s => context.window.Deck.markdown(s).trim().replace(/>\n</g, '><');
 
-test('legacy asset URLs are byte-identical to the published dist assets', () => {
-  for (const name of ['deck.js', 'deck.css']) assert.deepEqual(fs.readFileSync(require.resolve('../' + name)), fs.readFileSync(require.resolve('../dist/' + name)));
-});
 test('browser test server returns missing-file errors without crashing', async () => {
   const server = require('./run-browser.cjs')();
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const base = 'http://127.0.0.1:' + server.address().port;
   try {
     assert.equal((await fetch(base + '/missing-file.md')).status, 404);
-    const response = await fetch(base + '/dist/deck.js');
+    const response = await fetch(base + '/deck.js');
     assert.equal(response.status, 200);
     assert.match(await response.text(), /talkdown 0.2/);
   } finally { await new Promise(resolve => server.close(resolve)); }
@@ -106,4 +103,24 @@ test('notes and slide boundaries use tokens instead of splitting code or contain
   assert.match(env.feet[0], /<code>code<\/code>/);
   assert.equal(slideChunks('## One\n\n::: card\n---\n```md\n---\n```\n:::\n\n---\n## Two').length, 2);
   assert.match(renderMarkdown('$x$'), /class="math">x<\/span>/);
+});
+test('an unclosed container does not swallow later slides', async () => {
+  const { slideChunks } = await import('../src/markdown.js');
+  assert.equal(slideChunks('# One\n\n::: cols\nunclosed\n\n---\n# Two\n\n---\n# Three').length, 3);
+});
+test('math works in list items and indented code is never a table', async () => {
+  const { renderMarkdown } = await import('../src/markdown.js');
+  assert.match(renderMarkdown('- item\n\n  $$\n  x^2\n  $$'), /<li>[\s\S]*class="math math-block">x\^2</);
+  assert.doesNotMatch(renderMarkdown('    | a | b |\n    |---|---|'), /<table>/);
+});
+test('typography keeps quotes, ellipses and dashes but not (c) or +-', async () => {
+  const { renderMarkdown } = await import('../src/markdown.js');
+  assert.equal(renderMarkdown('Wait... a -- b "q" (c) a+-b').trim(), '<p>Wait… a – b “q” (c) a+-b</p>');
+});
+test('legacy {.chart} tables keep lenient numbers, first-column donuts and many series', async () => {
+  const { chartDataset } = await import('../src/data.js');
+  assert.deepEqual(chartDataset(['Q', 'V'], [['A', '42%'], ['B', '$1,200']], 'bar', undefined, true).series[0].values, [42, 1200]);
+  assert.equal(chartDataset(['Q', 'A', 'B'], [['x', '1', '2']], 'donut', undefined, true).series.length, 1);
+  assert.equal(chartDataset(['Q', ...'abcdefg'], [['x', ...'1234567']], 'bar', undefined, true).series.length, 7);
+  assert.throws(() => chartDataset(['Q', 'V'], [['A', '42%']]), /expected a finite number/);
 });
