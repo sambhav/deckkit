@@ -4,11 +4,11 @@
 
 # talkdown
 
-**An agent-first slide format. Your agent writes a short Markdown deck; you present it as slides, and everyone else reads it as an article.**
+**Interactive presentations in Markdown. Present as slides. Share as an article.**
 
-One HTML file · Instant preview · No author build · Host on GitHub Pages
+Human-editable source · Themed components · Custom HTML and JavaScript · No author build
 
-[**Live demo**](https://sambhav.dev/talkdown/) &nbsp;·&nbsp; [Quick start](#-quick-start) &nbsp;·&nbsp; [For agents](#-for-agents) &nbsp;·&nbsp; [Syntax](#-writing-slides) &nbsp;·&nbsp; [Widgets](#-widgets) &nbsp;·&nbsp; [Themes](#-themes) &nbsp;·&nbsp; [API](#-api)
+[**Live demo**](https://sambhav.dev/talkdown/) &nbsp;·&nbsp; [Why talkdown?](#why-talkdown) &nbsp;·&nbsp; [Quick start](#-quick-start) &nbsp;·&nbsp; [For agents](#-for-agents) &nbsp;·&nbsp; [Syntax](#-writing-slides) &nbsp;·&nbsp; [Widgets](#-widgets) &nbsp;·&nbsp; [Themes](#-themes) &nbsp;·&nbsp; [API](#-api)
 
 ![version](https://img.shields.io/badge/version-0.2.0-F1B000?style=flat-square) ![status](https://img.shields.io/badge/status-pre--release-555?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-3C9A5F?style=flat-square) ![build](https://img.shields.io/badge/build_step-none-2B63F5?style=flat-square) ![size](https://img.shields.io/badge/files-2-E8428E?style=flat-square)
 
@@ -22,28 +22,68 @@ One HTML file · Instant preview · No author build · Host on GitHub Pages
 
 ## Why talkdown?
 
-Asking an agent for an HTML deck works, and the result looks great. But every slide costs a lot of tokens, and once it exists you can't change a heading or reorder two slides without asking the model again.
+Over the last few months, I've seen more people move from Google Slides to interactive presentations built with coding agents. In a browser, you can build working examples into the talk: a diagram you can step through, a chart you can explore, a small simulation you can change in front of the audience.
 
-talkdown is a small Markdown format. An agent writes a deck in a fraction of the tokens, and you can open the file and fix it by hand. The same file serves two audiences:
+But asking an agent to build a whole HTML presentation means spending tokens on markup, styling and navigation for every deck. The resulting source also takes more work to read and edit.
 
-| | Presenting | Not there |
-|---|---|---|
-| **They get** | A 16:9 stage, driven from the keyboard | A scrolling article, with your speaker notes as the prose |
-| **You control** | `::: say`, `::: present-only` | `::: read`, `::: read-only` |
+I built talkdown to make that kind of presentation easier to write, maintain and share. It gives you a compact Markdown format, themed interactive components, and room for custom HTML and JavaScript.
 
-It also stays out of your way: no install, no bundler, no framework. Write one file, open it, refresh to preview, and push it to GitHub Pages.
+## Keep the source easy to edit
 
-## ✨ Features
+Most of a talk is headings, sentences, examples and notes. Those belong in a format you can read.
 
-- **Markdown first.** `---` between slides, `::: notes` for speaker notes, `|||` for columns.
-- **Steps built into navigation.** ← → change slides; ↑ ↓ walk the steps on a slide and then carry on, so a presenter can just keep pressing ↓.
-- **Two formats from one file.** Present as slides; the same link reads as an article, and you control each format separately.
-- **Read view.** Phones open the deck as an article: slides reflow, builds show finished, notes become paragraphs.
-- **Interactive widgets in plain Markdown.** Tabs, walkthroughs, explained tables, stepped code, flip cards, timelines, stats, callouts, charts, pull quotes, checklists, footnotes, maths and Mermaid diagrams.
-- **23 themes**, each a designed light/dark pair with its own typefaces, checked for WCAG AA contrast.
-- **Syntax highlighting and diagrams** that follow the theme, loaded only when a deck needs them.
-- **An HTML escape hatch** for the one slide that needs a hand-built, animated diagram.
-- **Deep links** to any slide and step: `#5.3`, or `#pricing` by id.
+In talkdown, `---` separates slides. A few lines of Markdown add a walkthrough, a chart or speaker notes. The runtime supplies the layout and behaviour, so an agent doesn't need to generate that scaffolding for every slide. You can change the wording, move a section or correct a number yourself.
+
+```md
+## Follow a request
+
+::: steps
+### Check the cache
+Return the saved result if it is still fresh.
+
+### Fetch on a miss
+Ask the service for a new result.
+
+### Save the response
+The next request can reuse it.
+:::
+
+::: notes
+A cache hit skips the service call. On a miss, we fetch the result
+and save it for subsequent requests.
+:::
+```
+
+When an explanation needs something specific, mix in HTML and JavaScript: an animated request flow, a live calculator, a simulation. Custom interactions can join the same keyboard navigation as the built-in widgets. The rest of the deck can stay in Markdown.
+
+## Build the explanation from components
+
+Different ideas need different ways of showing them. Walk through code a few lines at a time. Compare alternatives in tabs. Select a table row to explain a tradeoff. Plot a dataset, then let the reader inspect or download its values.
+
+talkdown provides those components, with navigation and reading behaviour built in. You can combine them across a presentation without rebuilding each interaction.
+
+The themes cover the components too. Choose one of 23 light/dark pairs and the typography, charts, code highlighting, callouts and diagrams follow it. A deck with several kinds of content still looks like one presentation.
+
+[See the widgets](#-widgets) · [Browse the themes](#-themes) · [Try the live demo](https://sambhav.dev/talkdown/)
+
+## Give people something they can read afterwards
+
+After a talk, someone usually asks for the slides. But the slides only contain part of the explanation. The rest was what you said.
+
+That was a big reason for building talkdown. When I'm presenting, I want slides. When I send someone the link afterwards, I want them to be able to read it like a blog.
+
+The same deck supports both. On desktop, it opens as a presentation. On a phone, it opens as a scrolling article: Markdown content reflows, reveals are shown, and shared speaker notes become the prose. Desktop readers can switch to the article too.
+
+Write the explanation in `::: notes`, keep delivery cues in `::: say`, and add reader-only context in `::: read`. You can give each audience the detail it needs while maintaining one source.
+
+| During the talk | After the talk |
+|---|---|
+| A 16:9 stage with keyboard navigation | A scrolling article with the explanation included |
+| Reveal an argument one step at a time | Read the complete argument at your own pace |
+| Show the chart | Inspect the chart and its data |
+| Use speaker notes to guide delivery | Read those notes as paragraphs |
+
+[Open the demo](https://sambhav.dev/talkdown/), then press **R** to read it as an article.
 
 ## 🚀 Quick start
 
@@ -325,7 +365,7 @@ Place it inside a slide's `.content`. The native table remains useful before enh
 
 <img src="docs/themes.png" alt="Twelve of the 23 themes, in light and dark" width="900">
 
-One attribute picks the look:
+Themes apply across slides and built-in components, including charts, code highlighting, callouts and diagrams. One attribute picks the look:
 
 ```html
 <html lang="en" data-theme="rose">
