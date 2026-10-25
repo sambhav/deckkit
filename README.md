@@ -8,7 +8,7 @@
 
 Markdown an agent can write and you can edit · Themed interactive components · Escape hatches to HTML and JavaScript · No author build
 
-[**Live demo**](https://sambhav.dev/talkdown/) &nbsp;·&nbsp; [Why](#why-talkdown) &nbsp;·&nbsp; [Quick start](#-quick-start) &nbsp;·&nbsp; [For agents](#-for-agents) &nbsp;·&nbsp; [Syntax](#-writing-slides) &nbsp;·&nbsp; [Widgets](#-widgets) &nbsp;·&nbsp; [Themes](#-themes) &nbsp;·&nbsp; [API](#-api)
+[**Live demo**](https://sambhav.dev/talkdown/) &nbsp;·&nbsp; [**Widget gallery**](https://sambhav.dev/talkdown/gallery.html) &nbsp;·&nbsp; [Why](#why-talkdown) &nbsp;·&nbsp; [Quick start](#-quick-start) &nbsp;·&nbsp; [For agents](#-for-agents) &nbsp;·&nbsp; [Syntax](#-writing-slides) &nbsp;·&nbsp; [Widgets](#-widgets) &nbsp;·&nbsp; [Themes](#-themes) &nbsp;·&nbsp; [API](#-api)
 
 ![version](https://img.shields.io/badge/version-0.3.0-F1B000?style=flat-square) ![status](https://img.shields.io/badge/status-pre--release-555?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-3C9A5F?style=flat-square) ![build](https://img.shields.io/badge/build_step-none-2B63F5?style=flat-square) ![size](https://img.shields.io/badge/files-2-E8428E?style=flat-square)
 
@@ -51,7 +51,7 @@ The [live demo](https://sambhav.dev/talkdown/) is itself a talkdown deck: a shor
 | To… | Start with… |
 |---|---|
 | See the pitch | [The opening presentation](https://sambhav.dev/talkdown/#why) |
-| Explore live components | [The widget tour](https://sambhav.dev/talkdown/#widgets) |
+| Explore live components | [Full widget gallery](https://sambhav.dev/talkdown/gallery.html) or [the widget tour](https://sambhav.dev/talkdown/#widgets) |
 | Create a deck | [Quick start](#-quick-start) or [the starter file](examples/starter.html) |
 | Have an agent write a deck | [For agents](#-for-agents) |
 | Add a custom interaction | [HTML slides](#-html-slides) and [the API](#-api) |
