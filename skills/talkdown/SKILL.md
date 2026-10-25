@@ -5,7 +5,7 @@ description: Use when creating or editing slide decks, presentations or talks; w
 
 # talkdown
 
-By default, deliver one `.html` file: a boilerplate plus Markdown in a `<script type="text/markdown">` block. It opens as slides on desktop and mobile. Use the phone's floating **Slides / Article** buttons, or **R** on desktop, to switch at the current section. Shared speaker notes become article prose. Share `?view=read#section-id` for a direct article link; set `<html data-view="read">` only when the author wants an article by default. Write Markdown, not hand-built HTML: it is shorter, and a human can tweak it by hand.
+By default, deliver one `.html` file: a boilerplate plus Markdown in a `<script type="text/markdown">` block. It opens as slides on desktop and mobile. Tap the phone's floating navigation button for **Slides / Article**, or **R** on desktop, to switch at the current section. Shared speaker notes become article prose. Share `?view=read#section-id` for a direct article link; set `<html data-view="read">` only when the author wants an article by default. Write Markdown, not hand-built HTML: it is shorter, and a human can tweak it by hand.
 
 ## File boilerplate
 
@@ -152,7 +152,7 @@ Set on `<html>`: `data-theme="rose"`. Themes: clean (default), paper, slate, led
 
 1. One idea per slide; at most about 6 bullets, each a short line.
 2. Put the explanation in `::: notes` blocks as full sentences. Use `::: say` for delivery cues and `::: read` for article-only detail.
-3. Prefer Markdown widgets over raw HTML. Drop to hand-written HTML slides only when Markdown cannot express it.
+3. Prefer Markdown widgets over raw HTML. Drop to hand-written HTML slides only when Markdown cannot express it. Mark custom touch interactions with `data-no-swipe` so deck swipes and edge taps do not intercept them.
 4. Do not add custom CSS or restyle; choose a theme instead, unless asked.
 5. Start with a `layout: title` slide, use `layout: section` slides for chapters, end with a `layout: center` slide.
 6. Keep the file small. To edit, change the Markdown in place; do not regenerate the whole deck.

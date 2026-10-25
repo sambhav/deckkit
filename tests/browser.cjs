@@ -137,6 +137,20 @@ async function verify(page, base) {
 }
 async function verifyMobileNavigation(page, base) {
   const check = (ok, message) => { if (!ok) throw new Error(message); };
+  const control = async id => {
+    if (!(await page.locator('#dPanel').isVisible())) await page.locator('#dToggle').click();
+    await page.locator('#' + id).click();
+  };
+  const gesture = async (target, points) => page.locator(target).evaluate((el, points) => {
+    for (let i = 0; i < points.length; i++) {
+      const type = i === 0 ? 'touchstart' : i === points.length - 1 ? 'touchend' : 'touchmove';
+      const touch = { clientX: points[i][0], clientY: points[i][1] };
+      const event = new Event(type, { bubbles: true });
+      Object.defineProperty(event, 'touches', { value: type === 'touchend' ? [] : [touch] });
+      Object.defineProperty(event, 'changedTouches', { value: [touch] });
+      el.dispatchEvent(event);
+    }
+  }, points);
   const notes = 'This is the explanation that accompanies the walkthrough. '.repeat(45);
   const source = [
     'layout: title', 'id: opening', 'section: Opening', '---', '# Opening',
@@ -156,40 +170,49 @@ async function verifyMobileNavigation(page, base) {
   await page.waitForFunction(() => window.Deck?.slides.length === 5);
   check(await page.locator('html').getAttribute('data-view') === 'present', 'Phones should open as slides');
   check(await page.locator('#dock').isVisible(), 'Mobile controls must be reachable in slides');
+  check(!(await page.locator('#dPanel').isVisible()), 'Mobile navigation must start collapsed');
+  check(await page.locator('#dock').evaluate(el => el.offsetHeight <= 56 && el.offsetWidth <= 56), 'Collapsed controls must occupy only one small button');
+  const before = await page.locator('#stage').boundingBox();
+  await page.locator('#dToggle').click();
+  check(await page.locator('#dPanel').isVisible(), 'The floating button must reveal the full controls');
+  const after = await page.locator('#stage').boundingBox();
+  check(before.y === after.y && before.height === after.height, 'Opening controls must not move or resize the slide');
+  await page.keyboard.press('Escape');
+  check(!(await page.locator('#dPanel').isVisible()), 'Escape must collapse the controls');
   await page.evaluate(() => Deck.go(1, 1));
-  await page.locator('#dNotes').click();
+  await control('dNotes');
   check(await page.locator('#mNotes').evaluate(el => el.clientHeight > 70), 'Long phone slides must leave room for speaker notes');
-  await page.locator('#dNotes').click();
+  await control('dNotes');
   for (let i = 0; i < 3; i++) {
-    await page.locator('#dRead').click();
+    await control('dRead');
     check(await page.locator('#dock').isVisible(), 'Article controls must remain visible');
-    await page.locator('#dSlides').click();
+    await control('dSlides');
     check(await page.evaluate(() => Deck.cur) === 1, 'Switching views must keep the visible section');
     check(await page.locator('.slide.active').count() === 1, 'Returning to slides must leave exactly one active slide');
     check(await page.locator('.slide.active .w-steps .w-pane.on h3').textContent() === 'Second', 'Article expansion must not overwrite the presenter step');
     check(await page.evaluate(() => scrollY) === 0, 'Article scroll offset must not displace the slide stage');
   }
-  await page.locator('#dRead').click();
-  await page.locator('#dSections').click();
+  await control('dRead');
+  await control('dSections');
   check(await page.locator('#mobileNav').isVisible(), 'Section picker must open as a dialog');
   await page.locator('#navSlides').click();
   check(!(await page.locator('#mobileNavList').textContent()).includes('Stage only'), 'Article navigation must omit presentation-only slides');
   await page.locator('#mobileNavList button').filter({ hasText: 'Background' }).click();
   check(await page.evaluate(() => Deck.cur) === 3, 'Slide picker must jump within the article');
-  await page.locator('#dSlides').click();
+  await control('dSlides');
   check(await page.evaluate(() => Deck.cur) === 4, 'Article-only content must switch to the next presentable slide');
   check(await page.locator('.slide.active').count() === 1, 'Changing sections in the article must clear the old active slide');
-  await page.locator('#dSections').click();
+  await control('dSections');
   await page.locator('#navSlides').click();
   check(!(await page.locator('#mobileNavList').textContent()).includes('Background'), 'Slide navigation must omit article-only content');
   await page.keyboard.press('Escape');
   check(!(await page.locator('#mobileNav').isVisible()), 'Native Escape must dismiss the picker');
-  await page.locator('#dRead').click();
+  await control('dRead');
   await page.evaluate(() => { Deck.go(0); Deck.go(2); });
   check(await page.evaluate(() => Deck.cur) === 3, 'Read navigation must skip hidden article frames');
-  await page.locator('#dNext').click();
+  await control('dNext');
   check(await page.evaluate(() => Deck.cur) === 4, 'Article next must advance a slide, not a hidden widget step');
-  await page.locator('#dHome').click();
+  await control('dHome');
   check(await page.evaluate(() => scrollY === 0 && Deck.cur === 0), 'Home must return to the top of the article');
   for (const [width, height] of [[320, 740], [844, 390], [390, 844]]) {
     await page.setViewportSize({ width, height });
@@ -200,11 +223,11 @@ async function verifyMobileNavigation(page, base) {
       return box.left >= 0 && box.right <= innerWidth + 1 && box.bottom <= innerHeight;
     }), 'The dock must fit the phone viewport');
   }
-  await page.locator('#dSlides').click();
-  await page.locator('#dRead').click();
+  await control('dSlides');
+  await control('dRead');
   await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
   await page.waitForFunction(() => Deck.cur === 4);
-  await page.locator('#dSlides').click();
+  await control('dSlides');
   check(await page.evaluate(() => Deck.cur) === 4 && await page.locator('.slide.active').count() === 1, 'Switching after scrolling to the article end must present its last visible section');
   await page.evaluate(() => Deck.go(1));
   await page.locator('.slide.active pre').evaluate(el => {
@@ -217,6 +240,54 @@ async function verifyMobileNavigation(page, base) {
     }
   });
   check(await page.evaluate(() => Deck.cur) === 1, 'Scrolling a code block must not swipe to another slide');
+  await page.evaluate(() => Deck.go(1, 0));
+  const activeStep = () => page.locator('.slide.active .w-steps .w-pane.on h3').textContent();
+  await gesture('.slide.active .content', [[250, 300], [140, 302], [60, 301]]);
+  check(await activeStep() === 'Second', 'A left swipe must advance one step');
+  await gesture('.slide.active .content', [[70, 300], [160, 302], [260, 301]]);
+  check(await activeStep() === 'First', 'A right swipe must reverse one step');
+  await gesture('.slide.active .content', [[362, 300], [362, 300]]);
+  check(await activeStep() === 'Second', 'A tap near the right edge must advance one step');
+  await gesture('.slide.active .content', [[362, 300], [362, 300]]);
+  check(await activeStep() === 'Second', 'Rapid double taps must not skip two steps');
+  await page.waitForTimeout(370);
+  await gesture('.slide.active .content', [[28, 300], [28, 300]]);
+  check(await activeStep() === 'First', 'A tap near the left edge must reverse one step');
+  await gesture('.slide.active .content', [[180, 420], [185, 260], [185, 210]]);
+  check(await activeStep() === 'First', 'Vertical gestures must stay available for scrolling');
+  await gesture('.slide.active pre', [[250, 300], [140, 302], [60, 301]]);
+  check(await activeStep() === 'First', 'Code scrolling must not consume a slide step');
+  await page.locator('.slide.active .content').evaluate(el => {
+    const custom = document.createElement('div');
+    custom.dataset.noSwipe = ''; custom.id = 'customGesture'; custom.textContent = 'Custom interaction'; el.append(custom);
+  });
+  await gesture('#customGesture', [[250, 300], [140, 302], [60, 301]]);
+  check(await activeStep() === 'First', 'Custom interactive content must be able to opt out of deck gestures');
+  await page.locator('.slide.active .content').evaluate(el => {
+    for (const [type, count, x] of [['touchstart', 1, 250], ['touchmove', 2, 140], ['touchend', 0, 60]]) {
+      const event = new Event(type, { bubbles: true }), touch = { clientX: x, clientY: 300 };
+      Object.defineProperty(event, 'touches', { value: Array(count).fill(touch) });
+      Object.defineProperty(event, 'changedTouches', { value: [touch] }); el.dispatchEvent(event);
+    }
+  });
+  check(await activeStep() === 'First', 'Pinching must cancel slide navigation');
+  await page.locator('.slide.active h2').evaluate(el => {
+    const range = document.createRange(); range.selectNodeContents(el);
+    getSelection().removeAllRanges(); getSelection().addRange(range);
+  });
+  await gesture('.slide.active .content', [[250, 300], [140, 302], [60, 301]]);
+  check(await activeStep() === 'First', 'Text selection must not navigate the deck');
+  await page.evaluate(() => getSelection().removeAllRanges());
+  await page.locator('#dToggle').click();
+  await gesture('.slide.active .content', [[250, 300], [140, 302], [60, 301]]);
+  check(!(await page.locator('#dPanel').isVisible()) && await activeStep() === 'First', 'A gesture outside open controls must dismiss them without advancing');
+  await control('dRead');
+  const entry = await page.evaluate(() => Deck.cur);
+  await gesture('.slide[data-id=process] .content', [[250, 300], [140, 302], [60, 301]]);
+  check(await page.evaluate(() => Deck.cur) === entry, 'Article gestures must not navigate the presentation');
+  await page.locator('#dToggle').click();
+  await page.evaluate(() => window.scrollBy({ top: 80, behavior: 'instant' }));
+  await page.waitForFunction(() => document.getElementById('dPanel').hidden);
   await page.goto(base + '/mobile-navigation.html?view=read#process');
   await page.waitForFunction(() => window.Deck?.slides.length === 5);
   check(await page.locator('html').getAttribute('data-view') === 'read' && await page.evaluate(() => Deck.cur) === 1, 'Explicit article links must preserve their section');

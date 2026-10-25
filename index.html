@@ -6,8 +6,8 @@
 <title>talkdown</title>
 <meta name="description" content="Interactive presentations in Markdown, with themed components and custom JavaScript. Present as slides and share the same link as a readable article.">
 <link rel="icon" href="docs/logo.svg">
-<link rel="stylesheet" href="deck.css?v=0.2.0-2">
-<script src="deck.js?v=0.2.0-2"></script>
+<link rel="stylesheet" href="deck.css?v=0.2.0-3">
+<script src="deck.js?v=0.2.0-3"></script>
 <style>
   /* quick start: what the Markdown on the left turns into */
   .mini { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--surface); box-shadow: 0 24px 60px -28px color-mix(in srgb, var(--fg) 45%, transparent); }
@@ -65,7 +65,7 @@ Present as slides. Share as an article. {.meta}
 ::: notes
 Over the last few months, I've seen more people move from Google Slides to interactive presentations built with coding agents. I built talkdown because I wanted that freedom in a format I could still read and edit myself. I also wanted the link I shared after a talk to contain the explanation, not just the slides.
 
-This page is both the presentation and the article. On desktop, use the arrow keys to present and R to switch to reading. On a phone, it opens as slides; the floating Slides / Article buttons let you switch at the section you are on.
+This page is both the presentation and the article. On desktop, use the arrow keys to present and R to switch to reading. On a phone, it opens as slides; tap the small floating navigation button to switch between Slides and Article at the section you are on.
 :::
 
 ---
@@ -211,7 +211,7 @@ Press **R**, or tap **Article** on a phone. The explanation is already here. {.m
 :::
 
 ::: read-only
-You are reading the article version. Use Slides in the floating phone dock to present this section.
+You are reading the article version. Tap the floating navigation button and choose Slides to present this section.
 :::
 
 ::: notes
@@ -447,15 +447,15 @@ kicker: Two formats
 
 ::: toggle
 ### Present
-The 16:9 stage, scaled to the screen. Arrow keys on a laptop; on a phone, a dock and swipes. Steps reveal one at a time.
+The 16:9 stage, scaled to the screen. Arrow keys on a laptop; on a phone, swipe or use the floating navigation button. Steps reveal one at a time.
 ### Read
 One column of text, like a blog post. Slides reflow, widgets lay everything out, builds show finished, and the notes become the prose.
 :::
 
-Press **R**, or use the phone's **Slides / Article** buttons. Both keep your place. Share `?view=read` to open the article directly. {.muted}
+Press **R**, or tap the phone's floating button for **Slides / Article**. Both keep your place. Share `?view=read` to open the article directly. {.muted}
 
 ::: notes
-There is one file and two ways to see it. On a laptop the deck presents full screen from the keyboard. Phones open with responsive slides and a floating dock. Tap Article at any section to read it: each slide reflows into article typography, and the shared notes follow as paragraphs. Tap Slides to return to that section. Your presenter step is restored. The Home button returns to the beginning; Sections opens a picker with section and slide tabs. Send the link to someone who missed the talk and they get the reasoning as well as the bullets.
+There is one file and two ways to see it. On a laptop the deck presents full screen from the keyboard. Phones open with responsive slides and a small floating navigation button. Tap it and choose Article at any section to read it: each slide reflows into article typography, and the shared notes follow as paragraphs. Tap Slides to return to that section. Your presenter step is restored. The Home button returns to the beginning; Sections opens a picker with section and slide tabs. Send the link to someone who missed the talk and they get the reasoning as well as the bullets.
 :::
 
 ---
@@ -1004,7 +1004,7 @@ kicker: Presenting
 | `S` · `F` · `?` | View this slide's Markdown · fullscreen · all the keys |
 
 ::: notes
-Presenting needs nothing but the keyboard. P opens a presenter view in a second window, with the next slide, your notes and a timer, and the two windows stay in step. L turns the mouse into a laser pointer, and D lets you draw on the slide. S shows the Markdown of the slide you are on, which is how every slide in this deck doubles as an example. On phones, a persistent floating dock replaces the keyboard. Its labeled Slides and Article buttons switch at the section you are viewing. Home returns to the beginning, and the grid button opens a section and slide picker. Previous and next step through the presentation, or jump between entries in the article. Portrait slides also have a notes button. Swiping code blocks, tables or controls does not navigate the deck.
+Presenting needs nothing but the keyboard. P opens a presenter view in a second window, with the next slide, your notes and a timer, and the two windows stay in step. L turns the mouse into a laser pointer, and D lets you draw on the slide. S shows the Markdown of the slide you are on, which is how every slide in this deck doubles as an example. On phones, a small floating button opens the navigation controls. Its Slides and Article buttons switch at the section you are viewing. Home returns to the beginning, and the grid button opens a section and slide picker. Previous and next step through the presentation, or jump between entries in the article. Portrait slides also have a notes button. Swipe horizontally to move through steps, or tap near the right or left edge to go forward or back. Vertical scrolling, pinching and text selection keep their normal behaviour. Code blocks, tables, media and controls keep their own gestures. The navigation panel closes when you switch view or scroll the article.
 :::
 
 ---
@@ -1014,16 +1014,18 @@ id: mobile
 ## Navigate without a keyboard
 
 ::: features
-### :panels-top-left: Slides / Article
-Switch format at the section you are viewing.
-### :list: Sections
-Jump to a chapter or any slide from the picker.
-### :house: Home
-Return to the beginning in either view.
+### :ellipsis: Tap for controls
+One small button opens view switching, sections and Home.
+### :move-horizontal: Swipe to step
+Left moves forward. Right moves back.
+### :pointer: Tap the edges
+Right advances; left goes back. The centre stays interactive.
 :::
 
 ::: notes
-The floating dock is available in both mobile views. Previous and next advance steps while presenting and jump between entries while reading. The section picker has separate section and slide tabs, so you can move around a long deck without tapping through every slide.
+Navigation stays collapsed until you tap the small floating button. The panel contains Slides and Article, Home, previous and next, and the section picker. Opening it does not move or resize the slide. Tap outside to close it; it also closes when you change views or scroll the article.
+
+On slides, use horizontal swipes or edge taps to move through steps. Article view scrolls normally. Code, tables, media, text selection, pinching and custom controls keep their own gestures. The section picker still has separate section and slide tabs, so you can jump around a long deck.
 
 Returning to slides restores the presenter step. Rotating the phone keeps your chosen view. In portrait slides, the notes button makes the speaker notes available below the slide.
 :::

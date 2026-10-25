@@ -24,7 +24,7 @@ Human-editable source · Themed components · Custom HTML and JavaScript · No a
 
 talkdown turns Markdown into interactive slides and a readable article. Built-in widgets share the active theme; custom HTML and JavaScript can join the same navigation.
 
-Write the slide content in Markdown and the explanation in `::: notes`. On desktop, present it as a 16:9 deck. Phones open as responsive slides, with a floating **Slides / Article** switch. Article view includes the notes as prose. On desktop, press **R** to switch views.
+Write the slide content in Markdown and the explanation in `::: notes`. On desktop, present it as a 16:9 deck. Phones open as responsive slides, with a small floating navigation button. Tap it for **Slides / Article**, section jumps, and Home. Article view includes the notes as prose. On desktop, press **R** to switch views.
 
 | To… | Start with… |
 |---|---|
@@ -388,7 +388,15 @@ Every colour, typeface and size is a CSS custom property. Override them after `d
 | `L` · `D` | Laser pointer · draw on the slide (cleared on the next slide) |
 | `S` | Show the current slide's Markdown (view source) |
 
-On phones and touch screens, a floating dock stays available in both views. **Slides / Article** switches format at the current section; **Home** returns to the beginning. The **Sections** button opens a picker with section and slide tabs. Previous/next buttons step through slides and widgets while presenting, or jump between entries while reading. The notes button opens speaker notes in portrait slides. Swipe on slide content to move between steps; code blocks, tables and controls keep their own gestures.
+On phones, navigation collapses to a small floating button showing the slide number. Tap it to open the controls; tap again, tap outside, or press Escape to close them. The panel overlays the page without resizing the slide. It closes after changing view, going Home, or scrolling the article.
+
+- **Slides / Article** switches at the current section. **Home** returns to the beginning.
+- **Sections** opens a picker with section and slide tabs. Portrait slides also have speaker notes.
+- **Swipe left/right** on slide content to advance/reverse a step, then move between slides.
+- **Tap the right/left edge** to advance/go back. The centre remains available for reading and interaction.
+- Vertical scrolling, pinching, text selection, code, tables, media, and interactive controls keep their gestures. Add `data-no-swipe` to a custom interaction to exclude it from deck gestures.
+
+The previous/next buttons remain available in the panel for anyone who prefers them. Article view uses normal page scrolling.
 
 Switching to the article shows the complete explanation. Switching back restores your presenter step. Rotating the phone keeps the selected view.
 
@@ -396,7 +404,7 @@ Switching to the article shows the complete explanation. Switching back restores
 
 <img src="docs/phones.png" alt="Three phones: a vertical slide, a walkthrough, and read view" width="760">
 
-Choose **Article** in the floating mobile dock, or press **R** on a laptop:
+Tap the floating navigation button and choose **Article**, or press **R** on a laptop:
 
 - Markdown slides reflow into article typography, with a chapter label on each.
 - **Speaker notes become the prose.** Timing cues like `[~60s]` are dropped.
