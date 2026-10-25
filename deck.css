@@ -220,6 +220,7 @@ aside.notes { display: none; }
 
 /* One compact touch launcher; the expanded controls overlay the content. */
 #dock { display: none; }
+.local-steps { display: none; }
 #dPanel[hidden] { display: none !important; }
 #mobileNav { color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 22px 22px 0 0;
   width: min(560px, 100%); max-width: 100%; max-height: min(78dvh, 700px); margin: auto auto 0;
@@ -239,6 +240,12 @@ aside.notes { display: none; }
 #mobileNavList button b { font: 500 15px/1.4 var(--sans); }
 #mobileNavList [aria-current] { background: var(--accent-soft); border-color: var(--accent); }
 @media (pointer: coarse), (max-width: 760px), (orientation: portrait) and (max-width: 900px), (max-height: 520px) and (max-width: 1000px) {
+  [data-view=present] .local-steps { display: flex; align-items: center; gap: 8px; margin-top: 8px; font: 12px var(--mono); color: var(--muted); }
+  .local-steps button { min-width: 48px; min-height: 48px; border: 1px solid var(--line); border-radius: 12px; color: var(--fg); background: var(--surface); font-size: 24px; }
+  .local-steps button:disabled { opacity: .35; }
+  .local-steps :focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+  [data-view=read] #dock :is(#dPrev, #dNext) { display: none; }
+  [data-view=present] [data-build] [data-step]:not(.shown) { opacity: 1; transform: none; }
   [data-view=present] #pager, [data-view=present] #help { display: none; }
   #dock { display: flex; align-items: center; gap: 8px; position: fixed; right: max(14px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); z-index: 20; width: 160px; height: 48px; color: var(--muted); }
   #dPanel { position: absolute; right: 0; bottom: 64px; width: min(360px, calc(100vw - 28px)); max-height: calc(100dvh - 100px); overflow-y: auto;

@@ -1,6 +1,6 @@
 # talkdown
 
-> talkdown is a small, no-install slide engine and Markdown format built for agents. A deck is one HTML file with Markdown in a `<script type="text/markdown">` block, loaded with deck.css and deck.js from a CDN. Desktop opens as slides; phones open as scrolling articles. Article view turns shared speaker notes into prose; phones have visible Previous/Next buttons and a menu containing Slides / Article, Home, and a section/slide picker. Native scrolling and browser gestures remain enabled; there is no custom swipe or edge-tap navigation. A `?view=read#section-id` link opens the article at a named section. The runtime supplies layout and interaction, keeping the authored source compact and editable by hand. Built-in components share the selected theme, and custom HTML and JavaScript can join the deck's navigation.
+> talkdown is a small, no-install slide engine and Markdown format built for agents. A deck is one HTML file with Markdown in a `<script type="text/markdown">` block, loaded through https://sambhav.dev/talkdown/latest.js for automatic runtime updates, or direct deck.css/deck.js links for offline or pinned decks. Slides are the default on desktop and mobile. Article view turns shared speaker notes into prose; phones have visible Previous/Next buttons that change slides directly, local controls for code and terminal steps, and a menu containing Slides / Article, Home, and a section/slide picker. Native scrolling and browser gestures remain enabled; there is no custom swipe or edge-tap navigation. A `?view=read#section-id` link opens the article at a named section. The runtime supplies layout and interaction, keeping the authored source compact and editable by hand. Built-in components share the selected theme, and custom HTML and JavaScript can join the deck's navigation.
 
 For new decks, prefer `::: notes` / `::: say` / `::: read` and explicit `::: chart` containers. Use one HTML file by default; referenced Markdown is optional over HTTP. The public root `deck.js` and `deck.css` URLs remain the supported runtime links.
 
@@ -15,3 +15,5 @@ For new decks, prefer `::: notes` / `::: say` / `::: read` and explicit `::: cha
 - [Live demo](https://sambhav.dev/talkdown/): a short presentation about why the format exists, followed by live component examples and an authoring tour.
 - [Starter deck](https://sambhav.dev/talkdown/examples/starter.html): a minimal template to copy.
 
+
+The stable latest.js loader checks an uncached latest.json manifest on each visit and loads a matched content-hashed JS/CSS pair. Custom scripts use Talkdown.onReady(Deck => { ... }). New builds update the manifest, so consuming articles do not need version bumps.

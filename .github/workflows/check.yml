@@ -15,7 +15,7 @@ jobs:
           node-version: '24'
       - run: npm ci
       - run: npm run build
-      - run: git diff --exit-code -- deck.js
+      - run: git diff --exit-code -- deck.js latest.json dist
       - run: npm test
   single-file:
     runs-on: ubuntu-latest
@@ -28,3 +28,4 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: node tests/single-file.cjs
       - run: node tests/run-browser.cjs
+

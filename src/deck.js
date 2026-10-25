@@ -3,7 +3,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
 
 /* talkdown — slide decks written in Markdown (or HTML), presented on a 16:9 stage, read like an article on a phone.
  *
- * Present view (desktop default)             Read view (phone default; R or the mobile menu)
+ * Present view (default on every screen)      Read view (R or the mobile menu)
  *   ← → Space PgUp PgDn   slides               one scrolling column; speaker notes become the prose,
  *   ↑ ↓ Enter             steps, then slides   builds show finished, fixed-layout slides become figures
  *   1–9                   jump to a step       ← → hop between slides
@@ -108,8 +108,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
   loadFonts();
   new MutationObserver(loadFonts).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
   const initialView = q.get('view') || root.dataset.view;
-  const phone = matchMedia('(max-width: 760px), (max-height: 520px) and (pointer: coarse), (orientation: portrait) and (pointer: coarse)');
-  root.dataset.view = initialView === 'present' || initialView === 'read' ? initialView : phone.matches ? 'read' : 'present';
+  root.dataset.view = initialView === 'read' ? 'read' : 'present';
   const reading = () => root.dataset.view === 'read';
 
   /* ================= Markdown ================= */
@@ -224,6 +223,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
       pick.forEach((b, j) => { b.classList.toggle('on', j === i); b.classList.toggle('done', j < i); if (kind !== 'steps') { b.setAttribute('aria-selected', j === i); b.tabIndex = j === i ? 0 : -1; } });
       if (kind === 'steps') w.firstChild.querySelector('.w-count').textContent = `Step ${i + 1} of ${ps.length}`;
     });
+    if (kind === 'steps') w.querySelector('.w-next').stepper = st;
     pick.forEach((b, j) => b.addEventListener('click', () => st.go(j)));
     if (kind !== 'steps') w.firstChild.addEventListener('keydown', e => {
       const j = pick.indexOf(e.target); if (j < 0) return;
@@ -283,6 +283,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
       pre.classList.toggle('stepping', i > 0 && !reading());
       [...code.children].forEach((l, j) => l.classList.toggle('on', i > 0 && groups[i - 1].has(j + 1)));
     });
+    localStepControls(pre, pre.stepper, 'Code');
   }
 
   /* syntax highlighting: highlight.js, fetched only when the deck has fenced code.
@@ -559,7 +560,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     if (!cmds.length) return;
     const out = w.lastChild, row = c => (c.cmd != null ? `<span class="t-p">$</span> <span class="t-c">${esc(c.cmd)}</span>\n` : '') + c.out.map(o => `<span class="t-o">${esc(o)}</span>\n`).join('');
     let timer;
-    steps(w, cmds.length, i => {
+    const st = steps(w, cmds.length, i => {
       clearInterval(timer);
       const done = cmds.slice(0, i).map(row).join(''), c = cmds[i];
       if (!started || reading() || matchMedia('(prefers-reduced-motion: reduce)').matches || c.cmd == null || w.closest('.slide') !== slide()) { out.innerHTML = done + row(c); return; }
@@ -570,6 +571,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
         if (k >= c.cmd.length) { clearInterval(timer); setTimeout(() => { if (out.isConnected) out.innerHTML = done + row(c); }, 260); }
       }, 34);
     }, { read: 'end' });
+    localStepControls(w, st, 'Command');
   }
 
   // asciinema v2: a JSON header line, then [time, "o", text] events. Plays when its slide opens; click to replay.
@@ -651,7 +653,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     const st = {
       n, i: 0, read,
       // quiet: a batch caller (setAt) syncs the chrome once at the end
-      go(k, quiet) { st.i = Math.max(0, Math.min(n - 1, k)); show(st.i); if (!quiet && started && owner === slide()) sync(); return st; },
+      go(k, quiet) { st.i = Math.max(0, Math.min(n - 1, k)); show(st.i); st.refreshControls?.(); if (!quiet && started && owner === slide()) sync(); return st; },
       next() { return st.i < n - 1 && (st.go(st.i + 1), true); },
       prev() { return st.i > 0 && (st.go(st.i - 1), true); },
     };
@@ -660,6 +662,20 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     show(0);
     if (started && reading() && read === 'end') st.go(n - 1);
     return st;
+  }
+
+  function localStepControls(el, st, name) {
+    if (st.n < 2) return;
+    const nav = document.createElement('div'); nav.className = 'local-steps';
+    nav.setAttribute('role', 'group'); nav.setAttribute('aria-label', name + ' steps');
+    nav.innerHTML = `<button aria-label="Previous ${name.toLowerCase()} step">‹</button><span></span><button aria-label="Next ${name.toLowerCase()} step">›</button>`;
+    const [back, next] = nav.querySelectorAll('button');
+    st.refreshControls = () => {
+      back.disabled = st.i === 0; next.disabled = st.i === st.n - 1;
+      nav.querySelector('span').textContent = `${name} ${st.i + 1} / ${st.n}`;
+    };
+    back.onclick = () => st.prev(); next.onclick = () => st.next();
+    el.after(nav); st.refreshControls();
   }
 
   function tabs(container, onPick) {
@@ -737,7 +753,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
   }
   const fillNotes = () => { $('mNotes').innerHTML = slide().querySelector('.notes')?.innerHTML || ''; $('mNotes').scrollTop = 0; };   // the speaker's notes
 
-  const label = s => s.querySelectorAll('[data-next]').forEach(b => b.textContent = done(s) ? 'Reset ↺' : 'Next →');
+  const label = s => s.querySelectorAll('[data-next]').forEach(b => b.textContent = (b.stepper ? b.stepper.i === b.stepper.n - 1 : done(s)) ? 'Reset ↺' : 'Next →');
   function sync() {
     const s = slide(), n = total(s), k = at(s);
     $('stepNav').classList.toggle('on', n > 1);
@@ -801,17 +817,19 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     $('dNotes').setAttribute('aria-pressed', String('notes' in root.dataset));
     const list = slides(), s = slide();
     if (!s) return;
-    $('dPrev').disabled = !list.slice(0, cur).some(item => available(item)) && (reading() || at(s) === 0);
-    $('dNext').disabled = !list.slice(cur + 1).some(item => available(item)) && (reading() || done(s));
-    $('dBack').disabled = $('dPrev').disabled;
-    $('dForward').disabled = $('dNext').disabled;
+    $('dPrev').disabled = reading() || at(s) === 0;
+    $('dNext').disabled = reading() || done(s);
+    $('dBack').disabled = !list.slice(0, cur).some(item => available(item));
+    $('dForward').disabled = !list.slice(cur + 1).some(item => available(item));
+    $('dBack').setAttribute('aria-label', reading() ? 'Previous section' : 'Previous slide');
+    $('dForward').setAttribute('aria-label', reading() ? 'Next section' : 'Next slide');
     $('dHome').disabled = !list.slice(0, cur).some(item => available(item)) && (reading() ? scrollY < 2 : at(s) === 0);
     const step = !reading() && total(s) > 1 ? `step ${at(s) + 1}/${total(s)}` : '';
     $('dCount').innerHTML = `<span>${cur + 1} / ${list.length}</span>${step ? `<small>${step}</small>` : ''}`;
     $('dCount').setAttribute('aria-label', `Slide ${cur + 1} of ${list.length}${step ? ', ' + step : ''}`);
     $('dPosition').textContent = cur + 1;
     $('dToggle').setAttribute('aria-label', `${$('dPanel').hidden ? 'Open' : 'Close'} navigation, slide ${cur + 1} of ${list.length}`);
-    $('dHint').textContent = reading() ? 'Scroll to read. Switch to Slides to present this section.' : 'Use the arrows for steps and slides. Scroll within long slides.';
+    $('dHint').textContent = reading() ? 'Scroll to read. Switch to Slides to present this section.' : 'Floating arrows change slides. Use widget controls for steps; these step buttons also work.';
   }
 
   function setDock(open) {
@@ -1012,7 +1030,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
         <button id="dBack" aria-label="Previous" title="Previous">‹</button><button id="dForward" aria-label="Next" title="Next">›</button>
         <div id="dPanel" hidden>
         <div class="view-switch" role="group" aria-label="Reading format"><button id="dSlides" aria-pressed="true">${svg('present')}<span>Slides</span></button><button id="dRead" aria-pressed="false">${svg('read')}<span>Article</span></button></div>
-        <div class="dock-actions"><button id="dHome" aria-label="Back to top" title="Back to top">${svg('home')}</button><button id="dSections" aria-label="Jump to a section or slide" title="Sections" aria-haspopup="dialog">${svg('grid')}</button><button id="dPrev" aria-label="Previous slide or step" title="Previous">‹</button><span id="dCount"></span><button id="dNext" aria-label="Next slide or step" title="Next">›</button><button id="dNotes" aria-label="Speaker notes" aria-pressed="false" title="Speaker notes">${svg('notes')}</button></div>
+        <div class="dock-actions"><button id="dHome" aria-label="Back to top" title="Back to top">${svg('home')}</button><button id="dSections" aria-label="Jump to a section or slide" title="Sections" aria-haspopup="dialog">${svg('grid')}</button><button id="dPrev" aria-label="Previous step" title="Previous step">‹</button><span id="dCount"></span><button id="dNext" aria-label="Next step" title="Next step">›</button><button id="dNotes" aria-label="Speaker notes" aria-pressed="false" title="Speaker notes">${svg('notes')}</button></div>
         <p id="dHint"></p></div>
         <button id="dToggle" aria-label="Open navigation" aria-expanded="false" aria-controls="dPanel"><span id="dPosition" aria-hidden="true"></span><svg viewBox="0 0 18 18" width="18" height="18" fill="currentColor" aria-hidden="true"><circle cx="3" cy="9" r="1.5"/><circle cx="9" cy="9" r="1.5"/><circle cx="15" cy="9" r="1.5"/></svg></button>
       </nav>
@@ -1035,8 +1053,12 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     $('ovBtn').onclick = toggleOverview;
     $('prev').onclick = () => go(cur - 1);
     $('next').onclick = () => go(cur + 1);
-    $('up').onclick = $('dPrev').onclick = $('dBack').onclick = prev;
-    $('down').onclick = $('dNext').onclick = $('dForward').onclick = next;
+    $('up').onclick = prev;
+    $('down').onclick = next;
+    $('dBack').onclick = () => go(cur - 1, 0);
+    $('dForward').onclick = () => go(cur + 1, 0);
+    $('dPrev').onclick = () => setAt(slide(), Math.max(0, at(slide()) - 1));
+    $('dNext').onclick = () => setAt(slide(), Math.min(total(slide()) - 1, at(slide()) + 1));
     $('dSlides').onclick = () => { setDock(false); setView('present'); };
     $('dRead').onclick = () => { setDock(false); setView('read'); };
     $('dHome').onclick = () => {
@@ -1279,6 +1301,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     maths();
     document.querySelectorAll('[data-build]').forEach(build);
     document.querySelectorAll('[data-next]').forEach(b => b.addEventListener('click', () => {
+      if (b.stepper) { b.stepper.go(b.stepper.i === b.stepper.n - 1 ? 0 : b.stepper.i + 1); return; }
       const s = b.closest('.slide');
       if (done(s)) setAt(s, 0); else stepsOf(s).some(st => st.next());
     }));
@@ -1304,6 +1327,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     let resizing = false;
     addEventListener('resize', () => { if (!resizing) { resizing = true; requestAnimationFrame(() => { resizing = false; fit(); }); } });
     addEventListener('scroll', () => { if (!scrolling) { scrolling = true; requestAnimationFrame(onScroll); } }, { passive: true });
+    document.dispatchEvent(new CustomEvent('talkdown:setup', { detail: window.Deck }));
     handlers.ready.forEach(f => f());
     started = true;
     const [sl, sp] = fromHash();

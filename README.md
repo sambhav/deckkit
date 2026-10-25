@@ -24,7 +24,7 @@ Human-editable source · Themed components · Custom HTML and JavaScript · No a
 
 talkdown turns Markdown into interactive slides and a readable article. Built-in widgets share the active theme; custom HTML and JavaScript can join the same navigation.
 
-Write the slide content in Markdown and the explanation in `::: notes`. On desktop, present it as a 16:9 deck. Phones open as a scrolling article. Floating **Previous / Next** buttons jump between sections; the menu opens **Slides / Article**, section jumps, and Home. Article view includes the notes as prose. On desktop, press **R** to switch views.
+Write the slide content in Markdown and the explanation in `::: notes`. On desktop, present it as a 16:9 deck. Phones open as slides. Floating **Previous / Next** buttons change slides directly; widget controls handle their own steps. The menu opens **Slides / Article**, section jumps, and Home. Article view includes the notes as prose. On desktop, press **R** to switch views.
 
 | To… | Start with… |
 |---|---|
@@ -51,8 +51,7 @@ Create `talk.html`:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dynamic Tools</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sambhav/talkdown@main/deck.css">
-  <script src="https://cdn.jsdelivr.net/gh/sambhav/talkdown@main/deck.js"></script>
+  <script src="https://sambhav.dev/talkdown/latest.js"></script>
 </head>
 <body>
 <script type="text/markdown">
@@ -79,7 +78,7 @@ These notes become the prose beneath this slide in read view.
 </html>
 ```
 
-Open it in a browser and press →. That's it.
+Open it in a browser and press →. The stable loader checks a fresh release manifest on every visit, then loads a matching pair of content-hashed JavaScript and CSS files. New Talkdown releases reach these decks on reload without editing their HTML.
 
 <details>
 <summary><b>Prefer to self-host?</b></summary>
@@ -90,9 +89,35 @@ Copy [`deck.css`](deck.css) and [`deck.js`](deck.js) next to your HTML and link 
 
 </details>
 
+## Always use the latest runtime
+
+For decks that should follow Talkdown updates, include this one stable URL:
+
+```html
+<script src="https://sambhav.dev/talkdown/latest.js"></script>
+```
+
+The loader itself can be cached. It requests `latest.json` with `cache: no-store` and a unique URL, then loads the named, integrity-checked JS/CSS pair. Those content-hashed files can be cached indefinitely. Every `npm run build` updates the manifest automatically; keep the older hashed files available for readers who already loaded a manifest.
+
+This updates decks on a new visit or reload, not halfway through a presentation. It requires a network connection. Existing `deck.js` / `deck.css` links and offline authoring continue to work.
+
+Custom JavaScript must wait for the asynchronous loader:
+
+```html
+<script>
+Talkdown.onReady(Deck => {
+  Deck.steps(document.getElementById('diagram'), 4, i => {
+    // Render step i.
+  }, { read: 'end' });
+});
+</script>
+```
+
+For a frozen, reproducible deck, copy both asset URLs and integrity values from a release's `latest.json` and link that exact pair instead. A mutable jsDelivr `@main` URL can serve cached code for hours, and browsers may retain it longer; it does not guarantee the latest runtime.
+
 ## Recommended choices for new decks
 
-Start from [`examples/starter.html`](examples/starter.html). It demonstrates note blocks, tabs, and a chart backed by one Markdown table.
+Use the quick start above for published decks that follow runtime updates. [`examples/starter.html`](examples/starter.html) keeps direct local runtime links for offline and self-hosted use; it demonstrates note blocks, tabs, and a chart backed by one Markdown table.
 
 | Decision | Recommendation |
 |---|---|
@@ -105,7 +130,8 @@ Start from [`examples/starter.html`](examples/starter.html). It demonstrates not
 | Chart type | Use `bar`/`hbar` for categories, `line` for ordered trends, and `donut` for shares of one nonnegative series. Set `series="Column name"` explicitly for multi-column donut data. |
 | Numbers and units | Use plain numeric cells, with units in the title/header. A percentage is `42` with `title="Share (%)"`, not a `42%` cell. Invalid or missing values need correction, not silent conversion to zero. |
 | Layout and interaction | Choose a theme and built-in widgets first. Use `|||` sparingly, reveal steps only when they help the explanation, and reserve custom HTML/JS for a visual that needs it. |
-| A published deck that must stay reproducible | Pin both CDN asset URLs to the same release tag or commit SHA. The quick start uses `@main` for convenience; it tracks ongoing changes. |
+| A published deck that should follow updates | Use the stable `latest.js` loader; it checks the current manifest on every visit. |
+| A published deck that must stay reproducible | Link a matching content-hashed pair from a known release manifest, or pin both URLs to the same commit SHA. |
 
 Always check desktop present view, phone-width read view, the chart's data table, and source copying before sharing. Optional fonts, diagrams, maths, icons, and recordings may require network access or self-hosted assets; a single authored HTML file does not automatically embed every resource.
 
@@ -388,10 +414,11 @@ Every colour, typeface and size is a CSS custom property. Override them after `d
 | `L` · `D` | Laser pointer · draw on the slide (cleared on the next slide) |
 | `S` | Show the current slide's Markdown (view source) |
 
-On phones, the default is a normally scrolling article. A compact row of **Previous**, **Next**, and **Menu** buttons stays available near the bottom. The menu contains **Slides / Article**, **Home**, and a section/slide picker. Opening it does not resize the content.
+On phones, the default is slides. A compact row of **Previous**, **Next**, and **Menu** buttons stays available near the bottom. The menu contains **Slides / Article**, **Home**, and a section/slide picker. Opening it does not resize the content.
 
-- Scroll down to read. The arrows jump to the previous/next entry.
-- Choose **Slides** to present the section you are reading. In slides, the arrows move through steps, then slides.
+- The visible arrows always change slides; they never step through a widget first.
+- Use each widget's own controls for its interaction. Code and terminal examples have local step buttons. The menu also provides step controls.
+- Choose **Article** for normal page scrolling; its arrows jump between entries. Switching views keeps your place.
 - Long slides scroll vertically; wide code blocks and tables scroll horizontally.
 - Browser scrolling, text selection, zoom, and back/forward gestures keep their normal behaviour. There is no custom swipe or edge-tap navigation.
 - Buttons have 48 CSS-pixel touch targets, accessible names, and visible keyboard focus. The primary buttons are separated by 8px.
@@ -445,7 +472,7 @@ The hit rate rose from 61% to 94% once the cache moved to the edge.
 :::
 ```
 
-Present view works on phones too. Held upright, slides go vertical and reflow at the phone's width, and speaker notes hide until you tap the notes button. Share an article link with `?view=read`, or slides with `?view=present`; append a slide id such as `#widgets` to open that section. Phones open as articles by default; desktop opens as slides. Authors can set `<html data-view="present">` or `<html data-view="read">` to choose a default for every screen.
+Present view works on phones too. Held upright, slides go vertical and reflow at the phone's width, and speaker notes hide until you tap the notes button. Share an article link with `?view=read`, or slides with `?view=present`; append a slide id such as `#widgets` to open that section. Slides are the default on every screen. Authors can set `<html data-view="present">` or `<html data-view="read">` to choose a default for every screen.
 
 ## 🛠 HTML slides
 
@@ -462,9 +489,11 @@ When a slide needs something Markdown can't express, write it by hand, anywhere 
 </section>
 
 <script>
-  Deck.steps(document.getElementById('pipe'), 4, i => {
-    // draw step i; ↑ ↓, the step counter and the URL all follow along
-  }, { read: 'end' });   // show the last step in read view
+  Talkdown.onReady(Deck => {
+    Deck.steps(document.getElementById('pipe'), 4, i => {
+      // draw step i; ↑ ↓, the step counter and the URL all follow along
+    }, { read: 'end' });   // show the last step in read view
+  });
 </script>
 ```
 
@@ -505,7 +534,7 @@ Current Chrome, Edge, Firefox and Safari, on desktop and mobile. Print from the 
 
 ## 🤝 Contributing
 
-Deck authors never build anything: link the committed `deck.js` and `deck.css`. Maintainers edit `deck.css` directly and the JavaScript in `src/`, then run `npm ci`, `npm run build` and `npm test`, and commit the rebuilt `deck.js`. CI checks that the committed bundle matches a fresh build.
+Deck authors never build anything: use `latest.js`, or local `deck.js` and `deck.css` for offline decks. Maintainers edit `deck.css` directly and the JavaScript in `src/`, then run `npm ci`, `npm run build` and `npm test`. Commit the rebuilt `deck.js`, `latest.json`, and new `dist/deck.<hash>.js` / `.css` assets. Keep previous hashed assets available. CI checks the committed bundle and manifest against a fresh build.
 
 For browser checks, run `npx playwright install chromium`, then `npm run test:single-file` and `node tests/run-browser.cjs`. The browser suite covers the full demo, phone layouts, CSV and Markdown table equivalence, view switching, downloads, invalid data, native HTML charts, notes and keyboard controls.
 

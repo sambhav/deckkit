@@ -5,7 +5,7 @@ description: Use when creating or editing slide decks, presentations or talks; w
 
 # talkdown
 
-By default, deliver one `.html` file: a boilerplate plus Markdown in a `<script type="text/markdown">` block. It opens as slides on desktop and as a scrolling article on phones. Use the phone's visible Previous/Next buttons to move between entries or steps. Open its menu for **Slides / Article**, or **R** on desktop, to switch at the current section. Shared speaker notes become article prose. Share `?view=read#section-id` for a direct article link; use `<html data-view="read">` or `<html data-view="present">` when the author wants to override the device default. Write Markdown, not hand-built HTML: it is shorter, and a human can tweak it by hand.
+By default, deliver one `.html` file: a boilerplate plus Markdown in a `<script type="text/markdown">` block. It opens as slides on desktop and mobile. Use the phone's visible Previous/Next buttons to change slides directly; widgets have their own controls. Open its menu for **Slides / Article**, or **R** on desktop, to switch at the current section. Shared speaker notes become article prose. Share `?view=read#section-id` for a direct article link; use `<html data-view="read">` or `<html data-view="present">` when the author wants to override the device default. Write Markdown, not hand-built HTML: it is shorter, and a human can tweak it by hand.
 
 ## File boilerplate
 
@@ -16,8 +16,7 @@ By default, deliver one `.html` file: a boilerplate plus Markdown in a `<script 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Deck title</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sambhav/talkdown@main/deck.css">
-<script src="https://cdn.jsdelivr.net/gh/sambhav/talkdown@main/deck.js"></script>
+<script src="https://sambhav.dev/talkdown/latest.js"></script>
 </head>
 <body>
 <script type="text/markdown">
@@ -33,7 +32,7 @@ To keep content in a separate file, use `<script type="text/markdown" data-src="
 
 ## Recommended defaults
 
-- Use the two root asset URLs in the boilerplate; no author build or extra parser script is needed. For a published deck, pin both URLs to the same existing release tag or commit SHA; `@main` tracks changes.
+- For published decks that should follow updates, use the stable `latest.js` loader in the boilerplate. It checks uncached release metadata and loads matching content-hashed JS/CSS on every visit. No per-deck version bump or author build is needed. Wrap custom JavaScript in `Talkdown.onReady(Deck => { ... })` because loading is asynchronous. For offline decks use local `deck.js` and `deck.css`; for reproducibility pin a matching asset pair from a release manifest. Do not promise immediate updates from cached jsDelivr `@main` links.
 - Prefer `::: notes`, `::: say`, and `::: read` blocks in new content. Keep shared notes as readable prose and keep delivery cues out of the article.
 - Use `::: chart` with one dataset. Choose a Markdown table for small hand-edited data; choose fenced CSV for spreadsheet exports, quoted commas, or multiline cells.
 - Omit chart `view` or use `view=auto` for plot-on-stage and plot-plus-table-in-article. Use `view=both` only when exact values belong on the slide and fit comfortably.

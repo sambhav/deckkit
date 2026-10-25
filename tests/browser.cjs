@@ -1,5 +1,6 @@
 // Run with `node tests/browser.cjs` after installing Playwright and its Chromium.
 // Exported so the same checks can also run in a connected Playwright browser.
+const verifyLatest = require('./latest.cjs');
 async function verify(page, base) {
   const check = (ok, message) => { if (!ok) throw new Error(message); };
   const errors = [];
@@ -133,8 +134,9 @@ async function verify(page, base) {
   await page.goto(base + '/empty-reference.html');
   await page.waitForFunction(() => window.Deck && document.querySelector('.td-load-error'));
   check(await page.locator('.td-load-error').isVisible(), 'A failed standalone reference needs a visible error');
+  const latest = await verifyLatest(page, base);
   check(!errors.length, 'Browser errors: ' + errors.join(', '));
-  return { slides: count, widths: sizes.map(s => s[0]), errors };
+  return { slides: count, widths: sizes.map(s => s[0]), latest, errors };
 }
 async function verifyMobileNavigation(page, base) {
   const check = (ok, message) => { if (!ok) throw new Error(message); };
@@ -169,8 +171,7 @@ async function verifyMobileNavigation(page, base) {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(base + '/mobile-navigation.html');
   await page.waitForFunction(() => window.Deck?.slides.length === 5);
-  check(await page.locator('html').getAttribute('data-view') === 'read', 'Phones should open as a normally scrolling article');
-  await control('dSlides');
+  check(await page.locator('html').getAttribute('data-view') === 'present', 'Phones should open as slides');
   check(await page.locator('#dock').isVisible(), 'Mobile controls must be reachable in slides');
   check(!(await page.locator('#dPanel').isVisible()), 'Mobile navigation must start collapsed');
   check(await page.locator('#dock').evaluate(el => el.offsetHeight <= 56 && el.offsetWidth <= 168), 'The floating arrows and menu must stay compact');
@@ -212,7 +213,7 @@ async function verifyMobileNavigation(page, base) {
   await control('dRead');
   await page.evaluate(() => { Deck.go(0); Deck.go(2); });
   check(await page.evaluate(() => Deck.cur) === 3, 'Read navigation must skip hidden article frames');
-  await control('dNext');
+  await page.locator('#dForward').click();
   check(await page.evaluate(() => Deck.cur) === 4, 'Article next must advance a slide, not a hidden widget step');
   await control('dHome');
   check(await page.evaluate(() => scrollY === 0 && Deck.cur === 0), 'Home must return to the top of the article');
@@ -249,9 +250,12 @@ async function verifyMobileNavigation(page, base) {
     check(await page.locator('#' + id).evaluate(el => el.offsetWidth >= 48 && el.offsetHeight >= 48), 'Primary touch targets must be at least 48 CSS pixels');
   }
   await page.locator('#dForward').click();
-  check(await activeStep() === 'Second', 'The visible next button must advance a step');
+  check(await page.evaluate(() => Deck.cur) === 2, 'The visible next button must change slides even when a widget has unfinished steps');
   await page.locator('#dBack').click();
-  check(await activeStep() === 'First', 'The visible previous button must reverse a step');
+  check(await page.evaluate(() => Deck.cur) === 1 && await activeStep() === 'First', 'The visible previous button must return to the previous slide');
+  await page.locator('.slide.active .w-next').click();
+  check(await activeStep() === 'Second', 'The walkthrough must advance from its own control');
+  await page.evaluate(() => Deck.go(1, 0));
   await gesture('.slide.active .content', [[250, 300], [140, 302], [60, 301]]);
   await gesture('.slide.active .content', [[362, 300], [362, 300]]);
   check(await activeStep() === 'First', 'Swiping and tapping content must not trigger deck navigation');
@@ -281,7 +285,7 @@ async function verifyNativeScrolling(page, base) {
       for (let i = 1; i <= 8; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x1 + (x2 - x1) * i / 8, y: y1 + (y2 - y1) * i / 8 }] });
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     };
-    await page.goto(base + '/native-scrolling.html');
+    await page.goto(base + '/native-scrolling.html?view=read');
     await page.waitForFunction(() => window.Deck?.slides.length === 1);
     await drag(170, 650, 170, 210);
     await page.waitForFunction(() => scrollY > 50);
