@@ -37,7 +37,7 @@ And it stays out of your way: no install, no bundler, no framework. Link two fil
 - **Markdown first.** `---` between slides, `<!-- comments -->` for speaker notes, `|||` for columns.
 - **Steps built into navigation.** ← → change slides; ↑ ↓ walk the steps on a slide and then carry on, so a presenter can just keep pressing ↓.
 - **Read view.** Phones open the deck as an article: slides reflow, builds show finished, notes become paragraphs.
-- **Interactive widgets in plain Markdown.** Tabs, walkthroughs, explained tables, stepped code, flip cards, timelines, stats, callouts and Mermaid diagrams.
+- **Interactive widgets in plain Markdown.** Tabs, walkthroughs, explained tables, stepped code, flip cards, timelines, stats, callouts, charts, pull quotes, checklists, footnotes, maths and Mermaid diagrams.
 - **23 themes**, each a designed light/dark pair with its own typefaces, checked for WCAG AA contrast.
 - **Syntax highlighting and diagrams** that follow the theme, loaded only when a deck needs them.
 - **An HTML escape hatch** for the one slide that needs a hand-built, animated diagram.
@@ -157,12 +157,13 @@ Everything else is ordinary Markdown, and inline HTML passes through. Inside a M
 | `class` | Extra classes on the slide |
 | `name` | The slide's name in the overview. Defaults to its first heading |
 | `takeaway` | One line shown above the speaker notes |
+| `image` | A background picture. With `layout: image`, the text sits over it on a dark scrim |
 
 </details>
 
 ## 🧩 Widgets
 
-<img src="docs/widgets.png" alt="Tabs, a Mermaid network diagram, stepped code and flip cards" width="900">
+<img src="docs/widgets.png" alt="Tabs, a chart, stepped code and a Mermaid diagram" width="900">
 
 Each widget is a few lines of Markdown. Each one takes part in ↑ ↓ navigation, and in read view each shows all of its content.
 
@@ -178,6 +179,12 @@ Each widget is a few lines of Markdown. Each one takes part in ↑ ↓ navigatio
 | **Stats** | `::: stats` around a list like `- **42%** faster first response` |
 | **Callouts** | `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]` |
 | **Diagrams** | ` ```mermaid `: flowcharts, networks, sequence, architecture, state, charts and more. Add `{source}` to show the text beside it |
+| **Charts** | `{.chart}` after a table: column one is the labels, each other column a series. Add `.hbar`, `.line` or `.donut` for the other kinds. Several series build up on ↓ |
+| **Pull quotes** | A `>` quote whose last line starts with `—` becomes a large quote with that attribution |
+| **Checklists** | `- [x] done` and `- [ ] to do` |
+| **Footnotes** | `text[^1]` and a `[^1]: source` line anywhere on the slide; set small at its foot |
+| **Maths** | `$x^2$` inline or a `$$ … $$` block, typeset by [KaTeX](https://katex.org/) |
+| **Image slides** | `layout: image` and `image: path.jpg` in the frontmatter: a full-bleed picture with the text over it |
 
 ```md
 ::: tabs
@@ -189,14 +196,14 @@ One column. Notes become the prose.
 ```
 
 <details>
-<summary><b>Code highlighting and diagrams</b></summary>
+<summary><b>Code highlighting, diagrams and maths</b></summary>
 
 <br>
 
-Fenced code is highlighted by [highlight.js](https://highlightjs.org/), and [Mermaid](https://mermaid.js.org/) draws diagrams. Both use the theme's colours and fonts, and redraw when the theme or mode changes. Each library is fetched from jsDelivr only if the deck needs it. To self-host one or turn it off:
+Fenced code is highlighted by [highlight.js](https://highlightjs.org/), [Mermaid](https://mermaid.js.org/) draws diagrams, and [KaTeX](https://katex.org/) typesets maths. Both use the theme's colours and fonts, and redraw when the theme or mode changes. Each library is fetched from jsDelivr only if the deck needs it. To self-host one or turn it off:
 
 ```html
-<html data-highlight="/vendor/highlight.min.js" data-diagrams="off">
+<html data-highlight="/vendor/highlight.min.js" data-diagrams="off" data-math="off">
 ```
 
 With diagrams off, or offline, the Mermaid source is shown instead.
@@ -253,6 +260,7 @@ Every colour, typeface and size is a CSS custom property. Override them after `d
 | `--inv` `--on-inv` `--inv-muted` | Inverted blocks (`.card.inv`) and their text |
 | `--red` `--green` `--blue` `--orange` | Status colours, used by callouts, marks and diagrams |
 | `--mark-yes` `--mark-part` `--mark-no` | ✓ ◐ ✗ colours |
+| `--chart-1` … `--chart-6` | Chart series colours. Default to the accent, then the theme's code and status colours |
 | `--c-key` `--c-str` `--c-com` `--c-num` `--c-fn` `--c-type` `--c-tag` | Code highlighting |
 | `--sans` `--display` `--mono` | Body, heading and mono typefaces |
 | `--grid` | A colour draws a background grid; `transparent` turns it off |

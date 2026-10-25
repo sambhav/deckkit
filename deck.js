@@ -29,6 +29,13 @@
  *   ```mermaid                          diagrams (Mermaid, fetched only if the deck has one; <html data-diagrams="off"> to skip);
  *                                       ```mermaid {source} sets the source beside the diagram
  *   [text](#id)                         link to the slide whose frontmatter says id: …
+ *   a table then {.chart}               a bar chart; {.chart .hbar}, {.chart .line} or {.chart .donut} for the others.
+ *                                       First column: labels; each other column: a series (↓ adds them one by one)
+ *   > quote, then a "— Name" line       a pull quote with its attribution
+ *   - [x] done / - [ ] to do            a checklist
+ *   text[^1] and a "[^1]: source" line  footnotes, set small at the foot of the slide
+ *   $x^2$ and $$ … $$                   maths (KaTeX, fetched only if the deck has some; <html data-math="off"> to skip)
+ *   layout: image + image: url          a full-bleed picture with the text over it
  *   ::: present-only / ::: read-only   content for one view only (or {.present-only} / {.read-only} on a block)
  */
 (() => {
@@ -102,7 +109,7 @@
   const LI = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/;
   const FENCE = /^(`{3,}|~{3,})/;
   const pad2 = n => String(n).padStart(2, '0');
-  const isStart = l => /^(#{1,6}\s|`{3}|~{3}|:::|>|([-*+]|\d+[.)])\s|<[a-zA-Z!/]|!\[)/.test(l.trimStart());
+  const isStart = l => /^(#{1,6}\s|`{3}|~{3}|:::|\$\$|>|([-*+]|\d+[.)])\s|<[a-zA-Z!/]|!\[)/.test(l.trimStart());
 
   // trailing {.class #id} on a heading, paragraph, list item or image
   function attrs(t) {
@@ -115,8 +122,10 @@
   function inline(s) {
     const keep = [], hold = h => `\u0001${keep.push(h) - 1}\u0002`;
     s = s.replace(/`([^`]+)`/g, (_, c) => hold(`<code>${esc(c)}</code>`))
+         .replace(/(^|[^\\\w$])\$(?=[^\s$])([^$\n]+?)(?<=\S)\$(?![\w$])/g, (_, pre, t) => pre + hold(`<span class="math">${esc(t)}</span>`))
          .replace(/<\/?[a-zA-Z][^>]*>|&(?:[a-zA-Z]+|#\d+);/g, hold);         // inline HTML and entities pass through
     s = esc(s)
+         .replace(/\[\^([\w-]+)\]/g, (_, k) => hold(`<sup class="fn">${k}</sup>`))
          .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, a, u) => hold(`<img src="${u}" alt="${qesc(a)}">`))
          .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, t, u) => hold(`<a href="${u}"${/^https?:/.test(u) ? ' target="_blank" rel="noopener"' : ''}>`) + t + hold('</a>'))
          .replace(/\*\*(?=\S)(.+?)\*\*/g, '<strong>$1</strong>')
@@ -147,8 +156,10 @@
     }
     const lis = items.map(lines => {
       let k = 1; while (k < lines.length && lines[k].trim() && !isStart(lines[k])) k++;
-      const [t, a] = attrs(lines.slice(0, k).map(s => s.trim()).join('\n'));
-      return `<li${a}>${inline(t)}${blocks(dedent(lines.slice(k)))}</li>`;
+      let [t, a] = attrs(lines.slice(0, k).map(s => s.trim()).join('\n'));
+      const task = t.match(/^\[([ xX])\]\s+/);
+      if (task) t = t.slice(task[0].length);
+      return `<li${a}${task ? ` data-task="${task[1] === ' ' ? 'todo' : 'done'}"` : ''}>${inline(t)}${blocks(dedent(lines.slice(k)))}</li>`;
     });
     return [i, `<${tag}>${lis.join('')}</${tag}>`];
   }
@@ -166,6 +177,11 @@
         out += m[2] === 'mermaid' && m[4] ? `<div class="w-with-source"><pre class="code"><code>${src}</code></pre>${diagram}</div>`   // {source}: the text beside its diagram
           : m[2] === 'mermaid' ? diagram
           : `<pre class="code"${m[2] ? ` data-lang="${m[2]}"` : ''}${m[3] ? ` data-steps="${qesc(m[3])}"` : ''}><code>${esc(body.join('\n'))}</code></pre>`;
+      } else if (/^\$\$/.test(l)) {
+        const body = [l.slice(2)]; i++;
+        while (i < L.length && !/\$\$\s*$/.test(body.at(-1))) body.push(L[i++]);
+        const tex = body.join('\n').replace(/\$\$\s*$/, '').trim();
+        out += `<div class="math math-block">${esc(tex)}</div>`;
       } else if ((m = l.match(/^:::\s*(.+)$/))) {
         const body = []; let depth = 1; i++;
         for (; i < L.length; i++) { if (/^:::\s*\S/.test(L[i])) depth++; else if (/^:::\s*$/.test(L[i]) && !--depth) break; body.push(L[i]); }
@@ -200,7 +216,7 @@
   }
 
   /* a Markdown deck: slides split by ---; a chunk of only `key: value` lines is the next slide's frontmatter */
-  const META = /^(section|name|layout|kicker|build|class|takeaway|id):\s*(.*)$/;
+  const META = /^(section|name|layout|kicker|build|class|takeaway|id|image):\s*(.*)$/;
   // split lines on a separator line, ignoring separators inside fenced code
   function split(L, sep) {
     const out = [[]]; let fence = null;
@@ -231,19 +247,23 @@
     L = L.join('\n').split(/(^(?:`{3,}|~{3,})[^\n]*\n[\s\S]*?^(?:`{3,}|~{3,})\s*$|`[^`\n]+`)/m)
       .map((part, j) => j % 2 ? part : part.replace(/<!--([\s\S]*?)-->/g, (_, n) => (notes.push(n.trim()), ''))).join('').split('\n');
     const layout = meta.layout || 'default';
+    // [^key]: text lines are footnotes, set at the foot of the slide
+    const feet = [];
+    L = L.filter(l => { const f = l.match(/^\[\^([\w-]+)\]:\s*(.*)$/); if (f) feet.push(`<p><sup>${f[1]}</sup> ${inline(f[2])}</p>`); return !f; });
     const cols = split(L, /^\|\|\|\s*$/);
     // text before the first ||| spans the slide; each ||| starts a column
     const body = blocks(cols[0]) + (cols.length > 1 ? `<div class="cols">${cols.slice(1).map(c => `<div>${blocks(c)}</div>`).join('')}</div>` : '');
     const el = document.createElement('section');
     el.className = `slide md layout-${layout} ${meta.class || ''}`.trim();
     el.innerHTML = `<div class="content">${layout === 'section' ? `<div class="num">Part ${pad2(++part)}</div>` : ''}`
-      + `${meta.kicker ? `<div class="kicker">${inline(meta.kicker)}</div>` : ''}${body}</div>`
+      + `${meta.kicker ? `<div class="kicker">${inline(meta.kicker)}</div>` : ''}${body}${feet.length ? `<div class="footnotes">${feet.join('')}</div>` : ''}</div>`
       + (notes.length ? `<aside class="notes">${blocks(notes.join('\n\n').split('\n'))}</aside>` : '');
     const heading = el.querySelector('h1, h2, h3')?.textContent.trim() || '';
     section = meta.section ?? (layout === 'section' ? heading : section);
     Object.assign(el.dataset, { section, name: meta.name || heading });
     if (meta.takeaway) el.dataset.takeaway = meta.takeaway;
     if (meta.id) el.dataset.id = meta.id;
+    if (meta.image) { el.style.setProperty('--image', `url("${encodeURI(meta.image)}")`); el.classList.add('has-image'); }
     const c = el.firstChild;
     widgets(c);
     if (meta.build && meta.build !== 'false') {
@@ -265,6 +285,8 @@
     c.querySelectorAll('.timeline').forEach(timeline);
     c.querySelectorAll('.stats').forEach(stats);
     c.querySelectorAll('blockquote').forEach(callout);
+    c.querySelectorAll('blockquote:not(.callout)').forEach(quote);
+    c.querySelectorAll('table.chart').forEach(chart);
     c.querySelectorAll('table.explain').forEach(explain);
     c.querySelectorAll('td, th').forEach(marks);
     c.querySelectorAll('pre[data-steps]').forEach(codeSteps);
@@ -343,6 +365,13 @@
   /* syntax highlighting: highlight.js, fetched only when the deck has fenced code.
      <html data-highlight="off"> turns it off; data-highlight="/path/highlight.min.js" self-hosts it. */
   const HLJS = 'https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/highlight.min.js';
+  // fetch an optional library once; offline or blocked, the deck keeps its plain fallback
+  function load(src, then, css) {
+    if (css) document.head.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="${css}">`);
+    const tag = document.createElement('script');
+    tag.src = src; tag.onload = then;
+    document.head.append(tag);
+  }
   function highlight() {
     const pres = [...document.querySelectorAll('pre.code[data-lang]')], opt = root.dataset.highlight;
     if (!pres.length || opt === 'off') return;
@@ -352,10 +381,18 @@
       pre.firstChild.innerHTML = pre.dataset.steps ? perLine(html) : html;
       pre.stepper?.go(pre.stepper.i, true);
     });
-    if (window.hljs) return run();
-    const tag = document.createElement('script');
-    tag.src = opt || HLJS; tag.onload = run;            // offline or blocked: the code just stays plain
-    document.head.append(tag);
+    window.hljs ? run() : load(opt || HLJS, run);
+  }
+
+  /* maths: KaTeX, fetched only when the deck has $…$ or $$…$$. <html data-math="off"> leaves the TeX showing;
+     data-math="/path/katex.min.js" self-hosts it (with katex.min.css next to it). */
+  const KATEX = 'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js';
+  function maths() {
+    const els = [...document.querySelectorAll('.math')], opt = root.dataset.math;
+    if (!els.length || opt === 'off') return;
+    const run = () => els.forEach(el => { try { katex.render(el.textContent, el, { displayMode: el.classList.contains('math-block'), throwOnError: false }); } catch {} });
+    const js = opt || KATEX;
+    window.katex ? run() : load(js, run, js.replace(/\.js$/, '.css'));
   }
   /* diagrams: Mermaid, fetched only when the deck has a ```mermaid block; coloured from the theme and redrawn when it changes.
      <html data-diagrams="off"> leaves the source showing; data-diagrams="/path/mermaid.min.js" self-hosts it. */
@@ -404,10 +441,7 @@
       document.fonts?.addEventListener('loadingdone', redraw);          // a theme's web font arrived: re-measure in it
       new MutationObserver(() => document.fonts.ready.then(redraw)).observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-mode'] });
     };
-    if (window.mermaid) return ready();
-    const tag = document.createElement('script');
-    tag.src = opt || MERMAID; tag.onload = ready;      // offline or blocked: the source stays visible
-    document.head.append(tag);
+    window.mermaid ? ready() : load(opt || MERMAID, ready);
   }
 
   // split highlighted HTML into line spans, closing and reopening any token that runs across a line break
@@ -457,6 +491,62 @@
     if (!p.textContent.trim()) p.remove();
     q.className = `callout callout-${kind}`;
     q.insertAdjacentHTML('afterbegin', `<div class="callout-label">${kind}</div>`);
+  }
+
+  // a quote whose last line starts with — (or --) is a pull quote with that attribution
+  function quote(q) {
+    const p = q.querySelector(':scope > p:last-child'), m = p?.innerHTML.match(/(^|<br>\s*)(—|–|--)\s*(.+)$/s);
+    if (!m) return;
+    p.innerHTML = p.innerHTML.slice(0, m.index);
+    if (!p.textContent.trim()) p.remove();
+    q.classList.add('pull');
+    q.insertAdjacentHTML('beforeend', `<footer>${m[3]}</footer>`);
+  }
+
+  // a table then {.chart}: column one holds the labels, every other column is a series. Drawn in HTML and CSS
+  // (the line in SVG), so text stays crisp and reflows on phones; the table stays behind for screen readers.
+  const niceMax = m => { if (m <= 0) return 1; const e = 10 ** Math.floor(Math.log10(m)), f = m / e; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * e; };
+  function chart(t) {
+    const kind = ['hbar', 'line', 'donut'].find(k => t.classList.contains(k)) || 'bar';
+    const rows = [...(t.tBodies[0]?.rows || [])], head = [...(t.tHead?.rows[0].cells || [])].map(c => c.innerHTML);
+    if (!rows.length || head.length < 2) return;
+    const labels = rows.map(r => r.cells[0].innerHTML);
+    const series = head.slice(1).map((name, j) => {
+      const cells = rows.map(r => r.cells[j + 1]);
+      return { name, shown: cells.map(c => c?.innerHTML.trim() ?? ''), v: cells.map(c => parseFloat(c?.textContent.replace(/[^\d.-]/g, '')) || 0) };
+    });
+    const max = niceMax(Math.max(...series.flatMap(s => s.v))), pct = v => (v / max * 100).toFixed(2);
+    const w = document.createElement('figure');
+    w.className = `w w-chart w-${kind}`;
+    const legend = items => `<div class="w-legend">${items.map(([name, j, extra = '']) => `<span class="s${j % 6}"><i></i>${name}${extra}</span>`).join('')}</div>`;
+    if (kind === 'donut') {
+      const v = series[0].v, total = v.reduce((a, b) => a + b, 0) || 1;
+      let at = 0;
+      w.innerHTML = `<div class="w-ring"><svg viewBox="0 0 42 42" aria-hidden="true"><circle class="w-track" cx="21" cy="21" r="15.915"/>${v.map((x, i) => {
+        const p = x / total * 100, arc = `<circle class="s${i % 6}" cx="21" cy="21" r="15.915" stroke-dasharray="${p.toFixed(3)} ${(100 - p).toFixed(3)}" stroke-dashoffset="${(25 - at).toFixed(3)}"/>`;
+        at += p; return arc;
+      }).join('')}</svg><span>${series[0].name}</span></div>` + legend(labels.map((l, i) => [l, i, `<b>${series[0].shown[i]}</b>`]));
+    } else if (kind === 'line') {
+      const x = i => (labels.length > 1 ? i / (labels.length - 1) * 100 : 50).toFixed(2);
+      w.innerHTML = (series.length > 1 ? legend(series.map((s, j) => [s.name, j])) : '') + `<div class="w-plot"><div class="w-area">`
+        + `<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${series.map((s, j) => `<polyline class="w-s s${j % 6}" points="${s.v.map((v, i) => `${x(i)},${100 - pct(v)}`).join(' ')}"/>`).join('')}</svg>`
+        + series.map((s, j) => s.v.map((v, i) => `<i class="w-dot w-s s${j % 6}${i === s.v.length - 1 ? ' last' : ''}" style="left:${x(i)}%;bottom:${pct(v)}%"><b>${s.shown[i]}</b></i>`).join('')).join('')
+        + labels.map((l, i) => `<span class="w-x" style="left:${x(i)}%">${l}</span>`).join('') + '</div></div>';
+    } else {
+      const bar = (s, j, i) => `<div class="w-b w-s s${j % 6}" style="--v:${pct(s.v[i])}%"><b>${s.shown[i]}</b></div>`;
+      w.innerHTML = (series.length > 1 ? legend(series.map((s, j) => [s.name, j])) : '') + (kind === 'hbar'
+        ? `<div class="w-rows">${labels.map((l, i) => `<div class="w-row"><span class="w-x">${l}</span><div class="w-track">${series.map((s, j) => bar(s, j, i)).join('')}</div></div>`).join('')}</div>`
+        : `<div class="w-plot">${labels.map((l, i) => `<div class="w-grp">${series.map((s, j) => bar(s, j, i)).join('')}<span class="w-x">${l}</span></div>`).join('')}</div>`);
+    }
+    w.style.setProperty('--n', labels.length);
+    t.replaceWith(w);
+    t.classList.add('w-chart-data');
+    w.append(t);
+    // several series build up one at a time
+    if (series.length > 1 && kind !== 'donut') {
+      const parts = j => w.querySelectorAll(`.w-s.s${j % 6}, .w-legend > .s${j % 6}`);
+      steps(w, series.length, i => series.forEach((_, j) => parts(j).forEach(el => el.classList.toggle('w-off', j > i))), { read: 'end' });
+    }
   }
 
   // ::: flip — the ### heading is the front, the rest is the back
@@ -837,6 +927,7 @@
     assemble();
     highlight();
     diagrams();
+    maths();
     document.querySelectorAll('[data-build]').forEach(build);
     document.querySelectorAll('[data-next]').forEach(b => b.addEventListener('click', () => {
       const s = b.closest('.slide');

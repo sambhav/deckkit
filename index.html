@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>talkdown</title>
 <meta name="description" content="Slides you write in Markdown, present on a 16:9 stage, and send to a phone as an essay. Two files, no build step.">
+<link rel="icon" href="docs/logo.svg">
 <link rel="stylesheet" href="deck.css?v=0.1.0">
 <script src="deck.js?v=0.1.0"></script>
 <style>
@@ -419,15 +420,133 @@ kicker: Widgets
 ### Today
 **Markdown decks** with steps, read view and themes
 ### Next
-**Charts** drawn from tables
+**Presenter view** on a second screen
 ### Later
-**Presenter mode** on a second screen
+**Export** to PDF and images
 ### Someday
 **Live audience** polls and Q&A
 :::
 
 <!--
 A timeline block lays milestones out on a line. Press down to walk it: each milestone lights up in turn. On a phone and in read view, it turns vertical.
+-->
+
+---
+kicker: Widgets
+---
+## Charts drawn from tables
+
+|||
+
+````md
+| Quarter | 2025 | 2026 |
+|---|---|---|
+| Q1 | 120 | 180 |
+| Q2 | 160 | 260 |
+| Q3 | 210 | 340 |
+| Q4 | 240 | 410 |
+{.chart}
+````
+
+|||
+
+| Quarter | 2025 | 2026 |
+|---|---|---|
+| Q1 | 120 | 180 |
+| Q2 | 160 | 260 |
+| Q3 | 210 | 340 |
+| Q4 | 240 | 410 |
+{.chart}
+
+<!--
+Write a table and put {.chart} under it. The first column becomes the labels and every other column a series, coloured from the theme. With more than one series, down adds them one at a time, so you can show last year before this one. There's no charting library: the bars are HTML, so the text stays sharp and reflows on a phone, and the table stays in the page for screen readers.
+-->
+
+---
+kicker: Widgets
+---
+## Bars, lines and donuts
+
+::: tabs
+### Line
+| Month | Weekly decks |
+|---|---|
+| Jan | 180 |
+| Feb | 320 |
+| Mar | 410 |
+| Apr | 620 |
+| May | 830 |
+| Jun | 1,100 |
+{.chart .line}
+### Ranking
+| Theme | Decks |
+|---|---|
+| Paper | 42% |
+| AI | 23% |
+| Rose | 15% |
+| Terminal | 11% |
+| Punk | 9% |
+{.chart .hbar}
+### Share
+| Where the time goes | Share |
+|---|---|
+| Writing | 45% |
+| Rehearsing | 30% |
+| Slides | 25% |
+{.chart .donut}
+:::
+
+<!--
+Add .line, .hbar or .donut after .chart for the other kinds: a line for a trend, horizontal bars for a ranking, a donut for shares of a whole.
+-->
+
+---
+kicker: Widgets
+---
+> Slides are a speech with the speaker removed. Keep the speaker in, and the slides start to read like an essay.
+>
+> — The idea behind talkdown
+
+<!--
+A quote whose last line starts with a dash becomes a pull quote, with the line after the dash as its attribution.
+-->
+
+---
+kicker: Widgets
+---
+## Checklists, footnotes and maths
+
+|||
+
+- [x] Write the deck in Markdown
+- [x] Present it from the keyboard
+- [ ] Send the link to everyone who missed it
+
+|||
+
+A deck read on a phone keeps about 60% of the talk[^1]; the notes carry the rest.
+
+$$
+\text{reach} = \text{audience} \times (1 + \text{shares})
+$$
+
+[^1]: An invented number, to show how footnotes look.
+
+<!--
+Dash-bracket lists become checklists. Write text[^1] and a [^1]: line anywhere on the slide, and the footnote is set small at the foot of the slide. Maths between dollar signs is typeset with KaTeX, which is only fetched when a deck has some.
+-->
+
+---
+layout: image
+image: assets/dusk.svg
+kicker: Widgets
+---
+## Put a picture behind it
+
+Two lines of frontmatter: `layout: image` and `image: assets/dusk.svg`.
+
+<!--
+An image layout fills the slide with a picture and sets the text over it on a dark gradient, so it stays readable whatever the picture is. In read view the picture becomes a banner with the text on it.
 -->
 
 ---
