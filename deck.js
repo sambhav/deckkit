@@ -5,14 +5,30 @@
  *   ↑ ↓ Enter             steps, then slides   builds show finished, fixed-layout slides become figures
  *   1–9                   jump to a step       ← → hop between slides
  *   swipe                 next / previous
- *   Home End · O overview · N notes · T theme · R read / present · F fullscreen · ? keys · Esc close
+ *   Home End · O overview · N notes · T light / dark · R read / present · F fullscreen · ? keys · Esc close
+ *
+ * Themes: <html data-theme="rose">, 23 of them, each with a light and a dark mode and its own typefaces (fetched for the
+ * active theme; <html data-fonts="off"> keeps system fonts). <html data-theme-picker> adds a picker to the top bar.
  *
  * Steps. A slide's steps come from its steppers, run in document order (↓ advances the first unfinished one):
  *   Deck.steps(el, n, show, {read})   show(i) renders step i (0 = initial); read: 'end' shows the last step in read view
  *   Deck.tabs(container, onPick)      each button in the container is a step; clicking selects it
  *   <div data-build> … data-step="1"  reveal [data-step] children in order (.shown / .current)
  *   <button data-next>                advance the slide's steps; wraps to the start at the end
- * Entering a slide resets its steps; coming back from the next slide shows them finished. Hash: #slide or #slide.step.
+ * Entering a slide resets its steps; coming back from the next slide shows them finished. Hash: #slide, #slide.step or #id.
+ *
+ * Markdown widgets (each is a stepper, and reads as plain content in read view):
+ *   ::: tabs / ::: toggle / ::: steps   ### headings start panes
+ *   a table then {.explain}             the last column becomes the detail for the selected row; ✓ ◐ ✗ cells are coloured
+ *   ```lang {steps: 2 | 3-4}            highlight those lines, one group per step (code is syntax-highlighted by highlight.js,
+ *                                       fetched only if the deck has code; <html data-highlight="off"> to skip it)
+ *   ::: flip                            ### front, the rest is the back
+ *   ::: timeline                        ### milestones; ↓ walks them; vertical on phones and in read view
+ *   ::: stats                           big numbers: "- **42%** faster first response"
+ *   > [!NOTE] / [!TIP] / [!WARNING]     callouts
+ *   ```mermaid                          diagrams (Mermaid, fetched only if the deck has one; <html data-diagrams="off"> to skip);
+ *                                       ```mermaid {source} sets the source beside the diagram
+ *   [text](#id)                         link to the slide whose frontmatter says id: …
  */
 (() => {
   const W = 1280, H = 720;
@@ -27,7 +43,52 @@
   const q = new URLSearchParams(location.search);
   const portrait = matchMedia('(orientation: portrait) and (max-width: 900px)');   // present view becomes slide-over-notes
   const small = matchMedia('(max-width: 760px), (max-height: 520px) and (pointer: coarse), (orientation: portrait) and (pointer: coarse)');
-  root.dataset.theme = q.get('theme') || store.get('theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  // data-mode: light or dark (the viewer's choice, remembered). data-theme: the look, set by the author.
+  // ?theme=light|dark is still read as a mode, for old links.
+  const qTheme = q.get('theme'), qMode = q.get('mode') || (/^(light|dark)$/.test(qTheme) ? qTheme : null);
+  root.dataset.mode = qMode || store.get('mode', store.get('theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+  const picker = root.hasAttribute('data-theme-picker');
+  const qLook = qTheme && !/^(light|dark)$/.test(qTheme) ? qTheme : null;
+  const chosen = qLook || (picker && store.get('look', null));
+  root.dataset.theme = chosen || root.dataset.theme || 'paper';
+
+  // each theme's typefaces, fetched from Google Fonts for the active theme only (<html data-fonts="off"> skips this)
+  const GF = 'https://fonts.googleapis.com/css2?display=swap&family=';
+  const FONTS = {
+    paper: 'Inter:opsz,wght@14..32,400..700&family=JetBrains+Mono:wght@400;500',
+    rose: 'Fraunces:opsz,wght@9..144,400..700&family=DM+Sans:opsz,wght@9..40,400..700&family=DM+Mono:wght@400;500',
+    sunset: 'Outfit:wght@400..700&family=JetBrains+Mono:wght@400;500',
+    solar: 'IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500',
+    forest: 'Lora:wght@400..700&family=Source+Sans+3:wght@400..700&family=Source+Code+Pro:wght@400;500',
+    ocean: 'Manrope:wght@400..800&family=JetBrains+Mono:wght@400;500',
+    nord: 'Rubik:wght@400..700&family=Fira+Code:wght@400;500',
+    slate: 'Geist:wght@400..700&family=Geist+Mono:wght@400;500',
+    ai: 'Sora:wght@400..700&family=Inter:opsz,wght@14..32,400..700&family=JetBrains+Mono:wght@400;500',
+    noir: 'Archivo:wght@400..800&family=JetBrains+Mono:wght@400;500',
+    editorial: 'Newsreader:opsz,wght@6..72,400..700&family=IBM+Plex+Mono:wght@400;500',
+    punk: 'Anton&family=Space+Grotesk:wght@400..700&family=Space+Mono:wght@400;700',
+    terminal: 'JetBrains+Mono:wght@400..700',
+    swiss: 'Inter+Tight:wght@400..800&family=Inter:opsz,wght@14..32,400..700&family=JetBrains+Mono:wght@400;500',
+    ledger: 'Source+Serif+4:opsz,wght@8..60,400..700&family=Inter:opsz,wght@14..32,400..700&family=JetBrains+Mono:wght@400;500',
+    clinic: 'Nunito+Sans:opsz,wght@6..12,400..800&family=JetBrains+Mono:wght@400;500',
+    chalk: 'Fredoka:wght@400..700&family=Nunito:wght@400..800&family=JetBrains+Mono:wght@400;500',
+    mocha: 'DM+Serif+Display&family=DM+Sans:opsz,wght@9..40,400..700&family=DM+Mono:wght@400;500',
+    atelier: 'Cormorant+Garamond:wght@400..700&family=Jost:wght@400..700&family=JetBrains+Mono:wght@400;500',
+    volt: 'Big+Shoulders+Display:wght@600..900&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500',
+    blueprint: 'Barlow+Semi+Condensed:wght@400;500;600;700&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500',
+    synth: 'Chakra+Petch:wght@400;500;600;700&family=Space+Grotesk:wght@400..700&family=Space+Mono:wght@400;700',
+  };
+  FONTS.clean = FONTS.paper;
+  const fontsLoaded = new Set();
+  function loadFonts() {
+    const t = root.dataset.theme;
+    if (root.dataset.fonts === 'off' || fontsLoaded.has(t) || !FONTS[t]) return;
+    fontsLoaded.add(t);
+    const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = GF + FONTS[t];
+    document.head.append(l);
+  }
+  loadFonts();
+  new MutationObserver(loadFonts).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
   root.dataset.view = q.get('view') || (small.matches ? 'read' : 'present');
   let viewChosen = q.has('view');
   const reading = () => root.dataset.view === 'read';
@@ -96,11 +157,14 @@
     while (i < L.length) {
       const l = L[i];
       if (!l.trim()) { i++; continue; }
-      if ((m = l.match(/^(`{3,}|~{3,})\s*([\w+-]*)/))) {
+      if ((m = l.match(/^(`{3,}|~{3,})\s*([\w+-]*)\s*(?:\{\s*steps:\s*([^}]*)\})?\s*(\{\s*source\s*\})?/))) {
         const body = []; i++;
         while (i < L.length && !L[i].startsWith(m[1])) body.push(L[i++]);
         i++;
-        out += `<pre class="code"${m[2] ? ` data-lang="${m[2]}"` : ''}><code>${esc(body.join('\n'))}</code></pre>`;
+        const src = esc(body.join('\n')), diagram = `<div class="w-diagram"><pre class="code w-diagram-src">${src}</pre></div>`;
+        out += m[2] === 'mermaid' && m[4] ? `<div class="w-with-source"><pre class="code"><code>${src}</code></pre>${diagram}</div>`   // {source}: the text beside its diagram
+          : m[2] === 'mermaid' ? diagram
+          : `<pre class="code"${m[2] ? ` data-lang="${m[2]}"` : ''}${m[3] ? ` data-steps="${qesc(m[3])}"` : ''}><code>${esc(body.join('\n'))}</code></pre>`;
       } else if ((m = l.match(/^:::\s*(.+)$/))) {
         const body = []; let depth = 1; i++;
         for (; i < L.length; i++) { if (/^:::\s*\S/.test(L[i])) depth++; else if (/^:::\s*$/.test(L[i]) && !--depth) break; body.push(L[i]); }
@@ -135,7 +199,7 @@
   }
 
   /* a Markdown deck: slides split by ---; a chunk of only `key: value` lines is the next slide's frontmatter */
-  const META = /^(section|name|layout|kicker|build|class|takeaway):\s*(.*)$/;
+  const META = /^(section|name|layout|kicker|build|class|takeaway|id):\s*(.*)$/;
   // split lines on a separator line, ignoring separators inside fenced code
   function split(L, sep) {
     const out = [[]]; let fence = null;
@@ -148,7 +212,8 @@
   }
   let section = '', part = 0;
   function mdSlides(src) {
-    const chunks = split(dedent(src.replace(/\r/g, '').split('\n')), /^---\s*$/);
+    // a deck can't contain a literal closing script tag, so it writes <\/script> and we restore it here
+    const chunks = split(dedent(src.replace(/\r/g, '').replace(/<\\\/script/gi, '</script').split('\n')), /^---\s*$/);
     const out = []; let meta = {};
     for (const c of chunks) {
       const filled = c.filter(l => l.trim());
@@ -177,15 +242,226 @@
     section = meta.section ?? (layout === 'section' ? heading : section);
     Object.assign(el.dataset, { section, name: meta.name || heading });
     if (meta.takeaway) el.dataset.takeaway = meta.takeaway;
+    if (meta.id) el.dataset.id = meta.id;
     const c = el.firstChild;
+    widgets(c);
     if (meta.build && meta.build !== 'false') {
       // every block after the title builds in; lists build item by item
       const kids = [...c.querySelectorAll(':scope > *, :scope > .cols > div > *')].filter(k => !k.matches('.kicker, .num, .cols, h1, h2'));
       kids.forEach(k => (k.matches('ul, ol') ? [...k.children] : [k]).forEach(x => x.classList.add('step')));
     }
-    const steps = c.querySelectorAll('.step');
-    if (steps.length) { c.setAttribute('data-build', ''); steps.forEach((s, i) => s.dataset.step ??= i + 1); }
+    const marked = c.querySelectorAll('.step');
+    if (marked.length) { c.setAttribute('data-build', ''); marked.forEach((s, i) => s.dataset.step ??= i + 1); }
     return el;
+  }
+
+  /* ================= widgets, built from Markdown ================= */
+  // Each one is a stepper (↑ ↓ walk it), and each degrades to plain, readable content in read view.
+  function widgets(c) {
+    // a line holding only {.class} applies to the block above it, e.g. a table
+    c.querySelectorAll('p').forEach(p => { if (!p.textContent.trim() && !p.children.length && p.className && p.previousElementSibling) { p.previousElementSibling.classList.add(...p.classList); p.remove(); } });
+    c.querySelectorAll('.tabs, .toggle, .steps').forEach(panes);
+    c.querySelectorAll('.timeline').forEach(timeline);
+    c.querySelectorAll('.stats').forEach(stats);
+    c.querySelectorAll('blockquote').forEach(callout);
+    c.querySelectorAll('table.explain').forEach(explain);
+    c.querySelectorAll('td, th').forEach(marks);
+    c.querySelectorAll('pre[data-steps]').forEach(codeSteps);
+    c.querySelectorAll('.flip').forEach(flip);
+  }
+
+  // ::: tabs / ::: toggle / ::: steps — each ### heading starts a pane
+  function panes(box) {
+    const kind = ['tabs', 'toggle', 'steps'].find(k => box.classList.contains(k));
+    const groups = [];
+    for (const ch of [...box.children]) { if (ch.tagName === 'H3' || !groups.length) groups.push([]); groups.at(-1).push(ch); }
+    const titles = groups.map(g => g[0].tagName === 'H3' ? g[0].innerHTML : '');
+    const w = document.createElement('div');
+    w.className = `w w-${kind} ${[...box.classList].filter(k => k !== kind).join(' ')}`.trim();
+    w.innerHTML = (kind === 'steps'
+      ? `<div class="w-head"><span class="w-count"></span><span class="w-dots">${groups.map((_, i) => `<button aria-label="Step ${i + 1}"></button>`).join('')}</span><button class="w-next" data-next></button></div>`
+      : `<div class="w-list" role="tablist">${titles.map(t => `<button role="tab">${t}</button>`).join('')}</div>`) + '<div class="w-panes"></div>';
+    const holder = w.lastChild;
+    for (const g of groups) { const p = document.createElement('section'); p.className = 'w-pane'; p.append(...g); holder.append(p); }
+    box.replaceWith(w);
+    const pick = [...w.querySelectorAll('[role=tab], .w-dots button')], ps = [...holder.children];
+    const st = steps(w, ps.length, i => {
+      ps.forEach((p, j) => p.classList.toggle('on', j === i));
+      pick.forEach((b, j) => { b.classList.toggle('on', j === i); b.classList.toggle('done', j < i); b.setAttribute('aria-selected', j === i); });
+      if (kind === 'steps') w.querySelector('.w-count').textContent = `Step ${i + 1} of ${ps.length}`;
+    });
+    pick.forEach((b, j) => b.addEventListener('click', () => st.go(j)));
+  }
+
+  // a table followed by {.explain}: its last column becomes the detail for the selected row
+  function explain(t) {
+    const rows = [...(t.tBodies[0]?.rows || [])];
+    if (!rows.length) return;
+    const name = rows.map(r => r.cells[0].textContent.trim()), why = rows.map(r => r.cells[r.cells.length - 1].innerHTML);
+    t.tHead?.rows[0].lastElementChild.remove();
+    rows.forEach(r => r.lastElementChild.remove());
+    const w = document.createElement('div'); w.className = 'w w-explain';
+    t.replaceWith(w); w.append(t);
+    w.insertAdjacentHTML('beforeend', `<div class="w-why"><div class="w-why-name"></div><p></p></div>`
+      + `<dl class="w-why-all">${rows.map((_, i) => `<dt>${esc(name[i])}</dt><dd>${why[i]}</dd>`).join('')}</dl>`);
+    const st = steps(w, rows.length, i => {
+      rows.forEach((r, j) => r.classList.toggle('on', j === i));
+      w.querySelector('.w-why-name').textContent = name[i];
+      w.querySelector('.w-why p').innerHTML = why[i];
+    });
+    rows.forEach((r, i) => r.addEventListener('click', () => st.go(i)));
+  }
+
+  // ✓ ◐ ✗ at the start of a table cell become icons in the theme's colours; a cell holding only a mark is centred
+  const MARK = {
+    '✓': ['yes', '<path d="M3.5 8.4l3 3 6-6.8"/>'],
+    '◐': ['part', '<circle cx="8" cy="8" r="5.6"/><path d="M8 2.4a5.6 5.6 0 0 0 0 11.2z" fill="currentColor"/>'],
+    '✗': ['no', '<path d="M4.6 4.6l6.8 6.8M11.4 4.6l-6.8 6.8"/>'],
+  };
+  function marks(cell) {
+    const m = cell.innerHTML.match(/^\s*([✓◐✗])/);
+    if (!m) return;
+    const [kind, path] = MARK[m[1]];
+    cell.innerHTML = cell.innerHTML.replace(m[1], `<b class="mk mk-${kind}" role="img" aria-label="${kind}"><svg viewBox="0 0 16 16" width="1.15em" height="1.15em" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${path}</svg></b>`);
+    if (!cell.textContent.trim()) cell.classList.add('mk-only');
+  }
+
+  // ```lang {steps: 2 | 3-4 | 6} — each step highlights those lines
+  const sources = new WeakMap();       // <pre> -> its code as written, for the syntax highlighter
+  function codeSteps(pre) {
+    const code = pre.firstChild;
+    sources.set(pre, code.textContent);
+    code.innerHTML = code.innerHTML.split('\n').map(l => `<span class="ln">${l}</span>`).join('');
+    const groups = pre.dataset.steps.split('|').map(g => new Set(g.split(',').flatMap(r => { const [a, b = a] = r.trim().split('-').map(Number); return Array.from({ length: b - a + 1 }, (_, k) => a + k); })));
+    pre.stepper = steps(pre, groups.length + 1, i => {
+      pre.classList.toggle('stepping', i > 0);
+      [...code.children].forEach((l, j) => l.classList.toggle('on', i > 0 && groups[i - 1].has(j + 1)));
+    });
+  }
+
+  /* syntax highlighting: highlight.js, fetched only when the deck has fenced code.
+     <html data-highlight="off"> turns it off; data-highlight="/path/highlight.min.js" self-hosts it. */
+  const HLJS = 'https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/highlight.min.js';
+  function highlight() {
+    const pres = [...document.querySelectorAll('pre.code[data-lang]')], opt = root.dataset.highlight;
+    if (!pres.length || opt === 'off') return;
+    const run = () => pres.forEach(pre => {
+      if (!window.hljs?.getLanguage(pre.dataset.lang)) return;
+      const html = hljs.highlight(sources.get(pre) ?? pre.firstChild.textContent, { language: pre.dataset.lang, ignoreIllegals: true }).value;
+      pre.firstChild.innerHTML = pre.dataset.steps ? perLine(html) : html;
+      pre.stepper?.go(pre.stepper.i, true);
+    });
+    if (window.hljs) return run();
+    const tag = document.createElement('script');
+    tag.src = opt || HLJS; tag.onload = run;            // offline or blocked: the code just stays plain
+    document.head.append(tag);
+  }
+  /* diagrams: Mermaid, fetched only when the deck has a ```mermaid block; coloured from the theme and redrawn when it changes.
+     <html data-diagrams="off"> leaves the source showing; data-diagrams="/path/mermaid.min.js" self-hosts it. */
+  const MERMAID = 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js';
+  function diagrams() {
+    const boxes = [...document.querySelectorAll('.w-diagram')], opt = root.dataset.diagrams;
+    if (!boxes.length || opt === 'off') return;
+    boxes.forEach(b => b.dataset.src = b.textContent);
+    let n = 0, queued;
+    const draw = async () => {
+      const v = k => getComputedStyle(root).getPropertyValue(k).trim(), font = v('--sans');
+      mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'base', fontFamily: font, htmlLabels: false,
+        flowchart: { curve: 'basis', padding: 16, htmlLabels: false }, state: { htmlLabels: false }, class: { htmlLabels: false },
+        architecture: { iconSize: 56, fontSize: 18 },
+        xyChart: { width: 900, height: 420, titleFontSize: 22, xAxis: { labelFontSize: 16 }, yAxis: { labelFontSize: 16, titleFontSize: 16 } },
+        themeVariables: { darkMode: root.dataset.mode === 'dark', fontFamily: font, fontSize: '18px', background: v('--bg'),
+          pie1: v('--accent'), pie2: v('--muted'), pie3: v('--accent-soft'), pie4: v('--line'), pie5: v('--accent-ink'), pieStrokeColor: v('--bg'), pieOuterStrokeColor: v('--line'),
+          pieTitleTextColor: v('--fg'), pieSectionTextColor: v('--fg'), pieLegendTextColor: v('--fg'), pieTitleTextSize: '22px', pieSectionTextSize: '16px', pieLegendTextSize: '16px',
+          xyChart: { backgroundColor: 'transparent', titleColor: v('--fg'), xAxisLabelColor: v('--muted'), yAxisLabelColor: v('--muted'), xAxisTitleColor: v('--muted'), yAxisTitleColor: v('--muted'),
+                     xAxisLineColor: v('--line'), yAxisLineColor: v('--line'), xAxisTickColor: v('--line'), yAxisTickColor: v('--line'), plotColorPalette: `${v('--accent')}, ${v('--muted')}` },
+          primaryColor: v('--surface'), primaryTextColor: v('--fg'), primaryBorderColor: v('--accent'), mainBkg: v('--surface'), nodeBorder: v('--accent'),
+          secondaryColor: v('--accent-soft'), secondaryTextColor: v('--fg'), secondaryBorderColor: v('--accent'),
+          tertiaryColor: v('--surface-2'), tertiaryTextColor: v('--fg'), tertiaryBorderColor: v('--line'),
+          lineColor: v('--muted'), textColor: v('--fg'), clusterBkg: v('--surface-2'), clusterBorder: v('--line'), titleColor: v('--fg'),
+          edgeLabelBackground: v('--bg'), noteBkgColor: v('--accent-soft'), noteTextColor: v('--fg'), noteBorderColor: v('--accent'),
+          actorBkg: v('--surface'), actorBorder: v('--accent'), actorTextColor: v('--fg'), actorLineColor: v('--muted'), signalColor: v('--muted'), signalTextColor: v('--fg'),
+          labelBoxBkgColor: v('--surface'), labelBoxBorderColor: v('--accent'), labelTextColor: v('--fg'), loopTextColor: v('--fg') } });
+      for (const b of boxes) {
+        try { const { svg } = await mermaid.render(`dk-diagram-${++n}`, b.dataset.src); b.innerHTML = svg; b.classList.add('drawn'); }
+        catch { b.innerHTML = `<pre class="code w-diagram-src">${esc(b.dataset.src)}</pre>`; b.classList.remove('drawn'); }
+      }
+      if (portrait.matches && !reading()) fit();
+    };
+    const redraw = () => { clearTimeout(queued); queued = setTimeout(draw, 60); };
+    // draw once the theme's fonts are in, so labels are measured in the face they're shown in
+    const ready = () => {
+      (document.fonts?.ready || Promise.resolve()).then(draw);
+      document.fonts?.addEventListener('loadingdone', redraw);          // a theme's web font arrived: re-measure in it
+      new MutationObserver(() => document.fonts.ready.then(redraw)).observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-mode'] });
+    };
+    if (window.mermaid) return ready();
+    const tag = document.createElement('script');
+    tag.src = opt || MERMAID; tag.onload = ready;      // offline or blocked: the source stays visible
+    document.head.append(tag);
+  }
+
+  // split highlighted HTML into line spans, closing and reopening any token that runs across a line break
+  function perLine(html) {
+    const open = []; let out = '<span class="ln">';
+    for (const t of html.split(/(<span[^>]*>|<\/span>|\n)/)) {
+      if (t === '\n') out += '</span>'.repeat(open.length) + '</span><span class="ln">' + open.join('');
+      else if (t.startsWith('<span')) { open.push(t); out += t; }
+      else if (t === '</span>') { open.pop(); out += t; }
+      else out += t;
+    }
+    return out + '</span>'.repeat(open.length) + '</span>';
+  }
+
+  // ::: timeline — each ### heading is a milestone; ↓ walks them
+  function timeline(box) {
+    const items = [];
+    for (const ch of [...box.children]) { if (ch.tagName === 'H3' || !items.length) items.push([]); items.at(-1).push(ch); }
+    const w = document.createElement('ol'); w.className = 'w w-timeline';
+    for (const g of items) { const li = document.createElement('li'); li.append(...g); w.append(li); }
+    box.replaceWith(w);
+    const lis = [...w.children];
+    w.style.setProperty('--n', lis.length);
+    const st = steps(w, lis.length, i => lis.forEach((li, j) => { li.classList.toggle('on', j === i); li.classList.toggle('done', j < i); }));
+    lis.forEach((li, j) => li.addEventListener('click', () => st.go(j)));
+  }
+
+  // ::: stats — each list item or paragraph leads with its number in bold: "**42%** faster first response"
+  function stats(box) {
+    const src = [...box.querySelectorAll(':scope > ul > li, :scope > ol > li, :scope > p')];
+    const w = document.createElement('div'); w.className = 'w w-stats';
+    w.innerHTML = src.map(el => {
+      const n = el.querySelector('strong'), num = n ? n.innerHTML : '';
+      n?.remove();
+      return `<div class="w-stat"><div class="w-stat-n">${num}</div><div class="w-stat-l">${el.innerHTML.trim()}</div></div>`;
+    }).join('');
+    w.style.setProperty('--n', Math.min(4, src.length));
+    box.replaceWith(w);
+  }
+
+  // > [!NOTE] / [!TIP] / [!WARNING] / [!IMPORTANT] — GitHub-style callouts
+  function callout(q) {
+    const p = q.querySelector(':scope > p'), m = p?.innerHTML.match(/^\s*\[!(NOTE|TIP|WARNING|IMPORTANT|CAUTION)\]\s*(<br>)?/i);
+    if (!m) return;
+    const kind = m[1].toLowerCase();
+    p.innerHTML = p.innerHTML.slice(m[0].length);
+    if (!p.textContent.trim()) p.remove();
+    q.className = `callout callout-${kind}`;
+    q.insertAdjacentHTML('afterbegin', `<div class="callout-label">${kind}</div>`);
+  }
+
+  // ::: flip — the ### heading is the front, the rest is the back
+  function flip(box) {
+    const w = document.createElement('div');
+    w.className = `w w-flip ${[...box.classList].filter(k => k !== 'flip').join(' ')}`.trim();
+    w.setAttribute('role', 'button'); w.tabIndex = 0;
+    w.innerHTML = '<div class="w-face w-front"></div><div class="w-face w-back"></div>';
+    const front = box.querySelector(':scope > h3');
+    if (front) w.firstChild.append(front);
+    w.lastChild.append(...box.childNodes);
+    box.replaceWith(w);
+    const st = steps(w, 2, i => w.classList.toggle('on', i === 1));
+    w.addEventListener('click', () => st.go(st.i ? 0 : 1));
   }
 
   /* ================= steppers ================= */
@@ -361,6 +637,7 @@
   /* ================= chrome ================= */
   const ICON = {
     notes: '<path d="M3.5 4.5h11M3.5 9h11M3.5 13.5h7"/>',
+    palette: '<path d="M9 2a7 7 0 1 0 0 14c1 0 1.5-.6 1.5-1.4 0-.5-.3-.8-.3-1.3 0-.7.6-1.3 1.3-1.3h1.6A3 3 0 0 0 16 9c0-3.9-3.1-7-7-7z"/><circle cx="5.6" cy="8.4" r="1" fill="currentColor"/><circle cx="8.2" cy="5.4" r="1" fill="currentColor"/><circle cx="11.6" cy="6.2" r="1" fill="currentColor"/>',
     grid: '<rect x="2.5" y="2.5" width="5" height="5" rx="1"/><rect x="10.5" y="2.5" width="5" height="5" rx="1"/><rect x="2.5" y="10.5" width="5" height="5" rx="1"/><rect x="10.5" y="10.5" width="5" height="5" rx="1"/>',
     read: '<path d="M2 3.5h4.5A2.5 2.5 0 0 1 9 6v8.5a2 2 0 0 0-2-2H2zM16 3.5h-4.5A2.5 2.5 0 0 0 9 6v8.5a2 2 0 0 1 2-2h5z"/>',
     present: '<rect x="2" y="3" width="14" height="9.5" rx="1.5"/><path d="M9 12.5V16M6 16h6"/>',
@@ -371,7 +648,7 @@
   function icons() {
     $('viewBtn').innerHTML = svg(reading() ? 'present' : 'read');
     $('viewBtn').title = reading() ? 'Present (R)' : 'Read as an article (R)';
-    $('themeBtn').innerHTML = svg(root.dataset.theme === 'dark' ? 'light' : 'dark');
+    $('themeBtn').innerHTML = svg(root.dataset.mode === 'dark' ? 'light' : 'dark');
   }
 
   function assemble() {
@@ -386,7 +663,7 @@
     if (!$('bar')) stage.insertAdjacentHTML('afterbegin', `<div id="bar"><div class="title">${esc(document.title)}</div></div>`);
     const bar = $('bar');
     if (!$('sectionLabel')) bar.insertAdjacentHTML('beforeend', '<div class="section" id="sectionLabel"></div>');
-    bar.insertAdjacentHTML('beforeend', `<div class="tools"><button class="ib" id="ovBtn" title="Overview (O)">${svg('grid')}</button><button class="ib" id="viewBtn"></button><button class="ib" id="themeBtn" title="Light / dark (T)"></button></div>`);
+    bar.insertAdjacentHTML('beforeend', `<div class="tools"><button class="ib" id="ovBtn" title="Overview (O)">${svg('grid')}</button><button class="ib" id="viewBtn"></button>${picker ? `<button class="ib" id="lookBtn" title="Theme" aria-haspopup="true">${svg('palette')}</button>` : ''}<button class="ib" id="themeBtn" title="Light / dark (T)"></button></div>`);
 
     // each slide sits in a frame with a label and its notes-as-prose, both shown only in read view
     const cue = /\[~?[\d.]+\s*(?:s|sec|secs|m|min|mins)\b[^\]]*\]\s*/gi;
@@ -431,6 +708,7 @@
 
     $('viewBtn').onclick = toggleView;
     $('themeBtn').onclick = toggleTheme;
+    if (picker) buildPicker();
     $('ovBtn').onclick = toggleOverview;
     $('prev').onclick = () => go(cur - 1);
     $('next').onclick = () => go(cur + 1);
@@ -449,7 +727,31 @@
     ov.onclick = e => { if (e.target === ov) ov.classList.remove('on'); };
     icons();
   }
-  function toggleTheme() { root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark'; store.set('theme', root.dataset.theme); icons(); }
+  function toggleTheme() { root.dataset.mode = root.dataset.mode === 'dark' ? 'light' : 'dark'; store.set('mode', root.dataset.mode); icons(); }
+
+  // the theme picker (<html data-theme-picker>): each swatch carries the theme's own tokens
+  const THEMES = {
+    Everyday: ['paper', 'clean', 'slate', 'ledger', 'noir'],
+    'Editorial & craft': ['editorial', 'swiss', 'atelier', 'mocha'],
+    'Warm & friendly': ['rose', 'sunset', 'chalk', 'clinic'],
+    'Nature & calm': ['forest', 'ocean', 'nord'],
+    Tech: ['solar', 'terminal', 'ai', 'blueprint'],
+    Loud: ['punk', 'volt', 'synth'],
+  };
+  function buildPicker() {
+    const pop = document.createElement('div'); pop.id = 'looks'; pop.setAttribute('role', 'menu');
+    pop.innerHTML = Object.entries(THEMES).map(([group, ts]) => `<div class="lg">${group}</div>`
+      + ts.map(t => `<button role="menuitemradio" data-look="${t}" data-theme="${t}"><i></i><span>${t === 'ai' ? 'AI' : t[0].toUpperCase() + t.slice(1)}</span></button>`).join('')).join('');
+    document.body.append(pop);
+    const mark = () => pop.querySelectorAll('button').forEach(b => { b.dataset.mode = root.dataset.mode; b.setAttribute('aria-checked', b.dataset.look === root.dataset.theme); });
+    pop.onclick = e => {
+      const b = e.target.closest('button'); if (!b) return;
+      root.dataset.theme = b.dataset.look; store.set('look', b.dataset.look); mark();
+    };
+    $('lookBtn').onclick = e => { e.stopPropagation(); mark(); pop.classList.toggle('on'); };
+    document.addEventListener('click', e => { if (!e.target.closest('#looks')) pop.classList.remove('on'); });
+    new MutationObserver(mark).observe(root, { attributes: true, attributeFilter: ['data-mode'] });
+  }
   function toggleOverview() { const ov = $('overview'); ov.classList.toggle('on'); if (ov.classList.contains('on')) ov.querySelector('.cur')?.focus(); }
 
   /* ================= input ================= */
@@ -475,7 +777,7 @@
     else if (lk === 't') toggleTheme();
     else if (lk === 'o') toggleOverview();
     else if (k === '?') $('keys').classList.add('on');
-    else if (k === 'Escape') { ov.classList.remove('on'); $('notes').classList.remove('on'); }
+    else if (k === 'Escape') { ov.classList.remove('on'); $('notes').classList.remove('on'); $('looks')?.classList.remove('on'); }
     else if (reading()) {                                   // the page scrolls; ← → hop between slides
       if (k === 'ArrowRight') { e.preventDefault(); go(cur + 1); }
       else if (k === 'ArrowLeft') { e.preventDefault(); go(cur - 1); }
@@ -505,10 +807,17 @@
   }
 
   // #slide or #slide.step, 1-based; [0, 1] when there's no hash
-  function fromHash() { const m = location.hash.match(/^#(\d+)(?:\.(\d+))?/); return m ? [+m[1], +(m[2] || 1)] : [0, 1]; }
+  function fromHash() {
+    const h = decodeURIComponent(location.hash.slice(1)), m = h.match(/^(\d+)(?:\.(\d+))?$/);
+    if (m) return [+m[1], +(m[2] || 1)];
+    const i = slides().findIndex(s => s.dataset.id === h);
+    return i >= 0 ? [i + 1, 1] : [0, 1];
+  }
 
   function start() {
     assemble();
+    highlight();
+    diagrams();
     document.querySelectorAll('[data-build]').forEach(build);
     document.querySelectorAll('[data-next]').forEach(b => b.addEventListener('click', () => {
       const s = b.closest('.slide');
@@ -516,6 +825,11 @@
     }));
     // a clicked button keeps focus, so Space / Enter would press it again; hand the keys back to the deck
     document.addEventListener('click', e => { const b = e.target.closest('#stage button'); if (b) b.blur(); });
+    // [text](#id) links to the slide with that id
+    document.addEventListener('click', e => {
+      const a = e.target.closest('a[href^="#"]'), i = a ? slides().findIndex(s => s.dataset.id === decodeURIComponent(a.hash.slice(1))) : -1;
+      if (i >= 0) { e.preventDefault(); go(i, 0); }
+    });
     addEventListener('keydown', onKey);
     addEventListener('hashchange', () => { const [sl, sp] = fromHash(); if (sl) go(sl - 1, reading() ? undefined : sp - 1); });
     let resizing = false;

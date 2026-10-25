@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="deckkit">
+  <rect width="128" height="128" rx="30" fill="#F1B000"/>
+  <rect x="34" y="26" width="66" height="44" rx="8" fill="none" stroke="#161514" stroke-width="5" opacity=".35"/>
+  <rect x="28" y="38" width="72" height="48" rx="9" fill="#FAF6EE" stroke="#161514" stroke-width="5"/>
+  <rect x="38" y="50" width="30" height="6" rx="3" fill="#161514"/>
+  <rect x="38" y="62" width="44" height="5" rx="2.5" fill="#161514" opacity=".45"/>
+  <path d="M64 94v12m-7-6l7 7 7-7" fill="none" stroke="#161514" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

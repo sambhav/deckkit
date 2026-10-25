@@ -1,22 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme-picker>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>deckkit</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="deck.css?v=0.6.0">
-<script src="deck.js?v=0.6.0"></script>
+<meta name="description" content="Slides you write in Markdown, present on a 16:9 stage, and send to a phone as an essay. Two files, no build step.">
+<link rel="stylesheet" href="deck.css?v=0.1.0">
+<script src="deck.js?v=0.1.0"></script>
 <style>
-  /* the one hand-built slide */
+  /* the one hand-built slide: a diagram with its own walkthrough */
   .pipe { display: flex; align-items: center; gap: 14px; margin-top: 64px; }
   .pipe .n { flex: 1; height: 120px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); padding: 20px 22px; display: flex; flex-direction: column; justify-content: space-between; transition: all .3s; }
   .pipe .n b { font-size: 22px; letter-spacing: -.01em; }
-  .pipe .n span { font: 13px var(--mono); color: var(--faint); }
+  .pipe .n span { font: 13px var(--mono); color: var(--muted); }
   .pipe .n.on { background: var(--accent-soft); border-color: var(--accent); transform: translateY(-4px); }
   .pipe .n.done { border-color: var(--accent); }
-  .pipe i { color: var(--faint); font-style: normal; font-size: 22px; }
+  .pipe i { color: var(--muted); font-style: normal; font-size: 22px; }
   .caption { margin-top: 36px; font-size: 24px; color: var(--muted); min-height: 2.8em; max-width: 34em; }
   .caption b { color: var(--fg); font-weight: 600; }
   .hand { padding: 60px 88px; }
@@ -27,9 +26,9 @@
   [data-tall] .pipe .n { flex: 1 1 40%; height: 96px; padding: 16px 18px; }
   [data-tall] .pipe .n b { font-size: 21px; }
   [data-tall] .pipe .n span { font-size: 15px; }
+  [data-tall] .pipe i { display: none; }
   [data-tall] .caption { font-size: 22px; margin-top: 26px; }
   @media (prefers-reduced-motion: reduce) { .pipe .n { transition: none; } }
-  [data-tall] .pipe i { display: none; }
 </style>
 </head>
 <body>
@@ -41,12 +40,12 @@ layout: title
 
 Slides you write in Markdown, present on a stage, and send to a phone as an essay.
 
-Two files · No build step · Light and dark {.meta}
+v0.1 · MIT · Two files, no build step {.meta}
 
 <!--
-deckkit is a tiny engine for HTML slide decks. You write the deck in Markdown, present it full-screen with the keyboard, and when someone opens the same link on their phone, it becomes a long-form article: your speaker notes turn into the prose between the slides.
+deckkit is a small, dependency-free engine for HTML slide decks. You write the deck in Markdown, present it full-screen from the keyboard, and when someone opens the same link on a phone it becomes a long-form article, with your speaker notes as the prose between the slides.
 
-Press R at any time to switch between presenting and reading. Press T for dark mode.
+You're looking at a deckkit deck. Press → to present it, R to read it as an article, and T for dark mode.
 -->
 
 ---
@@ -58,7 +57,41 @@ A deck is usually a script with the words missing.
 deckkit keeps the words. The notes you'd say out loud become the text people read later.
 
 <!--
-Most decks are written to be spoken over. Send one to someone who missed the talk and they get the bullet points without the argument. Here, the notes are part of the deck, so the deck can stand on its own.
+Most decks are written to be spoken over. Send one to someone who missed the talk and they get the bullet points without the argument. In deckkit the speaker notes are part of the deck, so the same file works on a stage, in a review, and on a phone the next morning.
+-->
+
+---
+kicker: Quick start
+id: start
+---
+## Two files and a browser
+
+|||
+
+````html
+<link rel="stylesheet" href="deck.css">
+<script src="deck.js"><\/script>
+
+<script type="text/markdown">
+# My talk
+---
+## The first idea
+- One point per line
+<!-- What you'll say -->
+<\/script>
+````
+
+|||
+
+1. Copy `deck.css` and `deck.js`, or load them from a CDN
+2. Write slides in a `text/markdown` script
+3. Open the file in a browser and press →
+
+> [!TIP]
+> Press R to read this deck as an article, and T for dark mode.
+
+<!--
+There is nothing to install and nothing to build. An HTML page links the stylesheet and the script, and holds the deck in a script tag of type text/markdown. Open it in any modern browser. To publish it, put the folder anywhere that serves static files: GitHub Pages, a bucket, an intranet share.
 -->
 
 ---
@@ -69,9 +102,9 @@ layout: section
 Markdown in, slides out.
 
 ---
-kicker: The whole deck is one file
+kicker: Writing
 ---
-## Write slides in Markdown
+## One Markdown block is the whole deck
 
 |||
 
@@ -98,30 +131,11 @@ arrives halfway through.
 - `::: card` wraps a block in a card
 
 <!--
-A deck is an HTML page that links deck.css and deck.js and holds a script tag of type text/markdown. Everything inside is ordinary Markdown with a few conventions: three dashes separate slides, a block of key-value lines sets a slide's layout, and comments are speaker notes.
-
-Columns use three pipes on their own line. Containers use three colons and a class name, so ::: card or ::: grid wrap their contents in that element.
+Three dashes separate slides. A block of key-value lines sets the next slide's layout, section or id. Comments are speaker notes. Three pipes start a column, and three colons with a class name wrap content in that class, which is also how the widgets are written. Everything else is ordinary Markdown.
 -->
 
 ---
-kicker: Steps
-build: true
----
-## Press ↓ to build a slide
-
-- **← →** move between slides
-- **↑ ↓** move between the steps on a slide
-- When the steps run out, **↓** carries on to the next slide
-- Coming back with **←** shows the slide finished
-
-<!--
-Steps are part of the navigation, not an add-on. Set build: true and every block after the heading appears one at a time, or tag any single block with {.step}.
-
-The left and right arrows always change the slide. Up and down walk through steps first, then move on, so a presenter can keep pressing down. The pager shows which step you're on, and the URL records it, so a link can point at step three of slide five.
--->
-
----
-kicker: Layouts
+kicker: Writing
 ---
 ## Five layouts cover most slides
 
@@ -134,53 +148,328 @@ kicker: Layouts
 | `center` | Everything centred, for a closing slide |
 
 <!--
-Pick a layout with one line of frontmatter. The defaults are deliberately few: a title slide, a numbered section divider, a statement slide for a single big sentence, a default slide for a heading and content, and a centred layout. Anything else is a class name away.
+Pick a layout with one line of frontmatter. The set is deliberately small, and sizes come from a single type scale, so slides stay consistent without any styling. Anything more is a class away.
 -->
 
 ---
-layout: default
+kicker: Writing
+build: true
 ---
-> Make it simple, but significant.
+## Press ↓ to build a slide
 
-Don Draper, *Mad Men* {.meta}
+- **← →** move between slides
+- **↑ ↓** move between the steps on a slide
+- When the steps run out, **↓** carries on to the next slide
+- Coming back with **←** shows the slide finished
 
 <!--
-Quotes get a hairline in the accent colour and large type. Emphasis follows Markdown: two asterisks for bold, one for italic, and double equals signs for ==accented text==.
+Steps are part of the navigation, not an add-on. Set build: true and every block after the heading appears one at a time, or tag a single block with {.step}. Left and right always change the slide; up and down walk the steps first and then move on, so a presenter can just keep pressing down. The URL records the step, so a link can point at step three of slide five.
+-->
+
+---
+layout: section
+id: widgets
+---
+# Widgets
+
+Interactive slides, still in plain Markdown.
+
+<!--
+The interactive patterns that come up in almost every technical deck are built in: tabs, toggles, walkthroughs, comparison tables that explain themselves, code that highlights as you talk, and flip cards. Each one is a few lines of Markdown, takes part in the arrow keys, and turns into plain, readable content in read view.
+-->
+
+---
+kicker: Widgets
+---
+## Tabs swap a detail panel
+
+|||
+
+````md
+::: tabs
+### Present
+The 16:9 stage, scaled to the screen.
+### Read
+One column. Notes become the prose.
+### Phone
+Slides go vertical and reflow.
+:::
+````
+
+|||
+
+::: tabs
+### Present
+The 16:9 stage, scaled to the screen. ← → move between slides; ↑ ↓ walk these tabs.
+### Read
+One column of text. Every tab is shown, one after another, under its heading.
+### Phone
+Slides go vertical and reflow at the phone's width; the tabs wrap to fit.
+:::
+
+<!--
+Every heading inside a tabs block becomes a tab, and the text under it becomes its panel. Press down to walk the tabs, or click one. A toggle block works the same way but looks like a switch, for two or three options. In read view all the panels are shown, one after another.
+-->
+
+---
+kicker: Widgets
+---
+## Walk through it, one step at a time
+
+::: steps
+### Write a `::: steps` block
+Each `###` heading inside it starts a step, with its own title and text.
+### Press ↓
+The next step appears. The counter and the dots follow, and Next works too.
+### Keep pressing
+After the last step, ↓ carries on to the next slide, like any other build.
+### Read it on a phone
+Read view lists every step in order, numbered, so nothing is hidden.
+:::
+
+<!--
+A walkthrough is the same idea as tabs, laid out as a sequence: a step counter, progress dots and a Next button. It's the pattern behind most "here's how the flow works" slides.
+-->
+
+---
+kicker: Widgets
+---
+## Compare, then explain
+
+| | Hand-built HTML | Slides app | deckkit | Why |
+|---|---|---|---|---|
+| Plain text you can diff | ◐ | ✗ | ✓ | A deckkit deck is one Markdown block in an HTML file, so a review is an ordinary diff. |
+| Reads well on a phone | ✗ | ◐ | ✓ | Read view reflows Markdown slides and turns the speaker notes into the prose. |
+| Custom interactive diagrams | ✓ | ✗ | ✓ | Any slide can drop to HTML and register its walkthrough with Deck.steps(). |
+| No build step | ✓ | ✓ | ✓ | Two files and a browser. |
+{.explain}
+
+<!--
+Put {.explain} on the line after a table and its last column becomes the explanation for whichever row is selected. Press down to walk the rows. Ticks, half circles and crosses at the start of a cell become icons in the theme's colours. In read view the explanations follow the table as a list.
+-->
+
+---
+kicker: Widgets
+---
+## Highlight code as you talk
+
+|||
+
+```python {steps: 1-2 | 3-4 | 5-6}
+def present(markdown):
+    slides = markdown.split("---")
+    for slide in slides:
+        show(slide)
+        for step in slide.steps:
+            wait_for("↓")
+```
+
+|||
+
+- Add `{steps: 1-2 | 3-4}` after the language
+- Each group of lines lights up on ↓
+- The rest of the code dims, so the eye goes where you're talking
+
+<!--
+Fenced code takes a list of line groups. Each press of down highlights the next group and dims everything else. In read view the code is shown plainly.
+-->
+
+---
+kicker: Widgets
+---
+## Flip a card to answer it
+
+::: grid
+::: flip
+### Does it need a build step?
+No. Two files and a browser.
+:::
+::: flip
+### Can I still write HTML?
+Yes. Any slide can be hand-built, next to the Markdown.
+:::
+::: flip
+### Does it work offline?
+Yes, apart from web fonts, which fall back to system fonts.
+:::
+:::
+
+<!--
+A flip block puts its heading on the front and the rest on the back. Click to flip, or press down to flip the cards one by one. In read view each card shows both sides.
+-->
+
+---
+kicker: Widgets
+---
+## Diagrams from text
+
+```mermaid {source}
+flowchart TB
+  users([Users]) --> cdn[CDN]
+  subgraph edge [Edge]
+    cdn --> waf[WAF]
+  end
+  subgraph vpc [Private network]
+    waf --> lb[Load balancer]
+    lb --> app1[App server 1]
+    lb --> app2[App server 2]
+    app1 --> db[(Primary DB)]
+    app2 --> db
+    db -.-> replica[(Replica)]
+  end
+```
+
+<!--
+Write a mermaid code block and it becomes a diagram; add {source} and the text sits beside it. This one is a network diagram: two zones, a load balancer, two app servers and a database with a replica, from eleven lines of text. Mermaid is fetched only when a deck has a diagram, and every diagram takes its colours and fonts from the theme, so it follows light and dark. If Mermaid can't load, the source shows instead.
+-->
+
+---
+kicker: Widgets
+---
+## Every kind of diagram
+
+::: tabs
+### Sequence
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant A as Agent
+  participant T as Deploy tool
+  U->>A: Roll back auth-service
+  A->>T: rollback(build 411)
+  T-->>A: done, 14 s
+  A-->>U: Back on build 411
+```
+### Architecture
+```mermaid
+architecture-beta
+  group cloud(cloud)[Cloud]
+  service web(internet)[Web] in cloud
+  service api(server)[API] in cloud
+  service db(database)[Database] in cloud
+  service files(disk)[Storage] in cloud
+  web:R --> L:api
+  api:R --> L:db
+  api:B --> T:files
+```
+### State
+```mermaid
+stateDiagram-v2
+  direction LR
+  [*] --> Draft
+  Draft --> Review: submit
+  Review --> Draft: changes
+  Review --> Published: approve
+  Published --> [*]
+```
+### Chart
+```mermaid
+xychart-beta
+  title "Weekly active decks"
+  x-axis [Jan, Feb, Mar, Apr, May, Jun]
+  y-axis "Decks" 0 --> 1200
+  bar [180, 320, 410, 620, 830, 1100]
+  line [180, 320, 410, 620, 830, 1100]
+```
+### Pie
+```mermaid
+pie showData
+  title Where the time goes
+  "Writing" : 45
+  "Rehearsing" : 30
+  "Slides" : 25
+```
+:::
+
+<!--
+Mermaid covers far more than flowcharts: sequence diagrams for request flows, architecture diagrams with cloud and server icons, state machines, and simple bar, line and pie charts. Put several in tabs and press down to walk through them. In read view, they're all shown one after another.
+-->
+
+---
+kicker: Widgets
+---
+## Numbers that land
+
+::: stats
+- **2** files, and no build step
+- **23** themes, each light and dark
+- **0** dependencies to install
+- **1** link for the stage, the phone and the review
+:::
+
+<!--
+A stats block turns a list into big numbers: the bold part of each item is the number, the rest is its label. It's the slide every product review and investor update needs.
+-->
+
+---
+kicker: Widgets
+---
+## Roadmaps walk forward
+
+::: timeline
+### Today
+**Markdown decks** with steps, read view and themes
+### Next
+**Charts** drawn from tables
+### Later
+**Presenter mode** on a second screen
+### Someday
+**Live audience** polls and Q&A
+:::
+
+<!--
+A timeline block lays milestones out on a line. Press down to walk it: each milestone lights up in turn. On a phone and in read view, it turns vertical.
 -->
 
 ---
 layout: section
 ---
-# Reading
+# Presenting and reading
 
-The same link, on a phone.
+One file, three ways to see it.
 
 ---
-kicker: Read view
+kicker: Presenting
+---
+## Everything is on the keyboard
+
+| Keys | |
+|---|---|
+| `←` `→` `Space` | Previous and next slide |
+| `↑` `↓` `Enter` | Previous and next step, then on to the next slide |
+| `1`–`9` | Jump to a step on this slide |
+| `R` · `T` · `O` · `N` | Read view · light and dark · overview · speaker notes |
+| `F` · `?` | Fullscreen · all the keys |
+
+<!--
+Presenting needs nothing but the keyboard. On a touch screen a dock appears instead, with large buttons for back, next, notes and read view, and you can swipe between slides and steps.
+-->
+
+---
+kicker: Reading
 ---
 ## On a phone, the deck becomes an article
 
-::: cols
-::: card
+::: toggle
 ### Present
-The 16:9 stage, scaled to the screen. Arrow keys on a laptop, swipe on a tablet.
-:::
-::: card inv
+The 16:9 stage, scaled to the screen. Arrow keys on a laptop; on a phone, a dock and swipes, with Markdown slides going vertical and reflowing at the phone's width.
 ### Read
-One column of text. Slides reflow, builds show finished, and speaker notes become the body.
-:::
+One column of text, like a blog post. Slides reflow, widgets lay everything out, builds show finished, and speaker notes become the body.
 :::
 
 <!--
-On a narrow screen deckkit opens in read view. Markdown slides reflow into article typography. Each one gets a small chapter label, and its speaker notes follow as paragraphs, so the deck reads top to bottom like a blog post.
-
-Hand-built slides with fixed layouts can't reflow, so they appear as figures scaled to the column. Tap one to present it full-screen.
-
-You can switch views at any time with the R key or the button in the top bar, and force one with ?view=read or ?view=present in the URL.
+On a phone or a portrait tablet, deckkit opens in read view. Markdown slides reflow into article typography, each with a small chapter label, and their speaker notes follow as paragraphs, so the deck reads top to bottom like a blog post. On a laptop, press R or use the button in the top bar. Force a view with ?view=read or ?view=present in the URL.
 -->
+
+---
+layout: section
+---
+# Make it yours
+
+HTML when you need it, tokens for the look.
 </script>
 
-<section class="slide" data-section="Reading" data-name="Escape hatch: HTML slides">
+<section class="slide" data-section="Make it yours" data-name="Some slides want to be built by hand">
   <div class="content hand">
     <div class="kicker">Escape hatch</div>
     <h2>Some slides want to be built by hand</h2>
@@ -193,19 +482,110 @@ You can switch views at any time with the R key or the button in the top bar, an
     <p class="caption" id="pipeCap"></p>
     <button class="chip" data-next style="margin-top:8px"></button>
   </div>
-  <aside class="notes">[~45s] Not everything is a list. When a slide needs a diagram that animates, write it as an HTML section next to the Markdown. Register its walkthrough with Deck.steps, and it takes part in the same navigation: down arrow, the step counter, the URL. In read view, this slide appears as a figure you can tap to present.</aside>
+  <aside class="notes">Not everything is a list. When a slide needs a diagram that animates, write it as an HTML section next to the Markdown and register its walkthrough with Deck.steps. It takes part in the same navigation as everything else: the down arrow, the step counter, the URL. In read view a hand-built slide appears as a figure with a Present button, or reflows if you mark it as flow.</aside>
 </section>
 
 <script type="text/markdown">
-layout: statement
-section: Start
+kicker: Make it yours
 ---
-Two files. No build step.
+## Theme it with a handful of tokens
 
-Copy `deck.css` and `deck.js`, write a `<script type="text/markdown">`, open it in a browser.
+|||
+
+```css
+:root {
+  --accent: #F1B000;
+  --accent-soft: #FFF3CC;
+  --on-accent: #161514;
+  --sans: "Space Grotesk", system-ui;
+}
+[data-mode=dark] {
+  --accent: #FFC94D;
+}
+```
+
+|||
+
+- Colours, fonts and the type scale are CSS custom properties
+- Dark mode redefines the same tokens
+- Override them after `deck.css`; nothing else to configure
 
 <!--
-That's the whole setup. View the source of this page: it's the deck you just read.
+Every colour, typeface and type size is a token. Override a few after deck.css and the whole deck follows, in both themes and in every view. The type scale is tokens too, which is how read view and phone slides resize everything at once.
+-->
+
+---
+kicker: Make it yours
+id: themes
+---
+## Twenty-three themes, each light and dark
+
+::: tabs
+### Everyday
+- [Paper](?theme=paper#themes): cream and gold, the default
+- [Clean](?theme=clean#themes): product and engineering reviews
+- [Slate](?theme=slate#themes): strategy and business
+- [Ledger](?theme=ledger#themes): finance and board updates
+- [Noir](?theme=noir#themes): high-contrast editorial
+### Editorial
+- [Editorial](?theme=editorial#themes): research and long-form keynotes
+- [Swiss](?theme=swiss#themes): design systems, grids and red
+- [Atelier](?theme=atelier#themes): fashion, architecture, luxury
+- [Mocha](?theme=mocha#themes): food, hospitality, cafés
+### Warm
+- [Rose](?theme=rose#themes): design, brand, community
+- [Sunset](?theme=sunset#themes): workshops and friendly talks
+- [Chalk](?theme=chalk#themes): teaching and classrooms
+- [Clinic](?theme=clinic#themes): health and care
+### Nature
+- [Forest](?theme=forest#themes): sustainability and the outdoors
+- [Ocean](?theme=ocean#themes): data and infrastructure
+- [Nord](?theme=nord#themes): cool technical explainers
+### Tech
+- [Solar](?theme=solar#themes): developer talks
+- [Terminal](?theme=terminal#themes): CLIs and hacker talks
+- [AI](?theme=ai#themes): AI and machine learning
+- [Blueprint](?theme=blueprint#themes): hardware, engineering, specs
+### Loud
+- [Punk](?theme=punk#themes): loud, opinionated talks
+- [Volt](?theme=volt#themes): sport, launches, energy
+- [Synth](?theme=synth#themes): gaming, music, nightlife
+:::
+
+<!--
+Pick a theme with one attribute on the html element, data-theme="rose", and every slide, widget and code block follows. Each theme has a light and a dark palette drawn as a pair, with typefaces chosen for it, and T switches between them. Click a theme name to try it, or use the palette button in the top bar: this deck turns on the theme picker with data-theme-picker.
+-->
+
+---
+kicker: Make it yours
+---
+## A small API for the rest
+
+```js {steps: 1-4 | 6 | 8}
+Deck.steps(diagram, 4, i => {
+  // render step i; ↑ ↓, the step counter
+  // and the URL all follow along
+}, { read: 'end' });
+
+Deck.on('slide', (slide, i) => track(i));
+
+Deck.go(Deck.slides.findIndex(s => s.dataset.id === 'start'));
+```
+
+<!--
+The API is deliberately small. Register a stepper for any interaction and it joins the navigation. Listen for slide changes, bind your own keys, or move the deck from code. Everything else is HTML and CSS you already know.
+-->
+
+---
+layout: center
+section: Start
+---
+## Two files. No build step.
+
+[Get started](#start) · [Source on GitHub](https://github.com/sambhav/deckkit) · MIT licensed
+
+<!--
+That's deckkit. View the source of this page: it's the deck you just read. The code and the documentation are on GitHub.
 -->
 </script>
 
