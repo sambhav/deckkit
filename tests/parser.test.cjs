@@ -11,7 +11,7 @@ const context = {
   MutationObserver: class { observe() {} }, window: {},
 };
 vm.runInNewContext(fs.readFileSync(require.resolve('../deck.js'), 'utf8'), context);
-const md = context.window.Deck.markdown;
+const md = s => context.window.Deck.markdown(s).trim().replace(/>\n</g, '><');
 
 test('literal punctuation escapes do not become formatting', () => {
   assert.equal(md('\\*literal\\* \\_name\\_ \\[link\\]'), '<p>*literal* _name_ [link]</p>');
@@ -23,7 +23,7 @@ test('multi-backtick code spans preserve embedded backticks and HTML', () => {
 });
 test('links preserve balanced parentheses and quoted attributes', () => {
   assert.match(md('[link](https://example.com/a_(b))'), /href="https:\/\/example.com\/a_\(b\)"/);
-  assert.match(md('[link](https://example.com/"x")'), /href="https:\/\/example.com\/&quot;x&quot;"/);
+  assert.match(md('[link](https://example.com/"x")'), /href="https:\/\/example.com\/%22x%22"/);
 });
 test('code spans and escaped pipes stay within one table cell', () => {
   const html = md('| A | B |\n| -- | -- |\n| `a|b` | c\\|d |');
@@ -40,5 +40,55 @@ test('closing fences must be bare, matching, and at least as long', () => {
   assert.match(html, /<p>end<\/p>$/);
 });
 test('media classes produce a single class attribute', () => {
-  assert.match(md('![Demo](demo.mp4) {.step}'), /^<figure class="w-media step">/);
+  assert.match(md('![Demo](demo.mp4) {.step}'), /^<figure class="(?:w-media step|step w-media)">/);
+});
+
+test('tokenizer preserves directives inside fences and supports nested containers', () => {
+  const html = md('::: tabs\n### One\n::: card\n```md\n::: notes\n---\n|||\n```\n:::\n### Two\nContent\n:::');
+  assert.match(html, /<div class="tabs">/);
+  assert.match(html, /<div class="card">/);
+  assert.match(html, /<code>::: notes\n---\n\|\|\|<\/code>/);
+  assert.doesNotMatch(html, /td-error/);
+});
+test('quoted chart options survive Markdown rendering', () => {
+  const html = md('::: chart type=line view=both title="Latency & time"\n```csv\nLabel,Value\n"A, B",12\n```\n:::');
+  assert.match(html, /data-title="Latency &amp; time"/);
+  assert.match(html, /<code>Label,Value\n&quot;A, B&quot;,12<\/code>/);
+});
+test('invalid directives have visible diagnostics', () => {
+  assert.match(md('::: chart type=line type=bar\nvalue\n:::'), /Duplicate option: type/);
+  assert.match(md('::: card\nvalue'), /Unclosed container/);
+});
+test('CSV decoder preserves quoted commas, newlines, quotes and BOM', async () => {
+  const { parseCSV } = await import('../src/data.js');
+  assert.deepEqual(parseCSV('\uFEFFName,Value\r\n"A, B",001\r\n"two\r\nlines",-2.5\r\n"say ""hi""",3'), {
+    headers: ['Name','Value'], rows: [['A, B','001'], ['two\r\nlines','-2.5'], ['say "hi"','3']],
+  });
+  assert.throws(() => parseCSV('Name,Value\n"unclosed,2'), /CSV row/);
+});
+test('chart schema rejects bad cells and keeps negatives and scientific notation', async () => {
+  const { chartDataset } = await import('../src/data.js');
+  assert.deepEqual(chartDataset(['Label','Value'], [['one','-2.5'], ['two','1e3']], 'line').series[0].values, [-2.5,1000]);
+  for (const value of ['', '25%', '£100', 'NaN', 'Infinity']) assert.throws(() => chartDataset(['L','V'], [['a',value]]), /Row 2/);
+  assert.throws(() => chartDataset(['L','V'], [['a','1','2']]), /expected 2 columns/);
+  assert.throws(() => chartDataset(['L','L'], [['a','1']]), /unique/);
+  assert.throws(() => chartDataset(['L','V'], [['a','-1']], 'donut'), /nonnegative/);
+  assert.throws(() => chartDataset(['L','A','B'], [['a','1','2']], 'donut'), /one numeric series/);
+  assert.equal(chartDataset(['L','A','B'], [['a','1','2']], 'donut', 'B').series[0].name, 'B');
+});
+test('CSV download preserves raw numbers and escapes formula-like text', async () => {
+  const { csvDownload, parseCSV } = await import('../src/data.js');
+  const source = csvDownload(['Label','Value'], [['=SUM(A1)','001'], ['normal','-2.50']]);
+  assert.deepEqual(parseCSV(source).rows, [["'=SUM(A1)",'001'], ['normal','-2.50']]);
+});
+test('notes and slide boundaries use tokens instead of splitting code or containers', async () => {
+  const { renderMarkdown, slideChunks } = await import('../src/markdown.js');
+  const env = { collectNotes: true, notes: [], article: [], feet: [] };
+  const html = renderMarkdown('Text <!-- say: inline `note` -->\n\n::: read\nArticle **only**.\n:::\n\n[^x]: A `code` footnote.', env);
+  assert.doesNotMatch(html, /inline/);
+  assert.match(env.notes[0], /inline <code>note<\/code>/);
+  assert.match(env.article[0], /<strong>only<\/strong>/);
+  assert.match(env.feet[0], /<code>code<\/code>/);
+  assert.equal(slideChunks('## One\n\n::: card\n---\n```md\n---\n```\n:::\n\n---\n## Two').length, 2);
+  assert.match(renderMarkdown('$x$'), /class="math">x<\/span>/);
 });

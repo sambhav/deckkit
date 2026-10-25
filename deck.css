@@ -527,6 +527,31 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 /* one centred column on a type scale of ~1.25 from a 19px body; hand-built slides break out into wide figures */
 /* charts: a table then {.chart}. Series colours are --chart-1 … --chart-6 */
 .w-chart { --chart-h: 290px; margin: 0; display: flow-root; font-size: calc(var(--t-body) * .62); color: var(--fg); }
+.w-chart-box { position: relative; min-width: 0; margin: 0; }
+.w-chart-box > figcaption { font: 600 var(--t-ui) var(--sans); margin: 0 0 10px; }
+.w-chart-box > .w-chart-caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.w-chart-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; font: 13px var(--sans); color: var(--muted); }
+.w-chart-tools select, .w-chart-tools button { color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font: inherit; }
+.w-chart-tools select:focus-visible, .w-chart-tools button:focus-visible, .w-chart-table:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.w-chart-box .w-chart { --chart-h: 230px; }
+.w-chart-table { max-width: 100%; max-height: 340px; overflow: auto; overscroll-behavior: contain; font-size: var(--t-small); }
+.w-chart-table table { border-collapse: collapse; width: 100%; font-size: inherit; }
+.md .w-chart-table table { display: table; }
+.w-chart-table caption { text-align: left; font-weight: 600; padding: 8px 0; }
+.w-chart-table th, .w-chart-table td { padding: .6em .7em; text-align: left; border-bottom: 1px solid var(--line); }
+.w-chart-table th { font: 600 12px var(--sans); }
+.w-chart-box[data-chart-view=chart] > .w-chart-table,
+.w-chart-box[data-chart-view=table] > .w-chart,
+:root:not([data-view=read]) .w-chart-box[data-chart-view=auto] > .w-chart-table { display: none; }
+.w-chart-box[data-chart-view=both] > .w-chart-table,
+[data-view=read] .w-chart-box[data-chart-view=auto] > .w-chart-table { margin-top: 20px; }
+:root:not([data-view=read]):not([data-tall]) .w-chart-box[data-chart-view=both] { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 24px; }
+:root:not([data-view=read]):not([data-tall]) .w-chart-box[data-chart-view=both] > :is(figcaption, .w-chart-tools) { grid-column: 1 / -1; }
+:root:not([data-view=read]):not([data-tall]) .w-chart-box[data-chart-view=both] > .w-chart-table { margin-top: 0; }
+.td-error { padding: 12px; border: 1px solid var(--red); border-radius: 8px; color: var(--fg); background: var(--surface); font-size: var(--t-small); }
+.w-zero { position: absolute; left: 0; right: 0; height: 1px; background: var(--muted); pointer-events: none; }
+.w-bar .w-b { bottom: var(--bottom, 0%); }
+.w-hbar .w-b { margin-left: var(--start, 0%); }
 .w-chart .s0 { --c: var(--chart-1, var(--accent)); } .w-chart .s1 { --c: var(--chart-2, var(--c-fn)); } .w-chart .s2 { --c: var(--chart-3, var(--green)); }
 .w-chart .s3 { --c: var(--chart-4, var(--orange)); } .w-chart .s4 { --c: var(--chart-5, var(--blue)); } .w-chart .s5 { --c: var(--chart-6, var(--muted)); }
 .w-chart-data { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
@@ -804,6 +829,9 @@ aside.article { display: none; }
 @media (prefers-reduced-motion: reduce) { .slide.active { animation: none; } [data-build] [data-step] { transition: none; } }
 
 @media print {
+  .w-chart-tools { display: none !important; }
+  .w-chart-box > .w-chart, .w-chart-box > .w-chart-table { display: block !important; }
+  .w-chart-table { max-height: none; overflow: visible; }
   html, body { background: #fff; overflow: visible; height: auto; }
   #stage { position: static; transform: none !important; }
   .slide { display: block !important; position: relative; page-break-after: always; animation: none; }

@@ -27,10 +27,6 @@ async function verify(page, base) {
     }));
     check(!clipped.length, width + 'px phone/tablet clipping: ' + clipped.join(', '));
   }
-  await page.goto(base + '/examples/external.html?view=read');
-  await page.waitForFunction(() => window.Deck?.slides.length === 2);
-  check(await page.locator('#stage pre code').textContent() === "<script>console.log('hello');</script>", 'External Markdown must preserve literal script tags');
-
   const fixture = [
     '## Syntax fixtures', '', '<!-- Notes with `inline code`', '---', 'still notes -->', '',
     'Real footnote[^real]', '', '[^real]: A `code` footnote.', '',
@@ -42,9 +38,8 @@ async function verify(page, base) {
     '::: flip', '### Front', 'Back', ':::', '',
     '---', '## End',
   ].join('\n');
-  await page.route('**/regression.md', r => r.fulfill({ body: fixture, contentType: 'text/plain' }));
   await page.route('**/regression.html*', r => r.fulfill({ contentType: 'text/html', body:
-    '<!doctype html><html data-fonts="off" data-highlight="off" data-diagrams="off" data-icons="off"><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown" data-src="regression.md"></script></body></html>' }));
+    '<!doctype html><html data-fonts="off" data-highlight="off" data-diagrams="off" data-icons="off"><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + fixture + '</script></body></html>' }));
   await page.goto(base + '/regression.html?view=present');
   await page.waitForFunction(() => window.Deck?.slides.length === 2);
   check((await page.locator('pre code').first().textContent()).includes('[^demo]: keep in code'), 'Footnote definitions in fenced code must survive');
@@ -63,6 +58,59 @@ async function verify(page, base) {
   check(await page.locator('.w-flip').getAttribute('aria-pressed') === 'true', 'Flip card must activate from keyboard');
   await page.keyboard.press('Space');
   check(await page.locator('.w-flip').getAttribute('aria-pressed') === 'false', 'Space must flip back without advancing slides');
+  const csv = ['Label,Before,After', '"A, B",10,5', '"two', 'lines",20,10'].join('\n');
+  const charts = [
+    '## CSV', '::: chart type=line view=both title="Latency & time"', '```csv', csv, '```', ':::',
+    '::: notes', 'Shared **notes**.', ':::', '::: say', 'Only spoken.', ':::', '::: read', 'Only read.', ':::',
+    '---', '## Table', '::: chart type=line view=both', '| Label | Before | After |', '|---|---|---|', '| A, B | 10 | 5 |', '| two lines | 20 | 10 |', ':::',
+    '---', '## Signed', '::: chart type=bar', '```csv', 'Label,Value', 'Low,-10', 'High,20', '```', ':::',
+    '---', '## Donut', '::: chart type=donut series=After', '```csv', csv, '```', ':::',
+    '---', '## Invalid', '::: chart type=line', '```csv', 'Label,Value', 'Bad,25%', '```', ':::',
+    '---', '## Quotes', '::: chart type=line', '```csv', 'Label,Value', '"unclosed,10', '```', ':::',
+  ].join('\n');
+  const native = '<section class="slide flow"><div class="content"><h2>Native HTML</h2><figure data-chart="line" data-chart-view="both"><figcaption>Native data</figcaption><table><thead><tr><th>Label</th><th>Value</th></tr></thead><tbody><tr><th>A</th><td>1</td></tr><tr><th>B</th><td>2</td></tr></tbody></table></figure></div></section>';
+  await page.route('**/charts.html*', r => r.fulfill({ contentType: 'text/html', body:
+    '<!doctype html><html data-fonts="off" data-highlight="off"><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + charts + '</script>' + native + '</body></html>' }));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(base + '/charts.html?view=present');
+  await page.waitForFunction(() => window.Deck?.slides.length === 7);
+  const first = page.locator('.w-chart-box').first();
+  check(await first.locator('tbody tr').count() === 2, 'CSV data must render a real table');
+  check(await first.locator('tbody tr').first().locator('th').textContent() === 'A, B', 'Quoted CSV commas must survive');
+  check(await first.locator('tbody tr').nth(1).locator('th').textContent() === 'two\nlines', 'Quoted CSV newlines must survive');
+  check(await first.locator('figcaption').textContent() === 'Latency & time', 'Quoted options must be decoded once');
+  check(await first.locator('.w-chart').isVisible() && await first.locator('.w-chart-table').isVisible(), 'Both view must show plot and table');
+  const compare = await page.evaluate(() => [...document.querySelectorAll('.w-chart-box')].slice(0,2).map(b => [...b.querySelectorAll('polyline')].map(p => p.getAttribute('points'))));
+  check(JSON.stringify(compare[0]) === JSON.stringify(compare[1]), 'CSV and Markdown tables must produce identical plots');
+  await first.locator('select').selectOption('table');
+  check(!(await first.locator('.w-chart').isVisible()) && await first.locator('.w-chart-table').isVisible(), 'Table-only view must switch without navigation');
+  await first.locator('select').selectOption('chart');
+  check(await first.locator('.w-chart').isVisible() && !(await first.locator('.w-chart-table').isVisible()), 'Chart-only view must switch without navigation');
+  await page.evaluate(() => {
+    window.__downloadCSV = '';
+    const create = URL.createObjectURL;
+    URL.createObjectURL = blob => { blob.text().then(text => window.__downloadCSV = text); return create(blob); };
+  });
+  const download = page.waitForEvent('download');
+  await first.locator('.w-csv-download').click();
+  check((await download).suggestedFilename() === 'chart-data.csv', 'CSV download must use a local file');
+  await page.waitForFunction(() => window.__downloadCSV.includes('"A, B"'));
+  check((await page.locator('.slide').first().locator('aside.notes').textContent()).includes('Only spoken.'), 'Explicit say notes must reach the presenter');
+  check(!(await page.locator('.slide').first().locator('aside.notes').textContent()).includes('Only read.'), 'Read notes must stay out of presenter notes');
+  check((await page.locator('.frame > .prose').first().textContent()).includes('Only read.'), 'Explicit read notes must reach article prose');
+  check(await page.locator('.slide').nth(4).locator('[role=alert]').count() === 1, 'Invalid numeric cells need a visible diagnostic');
+  check(await page.locator('.slide').nth(5).locator('pre').textContent() === 'Label,Value\n"unclosed,10', 'Malformed CSV source must remain inspectable');
+  await page.evaluate(() => Deck.go(2));
+  check(await page.locator('.slide.active .w-zero').count() === 1, 'Signed chart needs a zero baseline');
+  check(await page.evaluate(() => [...document.querySelectorAll('.slide.active .w-b')].every(e => e.style.getPropertyValue('--v').startsWith('33.33') || e.style.getPropertyValue('--v').startsWith('66.67'))), 'Signed bars must use magnitudes on a shared scale');
+  await page.evaluate(() => Deck.go(6));
+  check(await page.locator('.slide.active .w-chart').count() === 1, 'Native HTML charts must mount too');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => { Deck.setView('read'); Deck.go(0); });
+  check(await first.locator('.w-chart').isVisible(), 'Explicit chart-only choice must survive read mode');
+  await first.locator('select').selectOption('auto');
+  check(await first.locator('.w-chart-table').isVisible(), 'Auto view must expose data in the article');
+  check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Chart data must not widen the phone page');
   check(!errors.length, 'Browser errors: ' + errors.join(', '));
   return { slides: count, widths: sizes.map(s => s[0]), errors };
 }

@@ -10,7 +10,7 @@ One file · Instant preview · No build · Host on GitHub Pages
 
 [**Live demo**](https://sambhav.dev/talkdown/) &nbsp;·&nbsp; [Quick start](#-quick-start) &nbsp;·&nbsp; [For agents](#-for-agents) &nbsp;·&nbsp; [Syntax](#-writing-slides) &nbsp;·&nbsp; [Widgets](#-widgets) &nbsp;·&nbsp; [Themes](#-themes) &nbsp;·&nbsp; [API](#-api)
 
-![version](https://img.shields.io/badge/version-0.1.0-F1B000?style=flat-square) ![status](https://img.shields.io/badge/status-pre--release-555?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-3C9A5F?style=flat-square) ![build](https://img.shields.io/badge/build_step-none-2B63F5?style=flat-square) ![size](https://img.shields.io/badge/files-2-E8428E?style=flat-square)
+![version](https://img.shields.io/badge/version-0.2.0-F1B000?style=flat-square) ![status](https://img.shields.io/badge/status-pre--release-555?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-3C9A5F?style=flat-square) ![build](https://img.shields.io/badge/build_step-none-2B63F5?style=flat-square) ![size](https://img.shields.io/badge/files-2-E8428E?style=flat-square)
 
 <br>
 
@@ -158,21 +158,15 @@ build: true
 | `[text](#id)` | Links to the slide with that `id` |
 | `::: present-only` · `::: read-only` | Content for one format only. See [One deck, two formats](#one-deck-two-formats) |
 
-The parser supports the Markdown patterns shown here; it is not a complete CommonMark implementation. Inline HTML passes through, so decks should contain trusted author content.
+Markdown is tokenized by bundled markdown-it, with talkdown extensions for slides, containers, notes, and widgets. `---` is reserved for slide boundaries, so use `#` headings rather than Setext underlines. Inline HTML passes through; decks should contain trusted author content.
 
-### Easier escaping and separate Markdown files
+### One HTML file, no author build
 
 The existing single-file workflow stays supported: put your content in `index.html`, link `deck.js` and `deck.css`, and open it. No install, build, or separate Markdown file is required. Local copies of the script and stylesheet also work from `file://`.
 
 For a single self-contained HTML file, write `<\/script>` instead of a literal closing script tag inside the Markdown script. **S → Copy** preserves that escape so the result can be pasted back into the HTML safely.
 
-For decks with lots of HTML or code examples, keep the content in a plain `.md` file:
-
-```html
-<script type="text/markdown" data-src="talk.md"></script>
-```
-
-Keep the normal `deck.js` and `deck.css` links in the wrapper. Serve the files over HTTP; external Markdown cannot reliably load from `file://`. Paths to images and recordings remain relative to the HTML page. See [`examples/external.html`](examples/external.html) and [`examples/external.md`](examples/external.md).
+Markdown, CSV data, HTML slides and custom JavaScript can all stay in that one HTML file. The tokenizer and CSV decoder are already bundled into `deck.js`; no additional script tags or per-deck generated files are needed.
 
 - Escape punctuation in prose with a backslash: `\*literal asterisks\*`.
 - Use two backticks around inline code that contains one backtick, and a longer matching fence around fenced code examples.
@@ -218,7 +212,7 @@ Each widget is a few lines of Markdown. Each one takes part in ↑ ↓ navigatio
 | **Stats** | `::: stats` around a list like `- **42%** faster first response` |
 | **Callouts** | `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]` |
 | **Diagrams** | ` ```mermaid `: flowcharts, networks, sequence, architecture, state, charts and more. Add `{source}` to show the text beside it |
-| **Charts** | `{.chart}` after a table: column one is the labels, each other column a series. Add `.hbar`, `.line` or `.donut` for the other kinds. Several series build up on ↓ |
+| **Charts** | `::: chart type=line view=both` around a table or fenced CSV. Plot, table and download share one dataset. Legacy `{.chart}` table attributes still work |
 | **Pull quotes** | A `>` quote whose last line starts with `—` becomes a large quote with that attribution |
 | **Checklists** | `- [x] done` and `- [ ] to do` |
 | **Footnotes** | `text[^1]` and a `[^1]: source` line anywhere on the slide; set small at its foot |
@@ -256,6 +250,44 @@ Fenced code is highlighted by [highlight.js](https://highlightjs.org/), [Mermaid
 With diagrams off, or offline, the Mermaid source is shown instead.
 
 </details>
+
+### Charts, data tables and CSV
+
+````md
+::: chart type=line view=both title="Median latency (ms)"
+```csv
+Quarter,Before,After
+Q1,180,90
+Q2,160,80
+Q3,140,70
+```
+:::
+````
+
+You can put a Markdown table inside the container instead of CSV. The first column contains labels; remaining columns contain numeric series. CSV supports quoted commas, doubled quotes, multiline cells, BOM, LF and CRLF. Numeric cells accept decimals and scientific notation; missing values, currency symbols and percentages produce visible row/column errors instead of silently becoming zero. Keep units in the title. Bar, horizontal bar and line charts support signed values. Donuts require nonnegative values with a positive total; choose `series="After"` when the input has multiple numeric columns.
+
+| Option | Values |
+|---|---|
+| `type` | `bar` (default), `hbar`, `line`, `donut` |
+| `view` | `chart`, `table`, `both`, `auto` (default: chart when presenting, both in the article) |
+| `title` | A quoted caption, such as `title="Median latency (ms)"` |
+| `series` | Plot one named numeric column |
+
+Every chart has a keyboard-accessible view selector and a **Download CSV** button. Explicit `view=both` puts the chart and table side by side on desktop slides and stacks them on phones. Data tables scroll within the widget; the first 200 rows are displayed and the download includes every row. Charts accept up to 1,000 rows and 50 numeric columns, with up to six plotted series. Invalid data remains inspectable. Formula-like text is escaped in CSV downloads for spreadsheet safety.
+
+Native HTML uses the same component:
+
+```html
+<figure data-chart="line" data-chart-view="both">
+  <figcaption>Median latency (ms)</figcaption>
+  <table>
+    <thead><tr><th>Quarter</th><th>Before</th><th>After</th></tr></thead>
+    <tbody><tr><th>Q1</th><td>180</td><td>90</td></tr></tbody>
+  </table>
+</figure>
+```
+
+Place it inside a slide's `.content`. The native table remains useful before enhancement; `Deck.chart(element)` can enhance a chart added later by custom JavaScript.
 
 ## 🎨 Themes
 
@@ -351,6 +383,9 @@ Presenting and reading want different things, so you control each separately:
 | `<!-- notes -->` | Speaker notes | Prose under the slide |
 | `<!-- say: … -->` | Speaker notes | Left out |
 | `<!-- read: … -->` | Left out | Prose under the slide |
+| `::: notes` … `:::` | Speaker notes | Prose under the slide |
+| `::: say` … `:::` | Speaker notes | Left out |
+| `::: read` … `:::` | Left out | Prose under the slide |
 | `::: present-only` … `:::` | Shown | Left out |
 | `::: read-only` … `:::` | Left out | Shown |
 | `read: hide` in frontmatter | Shown | The slide is left out |
@@ -417,11 +452,12 @@ Current Chrome, Edge, Firefox and Safari, on desktop and mobile. Print from the 
 
 ## 🤝 Contributing
 
-Issues and pull requests are welcome. There's no build step: edit `deck.js` or `deck.css`, then open [`index.html`](index.html), which is the demo deck and the best test page. Run the parser regression checks with `node --test tests/parser.test.cjs`. Before sending a change, check present view, read view (**R**), dark mode (**T**) and a phone-sized window. Check dense phone slides can scroll, and verify external Markdown using an HTTP server.
+Deck authors do not build anything: use the committed `deck.js` and `deck.css`. Maintainers edit `src/` or `deck.css`, run `npm ci`, then `npm run build` and `npm test`. Commit the generated `deck.js` alongside source changes. CI checks that rebuilding produces the committed bundle and tests the original single-file starter directly from disk with networking disabled.
 
-talkdown is pre-release (0.1.0), so the syntax may still change before 1.0.
+For browser checks, run `npx playwright install chromium`, then `npm run test:single-file` and `node tests/run-browser.cjs`. The browser suite covers the full demo, phone layouts, CSV and Markdown table equivalence, view switching, downloads, invalid data, native HTML charts, notes and keyboard controls.
 
-The [v0.2 design proposal](docs/format-v0.2-proposal.md) covers optional CSV-backed charts, visible data tables, and a tokenizer migration while preserving that single-file workflow. These are proposed features, not current syntax.
+talkdown is pre-release (0.2.0), so the syntax may still change before 1.0.
+
 
 ## License
 

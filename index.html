@@ -6,8 +6,8 @@
 <title>talkdown</title>
 <meta name="description" content="talkdown is an agent-first slide format: Markdown that agents write in a fraction of the tokens of an HTML deck, that you can edit by hand, and that reads as a blog post when you are not presenting.">
 <link rel="icon" href="docs/logo.svg">
-<link rel="stylesheet" href="deck.css?v=0.1.0-11">
-<script src="deck.js?v=0.1.0-11"></script>
+<link rel="stylesheet" href="deck.css?v=0.2.0-1">
+<script src="deck.js?v=0.2.0-1"></script>
 <style>
   /* quick start: what the Markdown on the left turns into */
   .mini { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--surface); box-shadow: 0 24px 60px -28px color-mix(in srgb, var(--fg) 45%, transparent); }
@@ -726,32 +726,19 @@ A timeline block lays milestones out on a line. Press down to walk it: each mile
 ---
 kicker: Widgets
 ---
-## Charts drawn from tables
+## Charts and their backing data
 
-|||
-
-````md
-| Quarter | 2025 | 2026 |
-|---|---|---|
-| Q1 | 120 | 180 |
-| Q2 | 160 | 260 |
-| Q3 | 210 | 340 |
-{.chart}
-````
-
-Use `{.chart .line}`, `{.chart .hbar}` or `{.chart .donut}` for the other kinds. {.muted}
-
-|||
-
-| Quarter | 2025 | 2026 |
-|---|---|---|
-| Q1 | 120 | 180 |
-| Q2 | 160 | 260 |
-| Q3 | 210 | 340 |
-{.chart}
+::: chart type=bar view=both title="Requests per quarter"
+```csv
+Quarter,2025,2026
+Q1,120,180
+Q2,160,260
+Q3,210,340
+```
+:::
 
 <!--
-Write a table and put {.chart} under it. The first column becomes the labels and every other column a series, coloured from the theme. With more than one series, down adds them one at a time, so you can show last year before this one. Add .line for a trend, .hbar for a ranking, or .donut for shares of a whole. There is no charting library: the bars are HTML, so the text stays sharp and reflows on a phone, and the table stays in the page for screen readers.
+One dataset drives the plot, the table and the CSV download. Use a Markdown table or a fenced CSV block inside a chart container. Set type to bar, hbar, line or donut, and view to chart, table or both. Without view, the presentation starts with the chart and the article shows both. The viewer can switch views without changing slides. CSV supports quoted commas, quotes and multiline cells. Invalid numbers produce a visible diagnostic instead of silently becoming zero. Everything lives in this HTML file; no build or separate data file is required.
 -->
 
 ---
