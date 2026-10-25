@@ -46,11 +46,11 @@
   const small = matchMedia('(max-width: 760px), (max-height: 520px) and (pointer: coarse), (orientation: portrait) and (pointer: coarse)');
   // data-mode: light or dark (the viewer's choice, remembered). data-theme: the look, set by the author.
   // ?theme=light|dark is still read as a mode, for old links.
-  const qTheme = q.get('theme'), qMode = q.get('mode') || (/^(light|dark)$/.test(qTheme) ? qTheme : null);
-  root.dataset.mode = qMode || store.get('mode', store.get('theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+  const lookOf = p => { const t = p.get('theme'), m = /^(light|dark)$/.test(t); return { mode: p.get('mode') || (m ? t : null), look: t && !m ? t : null }; };
+  const qLook = lookOf(q);
+  root.dataset.mode = qLook.mode || store.get('mode', store.get('theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
   const picker = root.hasAttribute('data-theme-picker');
-  const qLook = qTheme && !/^(light|dark)$/.test(qTheme) ? qTheme : null;
-  const chosen = qLook || (picker && store.get('look', null));
+  const chosen = qLook.look || (picker && store.get('look', null));
   root.dataset.theme = chosen || root.dataset.theme || 'paper';
 
   // each theme's typefaces, fetched from Google Fonts for the active theme only (<html data-fonts="off"> skips this)
@@ -382,13 +382,21 @@
           lineColor: v('--muted'), textColor: v('--fg'), clusterBkg: v('--surface-2'), clusterBorder: v('--line'), titleColor: v('--fg'),
           edgeLabelBackground: v('--bg'), noteBkgColor: v('--accent-soft'), noteTextColor: v('--fg'), noteBorderColor: v('--accent'),
           actorBkg: v('--surface'), actorBorder: v('--accent'), actorTextColor: v('--fg'), actorLineColor: v('--muted'), signalColor: v('--muted'), signalTextColor: v('--fg'),
+          archEdgeColor: v('--muted'), archEdgeArrowColor: v('--muted'), archEdgeWidth: '2', archGroupBorderColor: v('--muted'), archGroupBorderWidth: '1.5px',
           labelBoxBkgColor: v('--surface'), labelBoxBorderColor: v('--accent'), labelTextColor: v('--fg'), loopTextColor: v('--fg') } });
       for (const b of boxes) {
-        try { const { svg } = await mermaid.render(`dk-diagram-${++n}`, b.dataset.src); b.innerHTML = svg; b.classList.add('drawn'); }
+        try { const { svg } = await mermaid.render(`dk-diagram-${++n}`, b.dataset.src); b.innerHTML = svg; b.classList.add('drawn'); themeIcons(b); }
         catch { b.innerHTML = `<pre class="code w-diagram-src">${esc(b.dataset.src)}</pre>`; b.classList.remove('drawn'); }
       }
       if (portrait.matches && !reading()) fit();
     };
+    // architecture icons arrive as blue tiles with white strokes in inline styles: hand those colours to the theme's CSS
+    const themeIcons = b => b.querySelectorAll('svg[aria-roledescription=architecture] svg [style]').forEach(el => {
+      const st = el.style;
+      if (st.fill === 'rgb(8, 126, 191)') { st.fill = st.strokeWidth = ''; el.classList.add('dk-tile'); }
+      if (st.stroke === 'rgb(255, 255, 255)') { st.stroke = ''; el.classList.add('dk-ink'); }
+      if (st.fill === 'rgb(255, 255, 255)') { st.fill = ''; el.classList.add('dk-ink-fill'); }
+    });
     const redraw = () => { clearTimeout(queued); queued = setTimeout(draw, 60); };
     // draw once the theme's fonts are in, so labels are measured in the face they're shown in
     const ready = () => {
@@ -552,12 +560,13 @@
   }
 
   /* ================= views ================= */
+  // merge params into the query string, keeping the hash
+  function setQuery(params) {
+    const keep = new URLSearchParams(location.search); params.forEach((v, k) => keep.set(k, v));
+    history.replaceState(null, '', '?' + keep + location.hash);
+  }
   function setView(v, chosen = true) {
-    if (chosen) {   // keep the choice in the URL, so a reload or a shared link opens in the same view
-      viewChosen = true;
-      const keep = new URLSearchParams(location.search); keep.set('view', v);
-      history.replaceState(null, '', '?' + keep + location.hash);
-    }
+    if (chosen) { viewChosen = true; setQuery(new Map([['view', v]])); }   // a reload or a shared link opens in the same view
     const i = Math.max(cur, 0);
     root.dataset.view = v;
     if (v === 'read') finishForReading();
@@ -732,7 +741,9 @@
     ov.onclick = e => { if (e.target === ov) ov.classList.remove('on'); };
     icons();
   }
-  function toggleTheme() { root.dataset.mode = root.dataset.mode === 'dark' ? 'light' : 'dark'; store.set('mode', root.dataset.mode); icons(); }
+  function setMode(m) { root.dataset.mode = m; store.set('mode', m); icons(); }
+  function setLook(t) { root.dataset.theme = t; if (picker) store.set('look', t); }
+  const toggleTheme = () => setMode(root.dataset.mode === 'dark' ? 'light' : 'dark');
 
   // the theme picker (<html data-theme-picker>): each swatch carries the theme's own tokens
   const THEMES = {
@@ -748,16 +759,17 @@
   function buildPicker() {
     const pop = document.createElement('div'); pop.id = 'looks'; pop.setAttribute('role', 'menu');
     pop.innerHTML = Object.entries(THEMES).map(([group, ts]) => `<div class="lg">${group}</div>`
-      + ts.map(t => `<button role="menuitemradio" data-look="${t}" data-theme="${t}"><i></i><span>${t === 'ai' ? 'AI' : t[0].toUpperCase() + t.slice(1)}</span><em title="Designed ${DARK_FIRST.includes(t) ? 'dark' : 'light'} first">${svg(DARK_FIRST.includes(t) ? 'dark' : 'light')}</em></button>`).join('')).join('');
+      + ts.map(t => { const first = DARK_FIRST.includes(t) ? 'dark' : 'light';
+        return `<button role="menuitemradio" data-look="${t}" data-theme="${t}"><i></i><span>${t === 'ai' ? 'AI' : t[0].toUpperCase() + t.slice(1)}</span><em title="Designed ${first} first">${svg(first)}</em></button>`; }).join('')).join('');
     document.body.append(pop);
     const mark = () => pop.querySelectorAll('button').forEach(b => { b.dataset.mode = root.dataset.mode; b.setAttribute('aria-checked', b.dataset.look === root.dataset.theme); });
     pop.onclick = e => {
       const b = e.target.closest('button'); if (!b) return;
-      root.dataset.theme = b.dataset.look; store.set('look', b.dataset.look); mark();
+      setLook(b.dataset.look);
     };
     $('lookBtn').onclick = e => { e.stopPropagation(); mark(); pop.classList.toggle('on'); };
     document.addEventListener('click', e => { if (!e.target.closest('#looks')) pop.classList.remove('on'); });
-    new MutationObserver(mark).observe(root, { attributes: true, attributeFilter: ['data-mode'] });
+    new MutationObserver(mark).observe(root, { attributes: true, attributeFilter: ['data-mode', 'data-theme'] });
   }
   function toggleOverview() { const ov = $('overview'); ov.classList.toggle('on'); if (ov.classList.contains('on')) ov.querySelector('.cur')?.focus(); }
 
@@ -838,18 +850,13 @@
       const a = e.target.closest('a[href]'); if (!a || e.metaKey || e.ctrlKey || e.shiftKey) return;
       const u = new URL(a.href, location.href);
       if (u.origin + u.pathname !== location.origin + location.pathname) return;
-      const theme = u.searchParams.get('theme'), mode = u.searchParams.get('mode') || (/^(light|dark)$/.test(theme) ? theme : null);
-      const look = theme && !/^(light|dark)$/.test(theme) ? theme : null;
-      if (u.search && !look && !mode) return;
+      const { look, mode } = lookOf(u.searchParams), restyle = look || mode;
       const i = u.hash ? slides().findIndex(s => s.dataset.id === decodeURIComponent(u.hash.slice(1))) : -1;
-      if (!look && !mode && i < 0) return;
+      if (u.search ? !restyle : i < 0) return;
       e.preventDefault();
-      if (look) { root.dataset.theme = look; if (picker) store.set('look', look); }
-      if (mode) { root.dataset.mode = mode; store.set('mode', mode); icons(); }
-      if (look || mode) {
-        const keep = new URLSearchParams(location.search); u.searchParams.forEach((v, k) => keep.set(k, v));
-        history.replaceState(null, '', '?' + keep + location.hash);
-      }
+      if (look) setLook(look);
+      if (mode) setMode(mode);
+      if (restyle) setQuery(u.searchParams);
       if (i >= 0 && i !== cur) go(i, reading() ? undefined : 0);
     });
     addEventListener('keydown', onKey);

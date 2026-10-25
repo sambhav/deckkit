@@ -419,13 +419,10 @@ td.mk-only, th.mk-only { text-align: center; }
 /* diagrams */
 .w-diagram { display: flex; justify-content: center; min-width: 0; }
 .w-diagram.drawn svg { width: 100%; max-width: 100% !important; height: auto; max-height: var(--diagram-h, 400px); }   /* fill the column, never the pager */
-/* Mermaid architecture icons ship as blue tiles with white strokes in inline styles; repaint them in the theme */
-.w-diagram [aria-roledescription=architecture] svg rect[width="80"][height="80"] { fill: var(--accent-soft) !important; stroke: color-mix(in srgb, var(--accent) 45%, transparent) !important; stroke-width: 2px !important; rx: 18px; }
-.w-diagram [aria-roledescription=architecture] svg [style*="stroke: #fff"] { stroke: var(--accent-ink) !important; stroke-width: 2.5px !important; }
-.w-diagram [aria-roledescription=architecture] svg [style*="fill: #fff"] { fill: var(--accent-ink) !important; }
-.w-diagram [aria-roledescription=architecture] .edge { stroke: var(--muted) !important; stroke-width: 2px !important; }
-.w-diagram [aria-roledescription=architecture] .arrow { fill: var(--muted) !important; }
-.w-diagram [aria-roledescription=architecture] .architecture-groups .node-bkg { fill: none !important; stroke: color-mix(in srgb, var(--accent) 40%, var(--line)) !important; stroke-width: 1.5px !important; stroke-dasharray: 6 5; rx: 14px; }
+/* Mermaid architecture icons, recoloured after render (see themeIcons in deck.js) */
+.w-diagram .dk-tile { fill: var(--accent-soft); stroke: color-mix(in srgb, var(--accent) 45%, transparent); stroke-width: 2px; rx: 18px; }
+.w-diagram .dk-ink { stroke: var(--accent-ink); }
+.w-diagram .dk-ink-fill { fill: var(--accent-ink); }
 :is(.w-tabs, .w-toggle) .w-diagram.drawn svg { --diagram-h: 270px; }
 .cols .w-diagram.drawn svg { --diagram-h: 360px; }
 :is(.w-tabs, .w-toggle) .w-pane:has(> .w-diagram) { padding: .7em 1em; }

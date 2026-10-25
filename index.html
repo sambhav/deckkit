@@ -18,7 +18,7 @@
   .mini-slide b { font: 700 46px/1.05 var(--display); letter-spacing: -.025em; color: var(--fg); }
   .mini-slide span { margin-top: 14px; font-size: 19px; color: var(--muted); }
   .mini-slide em { position: absolute; right: 22px; bottom: 16px; font: normal 12px var(--mono); color: var(--muted); }
-  .md .mini-cap { margin-top: 30px; font-size: calc(var(--t-body) * .85); color: var(--muted); }
+  .md .mini-cap { margin-top: 30px; font-size: calc(var(--t-body) * .85); }
   [data-view=read] .mini { max-width: 520px; }
   /* the one hand-built slide: a diagram with its own walkthrough */
   .pipe { display: flex; align-items: center; gap: 14px; margin-top: 64px; }
@@ -97,7 +97,7 @@ The one idea worth remembering
 
 <div class="mini" aria-hidden="true"><div class="mini-bar"><i></i><i></i><i></i><span>talk.html</span></div><div class="mini-slide"><b>My talk</b><span>The one idea worth remembering</span><em>1 / 2 &nbsp;→</em></div></div>
 
-Link two files, write Markdown, open it in a browser. {.mini-cap}
+Link two files, write Markdown, open it in a browser. {.muted .mini-cap}
 
 <!--
 There is nothing to install and nothing to build. An HTML page links the stylesheet and the script, and holds the deck in a script tag of type text/markdown: the code on the left becomes the slide on the right. Open it in any modern browser. To publish it, put the folder anywhere that serves static files: GitHub Pages, a bucket, an intranet share.
