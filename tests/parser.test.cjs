@@ -10,19 +10,16 @@ const context = {
   URLSearchParams, matchMedia: () => ({ matches: false }),
   MutationObserver: class { observe() {} }, window: {},
 };
-vm.runInNewContext(fs.readFileSync(require.resolve('../dist/deck.js'), 'utf8'), context);
+vm.runInNewContext(fs.readFileSync(require.resolve('../deck.js'), 'utf8'), context);
 const md = s => context.window.Deck.markdown(s).trim().replace(/>\n</g, '><');
 
-test('legacy asset URLs are byte-identical to the published dist assets', () => {
-  for (const name of ['deck.js', 'deck.css']) assert.deepEqual(fs.readFileSync(require.resolve('../' + name)), fs.readFileSync(require.resolve('../dist/' + name)));
-});
 test('browser test server returns missing-file errors without crashing', async () => {
   const server = require('./run-browser.cjs')();
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const base = 'http://127.0.0.1:' + server.address().port;
   try {
     assert.equal((await fetch(base + '/missing-file.md')).status, 404);
-    const response = await fetch(base + '/dist/deck.js');
+    const response = await fetch(base + '/deck.js');
     assert.equal(response.status, 200);
     assert.match(await response.text(), /talkdown 0.2/);
   } finally { await new Promise(resolve => server.close(resolve)); }

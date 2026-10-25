@@ -1,17 +1,30 @@
-import Papa from 'papaparse';
-
 const NUMBER = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i;
 const isNumber = text => NUMBER.test(text) && Number.isFinite(Number(text));
 // Legacy {.chart} tables read "42%", "$1,200" or "1,200" as their digits, as before.
 const legacyNumber = text => String(parseFloat(String(text).replace(/[^\d.-]/g, '')) || 0);
 
+// RFC 4180 CSV: quoted commas, doubled quotes, multiline cells, BOM, LF or CRLF.
 export function parseCSV(source) {
   if (source.length > 1_000_000) throw new Error('CSV exceeds the 1 MB limit');
-  const result = Papa.parse(source, { delimiter: ',', skipEmptyLines: true, dynamicTyping: false });
-  if (result.errors.length) {
-    const error = result.errors[0]; throw new Error(`CSV row ${(error.row ?? 0) + 1}: ${error.message}`);
+  const text = source.replace(/^\uFEFF/, ''), data = [];
+  let row = [], cell = '', quoted = false, start = 0, line = 1;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+      else if (ch === '"') quoted = false;
+      else { cell += ch; if (ch === '\n') line++; }
+    } else if (ch === '"' && cell === '') { quoted = true; start = line; }
+    else if (ch === ',') { row.push(cell); cell = ''; }
+    else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      row.push(cell); if (row.length > 1 || row[0] !== '') data.push(row);
+      row = []; cell = ''; line++;
+    } else cell += ch;
   }
-  return { headers: result.data[0] || [], rows: result.data.slice(1) };
+  if (quoted) throw new Error(`CSV row ${start}: unclosed quoted field`);
+  row.push(cell); if (row.length > 1 || row[0] !== '') data.push(row);
+  return { headers: data[0] || [], rows: data.slice(1) };
 }
 // legacy: a {.chart} table keeps the pre-0.2 behaviour (lenient numbers, a donut
 // plots its first column, more than six series cycle colours) so old decks still render.
@@ -48,5 +61,6 @@ export function csvDownload(headers, rows) {
     const text = String(value);
     return /^[=+\-@\t\r]/.test(text) && !isNumber(text.trim()) ? "'" + text : text;
   };
-  return Papa.unparse([headers.map(safe), ...rows.map(row => row.map(safe))], { newline: '\r\n' });
+  const quote = value => /[",\r\n]|^\s|\s$/.test(value) ? '"' + value.replace(/"/g, '""') + '"' : value;
+  return [headers, ...rows].map(row => row.map(value => quote(safe(value))).join(',')).join('\r\n');
 }
