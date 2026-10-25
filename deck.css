@@ -185,7 +185,7 @@ script[type="text/markdown"] { display: none; }
 
 /* ================= present view: a 1280×720 stage scaled to the window ================= */
 #stage { position: fixed; width: 1280px; height: 720px; left: 50%; top: 50%; transform-origin: center; }   /* fixed: the stage never widens the page */
-[data-view=present] body { touch-action: pinch-zoom; }   /* horizontal swipes change slides instead of panning */
+[data-view=present] body { touch-action: auto; }   /* keep native scrolling, zoom and browser gestures */
 .frame, .fig { display: contents; }
 .frame > .rh, .frame > .prose, .present-btn { display: none; }
 .slide {
@@ -229,9 +229,9 @@ aside.notes { display: none; }
 #mobileNav .nav-heading { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 16px; }
 #mobileNav h2 { font-size: 22px; margin: 0; }
 #mobileNav button { color: var(--fg); }
-#navClose { width: 44px; height: 44px; font-size: 28px; border-radius: 12px; }
+#navClose { width: 48px; height: 48px; font-size: 28px; border-radius: 12px; }
 .nav-tabs { display: flex; flex-shrink: 0; gap: 4px; margin: 10px 0; padding: 4px; background: var(--surface-2); border-radius: 12px; }
-.nav-tabs button { flex: 1; min-height: 44px; border-radius: 9px; font: 600 14px var(--sans); }
+.nav-tabs button { flex: 1; min-height: 48px; border-radius: 9px; font: 600 14px var(--sans); }
 .nav-tabs [aria-selected=true] { background: var(--surface); box-shadow: 0 1px 4px #0002; }
 #mobileNavList { display: grid; gap: 6px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 #mobileNavList button { display: flex; align-items: baseline; gap: 14px; min-height: 52px; padding: 12px; text-align: left; border: 1px solid transparent; border-radius: 12px; }
@@ -240,14 +240,15 @@ aside.notes { display: none; }
 #mobileNavList [aria-current] { background: var(--accent-soft); border-color: var(--accent); }
 @media (pointer: coarse), (max-width: 760px), (orientation: portrait) and (max-width: 900px), (max-height: 520px) and (max-width: 1000px) {
   [data-view=present] #pager, [data-view=present] #help { display: none; }
-  #dock { display: block; position: fixed; right: max(14px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); z-index: 20; width: 52px; height: 52px; color: var(--muted); }
+  #dock { display: flex; align-items: center; gap: 8px; position: fixed; right: max(14px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); z-index: 20; width: 160px; height: 48px; color: var(--muted); }
   #dPanel { position: absolute; right: 0; bottom: 64px; width: min(360px, calc(100vw - 28px)); max-height: calc(100dvh - 100px); overflow-y: auto;
     padding: 6px; border-radius: 20px; border: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 96%, transparent);
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 6px 28px #0003; }
-  #dock button { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 44px; height: 44px; border-radius: 12px; color: var(--fg); font: 600 13px var(--sans); touch-action: manipulation; }
+  #dock button { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 48px; min-height: 48px; height: 48px; border-radius: 12px; color: var(--fg); font: 600 13px var(--sans); touch-action: manipulation; }
+  #dock > :is(#dBack, #dForward) { flex: none; width: 48px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); box-shadow: 0 4px 18px #0003; font-size: 28px; }
   #dock button:active { background: var(--surface-2); }
   #dock button:disabled { opacity: .35; cursor: default; }
-  #dock #dToggle { width: 52px; height: 52px; padding: 4px; min-width: 52px; flex-direction: column; gap: 0; border-radius: 50%; border: 1px solid var(--line);
+  #dock #dToggle { width: 48px; height: 48px; padding: 4px; min-width: 48px; flex-direction: column; gap: 0; border-radius: 50%; border: 1px solid var(--line);
     background: var(--surface); box-shadow: 0 4px 18px #0003; }
   #dPosition { font: 600 12px/1.2 var(--mono); }
   #dock.open #dToggle { background: var(--accent-soft); border-color: var(--accent); }
@@ -255,7 +256,7 @@ aside.notes { display: none; }
   #dock.open #dToggle::after { content: '×'; font: 26px/1 var(--sans); }
   #dHint { margin: 4px 8px 6px; color: var(--muted); font: 12px/1.5 var(--sans); }
   #dock .view-switch { display: flex; gap: 4px; padding: 3px; border-radius: 14px; background: var(--surface-2); }
-  #dock .view-switch button { flex: 1; height: 44px; }
+  #dock .view-switch button { flex: 1; height: 48px; }
   #dock .view-switch [aria-pressed=true] { color: var(--fg); background: var(--bg); box-shadow: 0 1px 5px #0002; }
   .dock-actions { display: flex; align-items: center; justify-content: space-between; padding-top: 4px; }
   #dock .dock-actions button { font-size: 24px; }
@@ -286,7 +287,7 @@ aside.notes { display: none; }
   /* vertical slides: Markdown reflows at the phone's width (fluid); hand-built slides get a scaled 540px canvas */
   [data-view=present][data-tall] .slide .content { top: 0; padding: 32px 30px 36px; }
   /* dense phone slides scroll instead of clipping */
-  [data-view=present][data-tall=fluid] .slide .content { padding: 26px 22px 30px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y pinch-zoom; }
+  [data-view=present][data-tall=fluid] .slide .content { padding: 26px 22px 30px; overflow-y: auto; overscroll-behavior: contain; touch-action: auto; }
 }
 
 /* ================= type + components ================= */

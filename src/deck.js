@@ -3,11 +3,10 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
 
 /* talkdown — slide decks written in Markdown (or HTML), presented on a 16:9 stage, read like an article on a phone.
  *
- * Present view (default on every screen)      Read view (R or the mobile Article button)
+ * Present view (desktop default)             Read view (phone default; R or the mobile menu)
  *   ← → Space PgUp PgDn   slides               one scrolling column; speaker notes become the prose,
  *   ↑ ↓ Enter             steps, then slides   builds show finished, fixed-layout slides become figures
  *   1–9                   jump to a step       ← → hop between slides
- *   swipe                 next / previous
  *   Home End · O overview · N notes · T light / dark · R read / present · F fullscreen · S view source · ? keys · Esc close
  *
  * Themes: <html data-theme="rose">, 23 of them, each with a light and a dark mode and its own typefaces (fetched for the
@@ -109,7 +108,8 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
   loadFonts();
   new MutationObserver(loadFonts).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
   const initialView = q.get('view') || root.dataset.view;
-  root.dataset.view = initialView === 'read' ? 'read' : 'present';
+  const phone = matchMedia('(max-width: 760px), (max-height: 520px) and (pointer: coarse), (orientation: portrait) and (pointer: coarse)');
+  root.dataset.view = initialView === 'present' || initialView === 'read' ? initialView : phone.matches ? 'read' : 'present';
   const reading = () => root.dataset.view === 'read';
 
   /* ================= Markdown ================= */
@@ -781,7 +781,6 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
   function onScroll() {
     scrolling = false;
     if (!reading()) return;
-    if (!$('dPanel').hidden) setDock(false);
     const max = root.scrollHeight - innerHeight;
     $('progress').style.transform = `scaleX(${max > 0 ? scrollY / max : 1})`;
     if (readAnchor && Math.abs(scrollY - readAnchor.y) < 2) return;
@@ -804,13 +803,15 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     if (!s) return;
     $('dPrev').disabled = !list.slice(0, cur).some(item => available(item)) && (reading() || at(s) === 0);
     $('dNext').disabled = !list.slice(cur + 1).some(item => available(item)) && (reading() || done(s));
+    $('dBack').disabled = $('dPrev').disabled;
+    $('dForward').disabled = $('dNext').disabled;
     $('dHome').disabled = !list.slice(0, cur).some(item => available(item)) && (reading() ? scrollY < 2 : at(s) === 0);
     const step = !reading() && total(s) > 1 ? `step ${at(s) + 1}/${total(s)}` : '';
     $('dCount').innerHTML = `<span>${cur + 1} / ${list.length}</span>${step ? `<small>${step}</small>` : ''}`;
     $('dCount').setAttribute('aria-label', `Slide ${cur + 1} of ${list.length}${step ? ', ' + step : ''}`);
     $('dPosition').textContent = cur + 1;
     $('dToggle').setAttribute('aria-label', `${$('dPanel').hidden ? 'Open' : 'Close'} navigation, slide ${cur + 1} of ${list.length}`);
-    $('dHint').textContent = reading() ? 'Scroll to read. Switch to Slides to present this section.' : 'Swipe left/right to step. Tap the left/right edge to go back/forward.';
+    $('dHint').textContent = reading() ? 'Scroll to read. Switch to Slides to present this section.' : 'Use the arrows for steps and slides. Scroll within long slides.';
   }
 
   function setDock(open) {
@@ -851,6 +852,9 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     };
     $('dToggle').onclick = () => setDock($('dPanel').hidden);
     document.addEventListener('click', e => { if (!$('dPanel').hidden && !e.target.closest('#dock')) setDock(false); });
+    for (const type of ['touchstart', 'wheel']) addEventListener(type, e => {
+      if (!$('dPanel').hidden && !e.target.closest('#dock')) setDock(false);
+    }, { passive: true });
     $('dSections').onclick = () => { sections = true; render(); setDock(false); dialog.showModal(); };
     dialog.addEventListener('close', () => { if ($('dock').getClientRects().length) $('dToggle').focus({ preventScroll: true }); });
     $('navClose').onclick = () => dialog.close();
@@ -1005,6 +1009,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
       <div id="mhead"><b>${esc(bar.querySelector('.title')?.textContent || document.title)}</b><span id="mSec"></span><i id="mProg"></i></div>
       <div id="mNotes"></div>
       <nav id="dock" aria-label="Presentation navigation">
+        <button id="dBack" aria-label="Previous" title="Previous">‹</button><button id="dForward" aria-label="Next" title="Next">›</button>
         <div id="dPanel" hidden>
         <div class="view-switch" role="group" aria-label="Reading format"><button id="dSlides" aria-pressed="true">${svg('present')}<span>Slides</span></button><button id="dRead" aria-pressed="false">${svg('read')}<span>Article</span></button></div>
         <div class="dock-actions"><button id="dHome" aria-label="Back to top" title="Back to top">${svg('home')}</button><button id="dSections" aria-label="Jump to a section or slide" title="Sections" aria-haspopup="dialog">${svg('grid')}</button><button id="dPrev" aria-label="Previous slide or step" title="Previous">‹</button><span id="dCount"></span><button id="dNext" aria-label="Next slide or step" title="Next">›</button><button id="dNotes" aria-label="Speaker notes" aria-pressed="false" title="Speaker notes">${svg('notes')}</button></div>
@@ -1030,8 +1035,8 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     $('ovBtn').onclick = toggleOverview;
     $('prev').onclick = () => go(cur - 1);
     $('next').onclick = () => go(cur + 1);
-    $('up').onclick = $('dPrev').onclick = prev;
-    $('down').onclick = $('dNext').onclick = next;
+    $('up').onclick = $('dPrev').onclick = $('dBack').onclick = prev;
+    $('down').onclick = $('dNext').onclick = $('dForward').onclick = next;
     $('dSlides').onclick = () => { setDock(false); setView('present'); };
     $('dRead').onclick = () => { setDock(false); setView('read'); };
     $('dHome').onclick = () => {
@@ -1144,55 +1149,6 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     else if (lk === 'f') document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen();
   }
 
-  function swipe() {
-    let gesture = null, lastTap = -Infinity;
-    // Embedded controls and horizontal scrollers own their gestures. Custom
-    // interactive surfaces can opt out with data-no-swipe.
-    const interactive = 'button, a, input, select, textarea, pre, table, iframe, video, audio, canvas, svg, [contenteditable], [draggable=true], [role="button"], [role="tab"], [role="slider"], [data-no-swipe], #dock, #mobileNav, #mNotes';
-    const ownsGesture = target => {
-      if (target.closest(interactive)) return true;
-      for (let el = target; el && !el.classList.contains('slide'); el = el.parentElement) {
-        if (el.scrollWidth > el.clientWidth + 2 && /auto|scroll/.test(getComputedStyle(el).overflowX)) return true;
-      }
-      return false;
-    };
-    addEventListener('touchstart', e => {
-      gesture = null;
-      if (reading() || $('mobileNav').open || e.touches.length !== 1 || ownsGesture(e.target)) return;
-      const owner = e.target.closest('.slide');
-      if (owner !== slide()) return;
-      const t = e.touches[0];
-      // Keep the browser's own back/forward edge gestures available.
-      if (t.clientX < 16 || t.clientX > innerWidth - 16) return;
-      gesture = { x: t.clientX, y: t.clientY, time: performance.now(), owner,
-        scroll: owner.querySelector('.content')?.scrollTop || 0, distance: 0, vertical: false, dismiss: !$('dPanel').hidden };
-    }, { passive: true });
-    addEventListener('touchmove', e => {
-      if (!gesture) return;
-      if (e.touches.length !== 1) { gesture = null; return; }
-      const dx = Math.abs(e.touches[0].clientX - gesture.x), dy = Math.abs(e.touches[0].clientY - gesture.y);
-      gesture.distance = Math.max(gesture.distance, Math.hypot(dx, dy));
-      if (dy > 12 && dy > dx * 1.2) gesture.vertical = true;
-    }, { passive: true });
-    addEventListener('touchcancel', () => { gesture = null; }, { passive: true });
-    addEventListener('touchend', e => {
-      const g = gesture; gesture = null;
-      if (!g || e.touches.length || e.changedTouches.length !== 1 || reading() || slide() !== g.owner) return;
-      if (g.dismiss) { setDock(false); return; }
-      if (g.vertical || Math.abs((g.owner.querySelector('.content')?.scrollTop || 0) - g.scroll) > 1 || !getSelection().isCollapsed) return;
-      const t = e.changedTouches[0], dx = t.clientX - g.x, dy = t.clientY - g.y, elapsed = performance.now() - g.time;
-      const threshold = Math.min(90, Math.max(50, innerWidth * .12));
-      if (elapsed < 800 && Math.abs(dx) >= threshold && Math.abs(dx) > Math.abs(dy) * 1.6) {
-        dx < 0 ? next() : prev();
-      } else if (elapsed < 300 && Math.max(g.distance, Math.hypot(dx, dy)) < 12) {
-        const edge = Math.min(56, Math.max(36, innerWidth * .12)), now = performance.now();
-        if (g.x > edge && g.x < innerWidth - edge) return;
-        if (now - lastTap < 350) return;  // a double tap must not skip two steps
-        lastTap = now;
-        g.x < edge ? prev() : next();
-      }
-    }, { passive: true });
-  }
 
   // #slide or #slide.step, 1-based; [0, 1] when there's no hash
   function fromHash() {
@@ -1348,7 +1304,6 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     let resizing = false;
     addEventListener('resize', () => { if (!resizing) { resizing = true; requestAnimationFrame(() => { resizing = false; fit(); }); } });
     addEventListener('scroll', () => { if (!scrolling) { scrolling = true; requestAnimationFrame(onScroll); } }, { passive: true });
-    swipe();
     handlers.ready.forEach(f => f());
     started = true;
     const [sl, sp] = fromHash();

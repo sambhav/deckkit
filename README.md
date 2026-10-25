@@ -24,7 +24,7 @@ Human-editable source · Themed components · Custom HTML and JavaScript · No a
 
 talkdown turns Markdown into interactive slides and a readable article. Built-in widgets share the active theme; custom HTML and JavaScript can join the same navigation.
 
-Write the slide content in Markdown and the explanation in `::: notes`. On desktop, present it as a 16:9 deck. Phones open as responsive slides, with a small floating navigation button. Tap it for **Slides / Article**, section jumps, and Home. Article view includes the notes as prose. On desktop, press **R** to switch views.
+Write the slide content in Markdown and the explanation in `::: notes`. On desktop, present it as a 16:9 deck. Phones open as a scrolling article. Floating **Previous / Next** buttons jump between sections; the menu opens **Slides / Article**, section jumps, and Home. Article view includes the notes as prose. On desktop, press **R** to switch views.
 
 | To… | Start with… |
 |---|---|
@@ -388,15 +388,15 @@ Every colour, typeface and size is a CSS custom property. Override them after `d
 | `L` · `D` | Laser pointer · draw on the slide (cleared on the next slide) |
 | `S` | Show the current slide's Markdown (view source) |
 
-On phones, navigation collapses to a small floating button showing the slide number. Tap it to open the controls; tap again, tap outside, or press Escape to close them. The panel overlays the page without resizing the slide. It closes after changing view, going Home, or scrolling the article.
+On phones, the default is a normally scrolling article. A compact row of **Previous**, **Next**, and **Menu** buttons stays available near the bottom. The menu contains **Slides / Article**, **Home**, and a section/slide picker. Opening it does not resize the content.
 
-- **Slides / Article** switches at the current section. **Home** returns to the beginning.
-- **Sections** opens a picker with section and slide tabs. Portrait slides also have speaker notes.
-- **Swipe left/right** on slide content to advance/reverse a step, then move between slides.
-- **Tap the right/left edge** to advance/go back. The centre remains available for reading and interaction.
-- Vertical scrolling, pinching, text selection, code, tables, media, and interactive controls keep their gestures. Add `data-no-swipe` to a custom interaction to exclude it from deck gestures.
+- Scroll down to read. The arrows jump to the previous/next entry.
+- Choose **Slides** to present the section you are reading. In slides, the arrows move through steps, then slides.
+- Long slides scroll vertically; wide code blocks and tables scroll horizontally.
+- Browser scrolling, text selection, zoom, and back/forward gestures keep their normal behaviour. There is no custom swipe or edge-tap navigation.
+- Buttons have 48 CSS-pixel touch targets, accessible names, and visible keyboard focus. The primary buttons are separated by 8px.
 
-The previous/next buttons remain available in the panel for anyone who prefers them. Article view uses normal page scrolling.
+These choices follow [Apple's gesture guidance](https://developer.apple.com/design/human-interface-guidelines/gestures) and [Google's touch-target guidance](https://support.google.com/accessibility/android/answer/7101858?hl=en): familiar interaction and explicit controls.
 
 Switching to the article shows the complete explanation. Switching back restores your presenter step. Rotating the phone keeps the selected view.
 
@@ -445,7 +445,7 @@ The hit rate rose from 61% to 94% once the cache moved to the edge.
 :::
 ```
 
-Present view works on phones too. Held upright, slides go vertical and reflow at the phone's width, and speaker notes hide until you tap the notes button. Share an article link with `?view=read`, or slides with `?view=present`; append a slide id such as `#widgets` to open that section. Authors can set `<html data-view="read">` to open an article by default. The default is slides on every screen.
+Present view works on phones too. Held upright, slides go vertical and reflow at the phone's width, and speaker notes hide until you tap the notes button. Share an article link with `?view=read`, or slides with `?view=present`; append a slide id such as `#widgets` to open that section. Phones open as articles by default; desktop opens as slides. Authors can set `<html data-view="present">` or `<html data-view="read">` to choose a default for every screen.
 
 ## 🛠 HTML slides
 

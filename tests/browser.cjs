@@ -28,6 +28,7 @@ async function verify(page, base) {
     check(!clipped.length, width + 'px phone/tablet clipping: ' + clipped.join(', '));
   }
   await verifyMobileNavigation(page, base);
+  await verifyNativeScrolling(page, base);
   const fixture = [
     '## Syntax fixtures', '', '<!-- Notes with `inline code`', '---', 'still notes -->', '',
     'Real footnote[^real]', '', '[^real]: A `code` footnote.', '',
@@ -168,10 +169,11 @@ async function verifyMobileNavigation(page, base) {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(base + '/mobile-navigation.html');
   await page.waitForFunction(() => window.Deck?.slides.length === 5);
-  check(await page.locator('html').getAttribute('data-view') === 'present', 'Phones should open as slides');
+  check(await page.locator('html').getAttribute('data-view') === 'read', 'Phones should open as a normally scrolling article');
+  await control('dSlides');
   check(await page.locator('#dock').isVisible(), 'Mobile controls must be reachable in slides');
   check(!(await page.locator('#dPanel').isVisible()), 'Mobile navigation must start collapsed');
-  check(await page.locator('#dock').evaluate(el => el.offsetHeight <= 56 && el.offsetWidth <= 56), 'Collapsed controls must occupy only one small button');
+  check(await page.locator('#dock').evaluate(el => el.offsetHeight <= 56 && el.offsetWidth <= 168), 'The floating arrows and menu must stay compact');
   const before = await page.locator('#stage').boundingBox();
   await page.locator('#dToggle').click();
   check(await page.locator('#dPanel').isVisible(), 'The floating button must reveal the full controls');
@@ -242,55 +244,61 @@ async function verifyMobileNavigation(page, base) {
   check(await page.evaluate(() => Deck.cur) === 1, 'Scrolling a code block must not swipe to another slide');
   await page.evaluate(() => Deck.go(1, 0));
   const activeStep = () => page.locator('.slide.active .w-steps .w-pane.on h3').textContent();
+  for (const id of ['dBack', 'dForward', 'dToggle']) {
+    check(await page.locator('#' + id).isVisible(), 'Previous, next and menu must stay visible without opening a panel');
+    check(await page.locator('#' + id).evaluate(el => el.offsetWidth >= 48 && el.offsetHeight >= 48), 'Primary touch targets must be at least 48 CSS pixels');
+  }
+  await page.locator('#dForward').click();
+  check(await activeStep() === 'Second', 'The visible next button must advance a step');
+  await page.locator('#dBack').click();
+  check(await activeStep() === 'First', 'The visible previous button must reverse a step');
   await gesture('.slide.active .content', [[250, 300], [140, 302], [60, 301]]);
-  check(await activeStep() === 'Second', 'A left swipe must advance one step');
-  await gesture('.slide.active .content', [[70, 300], [160, 302], [260, 301]]);
-  check(await activeStep() === 'First', 'A right swipe must reverse one step');
   await gesture('.slide.active .content', [[362, 300], [362, 300]]);
-  check(await activeStep() === 'Second', 'A tap near the right edge must advance one step');
-  await gesture('.slide.active .content', [[362, 300], [362, 300]]);
-  check(await activeStep() === 'Second', 'Rapid double taps must not skip two steps');
-  await page.waitForTimeout(370);
-  await gesture('.slide.active .content', [[28, 300], [28, 300]]);
-  check(await activeStep() === 'First', 'A tap near the left edge must reverse one step');
-  await gesture('.slide.active .content', [[180, 420], [185, 260], [185, 210]]);
-  check(await activeStep() === 'First', 'Vertical gestures must stay available for scrolling');
-  await gesture('.slide.active pre', [[250, 300], [140, 302], [60, 301]]);
-  check(await activeStep() === 'First', 'Code scrolling must not consume a slide step');
-  await page.locator('.slide.active .content').evaluate(el => {
-    const custom = document.createElement('div');
-    custom.dataset.noSwipe = ''; custom.id = 'customGesture'; custom.textContent = 'Custom interaction'; el.append(custom);
-  });
-  await gesture('#customGesture', [[250, 300], [140, 302], [60, 301]]);
-  check(await activeStep() === 'First', 'Custom interactive content must be able to opt out of deck gestures');
-  await page.locator('.slide.active .content').evaluate(el => {
-    for (const [type, count, x] of [['touchstart', 1, 250], ['touchmove', 2, 140], ['touchend', 0, 60]]) {
-      const event = new Event(type, { bubbles: true }), touch = { clientX: x, clientY: 300 };
-      Object.defineProperty(event, 'touches', { value: Array(count).fill(touch) });
-      Object.defineProperty(event, 'changedTouches', { value: [touch] }); el.dispatchEvent(event);
-    }
-  });
-  check(await activeStep() === 'First', 'Pinching must cancel slide navigation');
-  await page.locator('.slide.active h2').evaluate(el => {
-    const range = document.createRange(); range.selectNodeContents(el);
-    getSelection().removeAllRanges(); getSelection().addRange(range);
-  });
-  await gesture('.slide.active .content', [[250, 300], [140, 302], [60, 301]]);
-  check(await activeStep() === 'First', 'Text selection must not navigate the deck');
-  await page.evaluate(() => getSelection().removeAllRanges());
-  await page.locator('#dToggle').click();
-  await gesture('.slide.active .content', [[250, 300], [140, 302], [60, 301]]);
-  check(!(await page.locator('#dPanel').isVisible()) && await activeStep() === 'First', 'A gesture outside open controls must dismiss them without advancing');
+  check(await activeStep() === 'First', 'Swiping and tapping content must not trigger deck navigation');
+  check(await page.locator('body').evaluate(el => getComputedStyle(el).touchAction === 'auto'), 'Native browser gestures must remain enabled');
   await control('dRead');
-  const entry = await page.evaluate(() => Deck.cur);
-  await gesture('.slide[data-id=process] .content', [[250, 300], [140, 302], [60, 301]]);
-  check(await page.evaluate(() => Deck.cur) === entry, 'Article gestures must not navigate the presentation');
   await page.locator('#dToggle').click();
   await page.evaluate(() => window.scrollBy({ top: 80, behavior: 'instant' }));
+  await page.evaluate(() => new Promise(requestAnimationFrame));
+  check(await page.locator('#dPanel').isVisible(), 'Residual scrolling must not dismiss newly opened controls');
+  await page.mouse.move(80, 180);
+  await page.mouse.wheel(0, 80);
   await page.waitForFunction(() => document.getElementById('dPanel').hidden);
   await page.goto(base + '/mobile-navigation.html?view=read#process');
   await page.waitForFunction(() => window.Deck?.slides.length === 5);
   check(await page.locator('html').getAttribute('data-view') === 'read' && await page.evaluate(() => Deck.cur) === 1, 'Explicit article links must preserve their section');
+}
+async function verifyNativeScrolling(page, base) {
+  const body = ['## Long slide', '', ...Array.from({ length: 35 }, (_, i) => 'Paragraph ' + i + ': native scrolling must work without changing slides.\n'), '```text', 'Wide code '.repeat(90), '```'].join('\n');
+  await page.route('**/native-scrolling.html*', route => route.fulfill({ contentType: 'text/html', body:
+    '<!doctype html><html data-fonts="off" data-highlight="off"><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + body + '</script></body></html>' }));
+  await page.setViewportSize({ width: 390, height: 844 });
+  const cdp = await page.context().newCDPSession(page);
+  try {
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+    const drag = async (x1, y1, x2, y2) => {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x1, y: y1 }] });
+      for (let i = 1; i <= 8; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x1 + (x2 - x1) * i / 8, y: y1 + (y2 - y1) * i / 8 }] });
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    };
+    await page.goto(base + '/native-scrolling.html');
+    await page.waitForFunction(() => window.Deck?.slides.length === 1);
+    await drag(170, 650, 170, 210);
+    await page.waitForFunction(() => scrollY > 50);
+    await page.locator('#dToggle').click();
+    await page.locator('#dSlides').click();
+    await drag(170, 650, 170, 210);
+    await page.waitForFunction(() => Deck.slide.querySelector('.content').scrollTop > 50);
+    const pre = page.locator('.slide.active pre');
+    await pre.scrollIntoViewIfNeeded();
+    const box = await pre.boundingBox();
+    await drag(300, box.y + box.height / 2, 80, box.y + box.height / 2);
+    await page.waitForFunction(() => document.querySelector('.slide.active pre').scrollLeft > 20);
+    if (await page.evaluate(() => Deck.cur) !== 0) throw new Error('Native scrolling must not change slides');
+  } finally {
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false });
+    await cdp.detach();
+  }
 }
 module.exports = verify;
 if (require.main === module) {
