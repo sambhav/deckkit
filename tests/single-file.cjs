@@ -8,7 +8,7 @@ async function verifySingleFile(page, files, fs, os) {
   page.on('pageerror', onError); page.on('request', onRequest);
   try {
     // Fonts are optional, and this test intentionally requests no web assets.
-    const html = files.html.replace('<html lang="en">', '<html lang="en" data-fonts="off">').replaceAll('../deck.', 'deck.');
+    const html = files.html.replace('<html lang="en"', '<html lang="en" data-fonts="off"').replaceAll('../deck.', 'deck.');
     await Promise.all([
       fs.writeFile(dir + '/index.html', html),
       fs.writeFile(dir + '/deck.js', files.js),
@@ -17,7 +17,7 @@ async function verifySingleFile(page, files, fs, os) {
     await page.context().setOffline(true);
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('file://' + dir + '/index.html?view=present');
-    await page.waitForFunction(() => window.Deck?.slides.length === 4);
+    await page.waitForFunction(() => window.Deck?.slides.length === 5);
     await page.keyboard.press('ArrowRight');
     if (await page.evaluate(() => Deck.cur) !== 1) throw new Error('Inline deck navigation failed');
     await page.keyboard.press('ArrowRight');
@@ -25,17 +25,17 @@ async function verifySingleFile(page, files, fs, os) {
     if (await page.locator('.w-tabs button.on').textContent() !== 'Option B') throw new Error('Inline deck widgets failed');
     await page.keyboard.press('r');
     if (await page.evaluate(() => document.documentElement.dataset.view) !== 'read') throw new Error('Inline deck read view failed');
-    if (await page.locator('.frame > .prose').count() !== 2) throw new Error('Inline deck notes failed');
+    if (await page.locator('.frame > .prose').count() !== 3) throw new Error('Inline deck notes failed');
     if (await page.locator('#stage').evaluate(e => getComputedStyle(e).position) !== 'static') throw new Error('Linked CSS did not load');
     const csvSlide = '\n---\n## CSV stays inside the HTML\n::: chart type=line view=both\n```csv\nLabel,Value\n"A, B",1\nC,2\n```\n:::\n';
     await fs.writeFile(dir + '/csv.html', html.replace(/<\/script>\s*<\/body>/, csvSlide + '</script></body>'));
-    await page.goto('file://' + dir + '/csv.html?view=present#5');
-    await page.waitForFunction(() => window.Deck?.slides.length === 5);
-    if (await page.locator('.w-chart-box tbody tr').count() !== 2) throw new Error('Embedded CSV must load offline');
-    if (await page.locator('.w-chart-table th[scope=row]').first().textContent() !== 'A, B') throw new Error('Embedded CSV quoted labels failed');
+    await page.goto('file://' + dir + '/csv.html?view=present#6');
+    await page.waitForFunction(() => window.Deck?.slides.length === 6);
+    if (await page.locator('.slide.active .w-chart-box tbody tr').count() !== 2) throw new Error('Embedded CSV must load offline');
+    if (await page.locator('.slide.active .w-chart-table th[scope=row]').first().textContent() !== 'A, B') throw new Error('Embedded CSV quoted labels failed');
     if (errors.length) throw new Error(errors.join('\n'));
     if (requests.some(url => !url.startsWith('file:'))) throw new Error('Unexpected remote dependency: ' + requests.join(', '));
-    return { protocol: 'file:', starterSlides: 4, csvSlides: 5, scripts: 1, stylesheets: 1, network: 'offline', errors };
+    return { protocol: 'file:', starterSlides: 5, csvSlides: 6, scripts: 1, stylesheets: 1, network: 'offline', errors };
   } finally {
     await page.context().setOffline(false);
     page.off('pageerror', onError); page.off('request', onRequest);
