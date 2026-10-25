@@ -162,6 +162,8 @@ The parser supports the Markdown patterns shown here; it is not a complete Commo
 
 ### Easier escaping and separate Markdown files
 
+The existing single-file workflow stays supported: put your content in `index.html`, link `deck.js` and `deck.css`, and open it. No install, build, or separate Markdown file is required. Local copies of the script and stylesheet also work from `file://`.
+
 For a single self-contained HTML file, write `<\/script>` instead of a literal closing script tag inside the Markdown script. **S → Copy** preserves that escape so the result can be pasted back into the HTML safely.
 
 For decks with lots of HTML or code examples, keep the content in a plain `.md` file:
@@ -418,6 +420,8 @@ Current Chrome, Edge, Firefox and Safari, on desktop and mobile. Print from the 
 Issues and pull requests are welcome. There's no build step: edit `deck.js` or `deck.css`, then open [`index.html`](index.html), which is the demo deck and the best test page. Run the parser regression checks with `node --test tests/parser.test.cjs`. Before sending a change, check present view, read view (**R**), dark mode (**T**) and a phone-sized window. Check dense phone slides can scroll, and verify external Markdown using an HTTP server.
 
 talkdown is pre-release (0.1.0), so the syntax may still change before 1.0.
+
+The [v0.2 design proposal](docs/format-v0.2-proposal.md) covers optional CSV-backed charts, visible data tables, and a tokenizer migration while preserving that single-file workflow. These are proposed features, not current syntax.
 
 ## License
 
