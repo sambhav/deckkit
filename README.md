@@ -8,7 +8,7 @@
 
 Human-editable source · Themed components · Custom HTML and JavaScript · No author build
 
-[**Live demo**](https://sambhav.dev/talkdown/) &nbsp;·&nbsp; [Why talkdown?](#why-talkdown) &nbsp;·&nbsp; [Quick start](#-quick-start) &nbsp;·&nbsp; [For agents](#-for-agents) &nbsp;·&nbsp; [Syntax](#-writing-slides) &nbsp;·&nbsp; [Widgets](#-widgets) &nbsp;·&nbsp; [Themes](#-themes) &nbsp;·&nbsp; [API](#-api)
+[**Live demo**](https://sambhav.dev/talkdown/) &nbsp;·&nbsp; [Overview](#what-talkdown-does) &nbsp;·&nbsp; [Quick start](#-quick-start) &nbsp;·&nbsp; [For agents](#-for-agents) &nbsp;·&nbsp; [Syntax](#-writing-slides) &nbsp;·&nbsp; [Widgets](#-widgets) &nbsp;·&nbsp; [Themes](#-themes) &nbsp;·&nbsp; [API](#-api)
 
 ![version](https://img.shields.io/badge/version-0.2.0-F1B000?style=flat-square) ![status](https://img.shields.io/badge/status-pre--release-555?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-3C9A5F?style=flat-square) ![build](https://img.shields.io/badge/build_step-none-2B63F5?style=flat-square) ![size](https://img.shields.io/badge/files-2-E8428E?style=flat-square)
 
@@ -20,70 +20,25 @@ Human-editable source · Themed components · Custom HTML and JavaScript · No a
 
 <br>
 
-## Why talkdown?
+## What talkdown does
 
-Over the last few months, I've seen more people move from Google Slides to interactive presentations built with coding agents. In a browser, you can build working examples into the talk: a diagram you can step through, a chart you can explore, a small simulation you can change in front of the audience.
+talkdown turns Markdown into interactive slides and a readable article. Built-in widgets share the active theme; custom HTML and JavaScript can join the same navigation.
 
-But asking an agent to build a whole HTML presentation means spending tokens on markup, styling and navigation for every deck. The resulting source also takes more work to read and edit.
+Write the slide content in Markdown and the explanation in `::: notes`. On desktop, present it as a 16:9 deck. On a phone, the same link opens as an article with the notes as prose. Desktop readers can press **R** to switch views.
 
-I built talkdown to make that kind of presentation easier to write, maintain and share. It gives you a compact Markdown format, themed interactive components, and room for custom HTML and JavaScript.
-
-## Keep the source easy to edit
-
-Most of a talk is headings, sentences, examples and notes. Those belong in a format you can read.
-
-In talkdown, `---` separates slides. A few lines of Markdown add a walkthrough, a chart or speaker notes. The runtime supplies the layout and behaviour, so an agent doesn't need to generate that scaffolding for every slide. You can change the wording, move a section or correct a number yourself.
-
-```md
-## Follow a request
-
-::: steps
-### Check the cache
-Return the saved result if it is still fresh.
-
-### Fetch on a miss
-Ask the service for a new result.
-
-### Save the response
-The next request can reuse it.
-:::
-
-::: notes
-A cache hit skips the service call. On a miss, we fetch the result
-and save it for subsequent requests.
-:::
-```
-
-When an explanation needs something specific, mix in HTML and JavaScript: an animated request flow, a live calculator, a simulation. Custom interactions can join the same keyboard navigation as the built-in widgets. The rest of the deck can stay in Markdown.
-
-## Build the explanation from components
-
-Different ideas need different ways of showing them. Walk through code a few lines at a time. Compare alternatives in tabs. Select a table row to explain a tradeoff. Plot a dataset, then let the reader inspect or download its values.
-
-talkdown provides those components, with navigation and reading behaviour built in. You can combine them across a presentation without rebuilding each interaction.
-
-The themes cover the components too. Choose one of 23 light/dark pairs and the typography, charts, code highlighting, callouts and diagrams follow it. A deck with several kinds of content still looks like one presentation.
-
-[See the widgets](#-widgets) · [Browse the themes](#-themes) · [Try the live demo](https://sambhav.dev/talkdown/)
-
-## Give people something they can read afterwards
-
-After a talk, someone usually asks for the slides. But the slides only contain part of the explanation. The rest was what you said.
-
-That was a big reason for building talkdown. When I'm presenting, I want slides. When I send someone the link afterwards, I want them to be able to read it like a blog.
-
-The same deck supports both. On desktop, it opens as a presentation. On a phone, it opens as a scrolling article: Markdown content reflows, reveals are shown, and shared speaker notes become the prose. Desktop readers can switch to the article too.
-
-Write the explanation in `::: notes`, keep delivery cues in `::: say`, and add reader-only context in `::: read`. You can give each audience the detail it needs while maintaining one source.
-
-| During the talk | After the talk |
+| To… | Start with… |
 |---|---|
-| A 16:9 stage with keyboard navigation | A scrolling article with the explanation included |
-| Reveal an argument one step at a time | Read the complete argument at your own pace |
-| Show the chart | Inspect the chart and its data |
-| Use speaker notes to guide delivery | Read those notes as paragraphs |
+| Understand why the format exists | [The opening presentation](https://sambhav.dev/talkdown/#why) |
+| Explore live components | [The widget tour](https://sambhav.dev/talkdown/#widgets) |
+| Create a deck | [Quick start](#-quick-start) or [the starter file](examples/starter.html) |
+| Have an agent write a deck | [For agents](#-for-agents) |
+| Add a custom interaction | [HTML slides](#-html-slides) and [the API](#-api) |
 
-[Open the demo](https://sambhav.dev/talkdown/), then press **R** to read it as an article.
+## Using the demo
+
+The [live demo](https://sambhav.dev/talkdown/) opens with a short presentation about the format, followed by the feature tour. Use **← →** for slides and **↑ ↓** for steps. Press **S** to inspect a Markdown slide's source, **R** to read the article, and **T** to switch light/dark mode.
+
+The examples run in the deck itself. Try a tab, inspect a chart's data, and use the theme picker to see how components change together.
 
 ## 🚀 Quick start
 

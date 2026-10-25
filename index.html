@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>talkdown</title>
-<meta name="description" content="talkdown is an agent-first slide format: Markdown that agents write in a fraction of the tokens of an HTML deck, that you can edit by hand, and that reads as a blog post when you are not presenting.">
+<meta name="description" content="Interactive presentations in Markdown, with themed components and custom JavaScript. Present as slides and share the same link as a readable article.">
 <link rel="icon" href="docs/logo.svg">
 <link rel="stylesheet" href="deck.css?v=0.2.0-1">
 <script src="deck.js?v=0.2.0-1"></script>
@@ -41,6 +41,11 @@
   [data-tall] .pipe .n span { font-size: 15px; }
   [data-tall] .pipe i { display: none; }
   [data-tall] .caption { font-size: 22px; margin-top: 26px; }
+  [data-view=read] .hand { padding: 0; }
+  [data-view=read] .pipe { margin-top: 28px; flex-wrap: wrap; }
+  [data-view=read] .pipe .n { flex: 1 1 38%; min-width: 0; height: 110px; }
+  [data-view=read] .pipe i { display: none; }
+  [data-view=read] .caption { font-size: 1em; margin-top: 20px; min-height: 0; }
   @media (prefers-reduced-motion: reduce) { .pipe .n { transition: none; } }
 </style>
 </head>
@@ -48,46 +53,187 @@
 
 <script type="text/markdown">
 layout: title
+section: Why talkdown
+id: why
 ---
 # talkdown
 
-Agent-first slides: a Markdown format that presents as a deck and reads as a blog post.
+Interactive presentations in Markdown.
 
-One HTML file · Instant preview · No author build · Host on GitHub Pages {.meta}
+Present as slides. Share as an article. {.meta}
 
 ::: notes
-talkdown is a slide format that agents write in Markdown. It is small enough that an agent needs only a fraction of the tokens it would spend on a hand-written HTML deck, and plain enough that you can change it yourself in a text editor.
+Over the last few months, I've seen more people move from Google Slides to interactive presentations built with coding agents. I built talkdown because I wanted that freedom in a format I could still read and edit myself. I also wanted the link I shared after a talk to contain the explanation, not just the slides.
 
-The same file presents as slides and, when you are not there to present it, reads as a blog post. This page is a talkdown deck and a walkthrough of the format. Press the right arrow to step through it, and S to see the Markdown behind any slide.
+This page is both the presentation and the article. On desktop, use the arrow keys to present and R to switch to reading. On a phone, it opens as an article.
 :::
 
 ---
-kicker: Why
+kicker: Why a browser?
+id: browser
 ---
-## Agents write good HTML decks. They are expensive to make and awkward to edit.
+## Put working examples inside the talk
 
-|||
-
-### What you get today
-
-- The result looks great
-- Every slide is hundreds of lines of HTML and CSS
-- A small change means asking the model again
-- Nobody can read the deck without presenting it
-
-|||
-
-### With talkdown
-
-- The agent writes Markdown, a fraction of the tokens
-- You fix a typo or reorder slides by hand in seconds
-- The same file reads as a blog post
-- Widgets and themes are built in
+::: features
+### :git-branch: Follow a flow
+Step through a request, a decision or a piece of code.
+### :chart-no-axes-combined: Explore the data
+Show a chart, inspect its values, download the dataset.
+### :sliders-horizontal: Try an idea
+Change an input and show what happens.
+:::
 
 ::: notes
-Plenty of people ask an agent to write an HTML deck directly. The results look great, but the agent spends a lot of tokens on markup and styling, and once the deck exists it is hard to change. Moving a bullet or fixing a number means another round trip to the model, or editing a large file that nobody wrote by hand.
+A browser lets a presentation include working examples. You can follow a request through a system, explore a dataset, or change an input in a simulation while you explain the result. Coding agents make these kinds of presentations easier to build.
 
-talkdown moves the markup into the engine. The agent writes only the content and a few lines of structure, which costs a fraction of the tokens. You can open the file and edit it like any other text. And because the notes are part of the file, it also works as an article for people who were not in the room.
+But generating an entire HTML deck also means generating its markup, styling and navigation. That adds source to maintain and tokens to produce. Much of that work is repeated from one talk to the next.
+:::
+
+---
+kicker: Why Markdown?
+id: markdown
+---
+## Write the explanation. Reuse the scaffolding.
+
+|||
+
+````md
+## Follow a request
+
+::: steps
+### Check the cache
+Return a fresh saved result.
+
+### Fetch on a miss
+Ask the service for a new result.
+
+### Save the response
+The next request can reuse it.
+:::
+````
+
+|||
+
+- The agent writes content and structure
+- talkdown supplies layout and interaction
+- You can edit the source by hand
+
+Press **S** to inspect any Markdown slide. {.muted}
+
+::: notes
+Most of a talk is headings, sentences, examples and notes. Markdown keeps that source compact and readable. Here, a few headings inside a steps block are enough to create a walkthrough. The runtime supplies its controls and appearance, so the agent does not have to generate that scaffolding for every slide.
+
+The benefit carries over to editing: change a sentence, correct a number or move a slide in the source. Custom HTML and JavaScript are still available when an explanation needs more than the built-in components.
+:::
+
+</script>
+
+<section class="slide flow" data-section="Why talkdown" data-id="custom" data-name="Keep room for custom JavaScript">
+  <div class="content hand">
+    <div class="kicker">Custom JavaScript</div>
+    <h2>Build the example your talk needs</h2>
+    <div class="pipe" id="pipe" role="img" aria-label="A request checks the cache, fetches from the service on a miss, and returns a response.">
+      <div class="n"><b>Request</b><span>arrives</span></div><i aria-hidden="true">→</i>
+      <div class="n"><b>Cache</b><span>check for a hit</span></div><i aria-hidden="true">→</i>
+      <div class="n"><b>Service</b><span>fetch on a miss</span></div><i aria-hidden="true">→</i>
+      <div class="n"><b>Response</b><span>save and return</span></div>
+    </div>
+    <p class="caption" id="pipeCap" aria-live="polite"></p>
+    <button class="chip" data-next style="margin-top:8px"></button>
+  </div>
+  <aside class="notes">Sometimes the best explanation needs custom code. This request flow is a hand-written HTML slide with a small JavaScript walkthrough. Press down to follow a cache miss from the request through to the response. The interaction uses Deck.steps, so it shares the deck's keyboard controls, step counter and deep links. Its colours come from the active theme. In the article, the diagram shows its completed state. You can build a calculator, simulation or animated diagram this way while keeping the surrounding talk in Markdown.</aside>
+</section>
+
+<script type="text/markdown">
+kicker: Components and themes
+id: components
+---
+## Different explanations. One visual language.
+
+|||
+
+::: tabs
+### Walk through
+Reveal a process at the pace of the explanation.
+### Compare
+Use tabs or an explained table to examine alternatives.
+### Inspect
+Keep the chart and its backing data together.
+:::
+
+|||
+
+::: chart type=bar title="Example request latency (ms)"
+| Path | Latency |
+|---|---|
+| Cache hit | 20 |
+| Cache miss | 180 |
+:::
+
+23 themes, each with light and dark palettes. Try the theme picker above, or press **T**. {.muted}
+
+::: notes
+A technical talk often needs several kinds of interaction. A walkthrough suits a process; tabs suit a comparison; a chart helps show a numeric relationship. talkdown provides these as Markdown components, with keyboard navigation and reading behaviour included.
+
+The theme applies to the components as well as the slide. Typography, charts, code highlighting, diagrams and callouts follow the same palette. Try the theme picker on this page: the tabs and chart change together. These latency values are illustrative data, not a benchmark.
+:::
+
+---
+layout: statement
+kicker: After the talk
+id: afterwards
+---
+## “Can you send me the slides?”
+
+The slides contain what you showed. The reader also needs what you said.
+
+::: notes
+After a presentation, someone usually asks for the slides. I want to send them something they can understand without me in the room. Short headings and diagrams make sense while someone is explaining them, but leave out much of the argument when read alone.
+
+This was a big motivation for talkdown. I wanted slides while presenting, and something that reads like a blog when sharing the talk afterwards.
+:::
+
+---
+kicker: One source, two views
+id: share
+---
+## Keep the explanation with the slides
+
+::: toggle
+### Present
+A 16:9 stage. Reveal each step as you speak. Keep the explanation in your speaker notes.
+### Read
+A scrolling article. Content reflows, steps are shown, and shared notes become paragraphs.
+:::
+
+::: present-only
+Press **R** now. The explanation is already here. {.muted}
+:::
+
+::: read-only
+You are reading the article version. On a phone, this is the default.
+:::
+
+::: notes
+The same source serves both views. Markdown slides reflow into article typography, and shared notes become the prose underneath them. Built-in step sequences expose their content so readers can follow the explanation at their own pace. Charts can show the backing data alongside the plot.
+
+Write the explanation as full sentences in notes blocks. Keep delivery cues in say blocks and add reader-only context in read blocks. An article still needs an argument that makes sense without the speaker; these blocks give you a place to write it.
+:::
+
+---
+layout: center
+id: tour
+---
+## That's the format. Now try the pieces.
+
+Markdown for the narrative. Components for interaction. JavaScript when you need it.
+
+[Writing slides](#writing) · [Widgets](#widgets) · [Themes](#themes) · [Make a deck](#start)
+
+::: notes
+That is the idea behind talkdown: a compact source you can edit, interactive components that belong to the same theme, and a shared version that carries the explanation with it.
+
+The rest of this deck is a feature tour and authoring reference. Each example is live. Press S to inspect its Markdown, use down to step through an interaction, or jump to a section using the links above.
 :::
 
 ---
@@ -190,6 +336,7 @@ This contents slide writes itself: an agenda block lists every section slide in 
 
 ---
 layout: section
+id: writing
 ---
 # Writing slides
 
@@ -494,11 +641,11 @@ kicker: Widgets
 ---
 ## Compare, then explain
 
-| | Hand-built HTML | Slides app | talkdown | Why |
-|---|---|---|---|---|
-| Plain text you can diff | ◐ | ✗ | ✓ | A talkdown deck is one Markdown block in an HTML file, so a review is an ordinary diff. |
-| Cheap for an agent to write | ✗ | ✗ | ✓ | The agent writes content, and the engine supplies the markup and styling. |
-| Reads well on a phone | ✗ | ◐ | ✓ | The read view reflows Markdown slides and turns the speaker notes into the prose. |
+| Need | Use | Why |
+|---|---|---|
+| Explain a process | Walkthrough | Each heading becomes a step you can advance while speaking. |
+| Compare alternatives | Tabs | Keep related options together and inspect each in turn. |
+| Show exact values | Chart and table | One dataset drives the plot, the table and the CSV download. |
 {.explain}
 
 Write a table, then `{.explain}` on the line after it. {.muted}
@@ -559,7 +706,7 @@ added 18 packages in 2s
 ```
 
 ::: notes
-A terminal block types each command as you press down, then prints its output. Lines that start with a dollar sign are commands and the rest is output. You set the pace, so a live demo cannot go wrong on stage. In the read view the whole session is shown.
+A terminal block types each command as you press down, then prints its output. Lines that start with a dollar sign are commands and the rest is output. You set the pace and replay a prepared sequence without running the commands on stage. In the read view the whole session is shown.
 :::
 
 ---
@@ -715,28 +862,28 @@ A stats block turns a list into big numbers: the bold part of each item is the n
 ---
 kicker: Widgets
 ---
-## Roadmaps walk forward
+## Walk through a timeline
 
 |||
 
 ````md
 ::: timeline
-### Today
-**Markdown decks** with themes
-### Next
-**Export** to PDF
+### Prepare
+**Measure** the current service
+### Roll out
+**Move** traffic gradually
 :::
 ````
 
 |||
 
 ::: timeline
-### Today
-**Markdown decks** with steps and read view
-### Next
-**Presenter view** on a second screen
-### Later
-**Export** to PDF and images
+### Prepare
+**Measure** the current service
+### Roll out
+**Move** traffic gradually
+### Review
+**Compare** latency and error rates
 :::
 
 ::: notes
@@ -798,13 +945,13 @@ $$ x^2 + y^2 = z^2 $$
 - [x] Present it from the keyboard
 - [ ] Send the link to everyone who missed it
 
-A deck read on a phone keeps about 60% of the talk[^1]; the notes carry the rest.
+Shared notes carry the explanation into the article[^1].
 
 $$
 \text{reach} = \text{audience} \times (1 + \text{shares})
 $$
 
-[^1]: An invented number, to show how footnotes look.
+[^1]: Use notes blocks for prose shared by the presenter and the reader.
 
 ::: notes
 Dash-bracket lists become checklists. Write text[^1] and a [^1]: line anywhere on the slide, and the footnote is set small at the foot of the slide. Maths between dollar signs is typeset with KaTeX, which is only fetched when a deck has some.
@@ -868,22 +1015,6 @@ layout: section
 HTML when you need it, tokens for the look.
 
 </script>
-
-<section class="slide" data-section="Make it yours" data-name="Some slides want to be built by hand">
-  <div class="content hand">
-    <div class="kicker">Escape hatch</div>
-    <h2>Some slides want to be built by hand</h2>
-    <div class="pipe" id="pipe">
-      <div class="n"><b>Markdown</b><span>the words</span></div><i>→</i>
-      <div class="n"><b>HTML slide</b><span>the diagram</span></div><i>→</i>
-      <div class="n"><b>Deck.steps()</b><span>the walkthrough</span></div><i>→</i>
-      <div class="n"><b>↓</b><span>the presenter</span></div>
-    </div>
-    <p class="caption" id="pipeCap"></p>
-    <button class="chip" data-next style="margin-top:8px"></button>
-  </div>
-  <aside class="notes">Not everything is a list. When a slide needs a diagram that animates, write it as an HTML section next to the Markdown and register its walkthrough with Deck.steps. It takes part in the same navigation as everything else: the down arrow, the step counter, the URL. In read view a hand-built slide appears as a figure with a Present button, or reflows if you mark it as flow.</aside>
-</section>
 
 <script type="text/markdown">
 kicker: Make it yours
@@ -997,10 +1128,10 @@ That's talkdown. Press S on this slide to see how it is written, or view the sou
 
 <script>
   const caps = [
-    'Write the words in <b>Markdown</b>.',
-    'Hand-build the slide that needs a <b>diagram</b>.',
-    'Register its walkthrough with <b>Deck.steps(el, n, show)</b>.',
-    'The presenter just presses <b>↓</b>, through Markdown builds and hand-built diagrams alike.',
+    'A <b>request</b> arrives. Follow a cache miss with ↓.',
+    'Check the <b>cache</b>. A fresh hit could return immediately.',
+    'On this miss, ask the <b>service</b> for the result.',
+    'Save the result in the cache and return the <b>response</b>.',
   ];
   const nodes = document.querySelectorAll('#pipe .n');
   Deck.steps(document.getElementById('pipe'), caps.length, i => {
