@@ -41,6 +41,8 @@
  *   ::: accordion / ::: features        ### items that open one per ↓ / a grid of cards (a leading :icon: or image is the card's icon)
  *   :rocket:                            a Lucide icon in the theme's colours (any name from lucide.dev/icons)
  *   ::: agenda / ::: qr                 a contents slide linking every section / a QR code of the deck's link (or the URL inside)
+ * Two formats from one deck: <!-- notes --> are spoken and read; <!-- say: … --> spoken only; <!-- read: … --> read only.
+ *   ::: present-only / ::: read-only for slide content; frontmatter read: hide | text and present: hide for whole slides.
  * Presenting: P presenter view (next slide, notes, timer, in a second window) · L laser pointer · D draw on the slide
  *   ::: present-only / ::: read-only   content for one view only (or {.present-only} / {.read-only} on a block)
  */
@@ -238,7 +240,7 @@
   }
 
   /* a Markdown deck: slides split by ---; a chunk of only `key: value` lines is the next slide's frontmatter */
-  const META = /^(section|name|layout|kicker|build|class|takeaway|id|image):\s*(.*)$/;
+  const META = /^(section|name|layout|kicker|build|class|takeaway|id|image|read|present):\s*(.*)$/;
   // split lines on a separator line, ignoring separators inside fenced code
   function split(L, sep) {
     const out = [[]]; let fence = null;
@@ -265,9 +267,16 @@
 
   function mdSlide(L, meta) {
     const notes = [];
-    // speaker notes are the HTML comments outside fenced code
+    // HTML comments outside fenced code are the words around the slide: <!-- … --> is both what you say and what the
+    // article reads; <!-- say: … --> is only for the speaker, <!-- read: … --> only for the article
+    const article = [];
     L = L.join('\n').split(/(^(?:`{3,}|~{3,})[^\n]*\n[\s\S]*?^(?:`{3,}|~{3,})\s*$|`[^`\n]+`)/m)
-      .map((part, j) => j % 2 ? part : part.replace(/<!--([\s\S]*?)-->/g, (_, n) => (notes.push(n.trim()), ''))).join('').split('\n');
+      .map((part, j) => j % 2 ? part : part.replace(/<!--([\s\S]*?)-->/g, (_, n) => {
+        const m = n.trim().match(/^(say|read):\s*([\s\S]*)$/i), t = m ? m[2].trim() : n.trim();
+        if (!m || m[1].toLowerCase() === 'say') notes.push(t);
+        if (!m || m[1].toLowerCase() === 'read') article.push(t);
+        return '';
+      })).join('').split('\n');
     const layout = meta.layout || 'default';
     // [^key]: text lines are footnotes, set at the foot of the slide
     const feet = [];
@@ -279,12 +288,15 @@
     el.className = `slide md layout-${layout} ${meta.class || ''}`.trim();
     el.innerHTML = `<div class="content">${layout === 'section' ? `<div class="num">Part ${pad2(++part)}</div>` : ''}`
       + `${meta.kicker ? `<div class="kicker">${inline(meta.kicker)}</div>` : ''}${body}${feet.length ? `<div class="footnotes">${feet.join('')}</div>` : ''}</div>`
-      + (notes.length ? `<aside class="notes">${blocks(notes.join('\n\n').split('\n'))}</aside>` : '');
+      + (notes.length ? `<aside class="notes">${blocks(notes.join('\n\n').split('\n'))}</aside>` : '')
+      + (article.length ? `<aside class="article">${blocks(article.join('\n\n').split('\n'))}</aside>` : '');
     const heading = el.querySelector('h1, h2, h3')?.textContent.trim() || '';
     section = meta.section ?? (layout === 'section' ? heading : section);
     Object.assign(el.dataset, { section, name: meta.name || heading });
     if (meta.takeaway) el.dataset.takeaway = meta.takeaway;
     if (meta.id) el.dataset.id = meta.id;
+    if (meta.read) el.dataset.read = meta.read;            // hide: leave it out of the article · text: only its prose
+    if (meta.present) el.dataset.present = meta.present;   // hide: an article-only section, skipped when presenting
     if (meta.image) { el.style.setProperty('--image', `url("${encodeURI(meta.image)}")`); el.classList.add('has-image'); }
     const c = el.firstChild;
     widgets(c);
@@ -746,6 +758,11 @@
   function go(i, step, force) {
     const list = slides(), from = cur;
     cur = Math.max(0, Math.min(list.length - 1, i));
+    if (!reading()) {                                   // present: hide slides are for the article only
+      const dir = cur < from ? -1 : 1;
+      while (list[cur]?.dataset.present === 'hide' && list[cur + dir]) cur += dir;
+      if (list[cur]?.dataset.present === 'hide') { cur = from; return; }
+    }
     const s = list[cur];
     if (reading()) { s.closest('.frame').scrollIntoView({ behavior: force ? 'auto' : 'smooth' }); if (force) announce(); return; }
     if (cur !== from || step != null) setAt(s, step ?? (cur === from - 1 ? Infinity : 0));
@@ -771,7 +788,7 @@
     handlers.slide.forEach(f => f(s, cur));
     if (reading()) history.replaceState(null, '', '#' + (cur + 1)); else if (portrait.matches) fit();
   }
-  const fillNotes = () => { $('mNotes').innerHTML = slide().closest('.frame').querySelector('.prose')?.innerHTML || ''; $('mNotes').scrollTop = 0; };
+  const fillNotes = () => { $('mNotes').innerHTML = slide().querySelector('.notes')?.innerHTML || ''; $('mNotes').scrollTop = 0; };   // the speaker's notes
 
   const label = s => s.querySelectorAll('[data-next]').forEach(b => b.textContent = done(s) ? 'Reset ↺' : 'Next →');
   function sync() {
@@ -919,7 +936,9 @@
       s.before(f);
       f.insertAdjacentHTML('beforeend', `<div class="rh"><span>${pad2(i + 1)}</span>${esc(s.dataset.section || '')}</div>`);
       f.append(s);
-      const notes = s.querySelector('.notes');
+      if (s.dataset.read) f.dataset.read = s.dataset.read;
+      if (s.dataset.present) f.dataset.present = s.dataset.present;
+      const notes = s.querySelector('.article') || (s.classList.contains('md') ? null : s.querySelector('.notes'));
       if (notes) {
         const prose = s.classList.contains('md') ? notes.innerHTML.replace(cue, '')
           : notes.textContent.replace(cue, '').trim().split(/\n\s*\n/).map(p => `<p>${esc(p.trim())}</p>`).join('');
@@ -1154,7 +1173,7 @@
       box.style.setProperty('--k', box.clientWidth / W);
       if (nx) { const c = nx.cloneNode(true); c.classList.add('active'); c.removeAttribute('id'); c.querySelectorAll('[id]').forEach(e => e.removeAttribute('id')); box.append(c); }
       else box.innerHTML = '<p class="p-end">End of the deck</p>';
-      $('pNotes').innerHTML = s.closest('.frame').querySelector('.prose')?.innerHTML || '<p class="p-end">No notes for this slide.</p>';
+      $('pNotes').innerHTML = s.querySelector('.notes')?.innerHTML || '<p class="p-end">No notes for this slide.</p>';
       $('pCount').textContent = `${i + 1} / ${slides().length}`;
     });
   }

@@ -696,6 +696,11 @@ i.ico.missing { width: auto; height: auto; color: var(--muted); }
 .w-icon, .md li > i.ico:first-child { color: var(--accent-ink); }
 .w-icon :is(i.ico, img) { width: 1.25em; height: 1.25em; vertical-align: 0; margin: 0; }
 
+/* per-format slides: read: hide leaves a slide out of the article; read: text keeps only its prose */
+aside.article { display: none; }
+[data-view=read] .frame[data-read=hide] { display: none; }
+[data-view=read] .frame[data-read=text] :is(.slide, .fig) { display: none; }
+
 /* view-only content: .present-only shows on the stage, .read-only in the article (::: present-only / ::: read-only in Markdown) */
 :root:not([data-view=read]) .read-only, [data-view=read] .present-only { display: none !important; }
 
