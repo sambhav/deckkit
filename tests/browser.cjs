@@ -9,7 +9,15 @@ async function verify(page, base) {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(base + '/?view=present');
   await page.waitForFunction(() => window.Deck?.slides.length);
-  await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(async () => {
+    // The loader inserts stylesheets asynchronously; fonts.ready alone can
+    // resolve before the optional Google Fonts stylesheet has arrived.
+    await Promise.all([...document.querySelectorAll('link[rel=stylesheet]')].map(link => link.sheet ? null : new Promise(resolve => {
+      link.addEventListener('load', resolve, { once: true }); link.addEventListener('error', resolve, { once: true });
+      setTimeout(resolve, 3000);
+    })));
+    await document.fonts.ready;
+  });
   const count = await page.evaluate(() => Deck.slides.length);
   const desktopOverflow = await page.evaluate(() => Deck.slides.flatMap((s, i) => {
     Deck.go(i, 999);
