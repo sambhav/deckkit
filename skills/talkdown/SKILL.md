@@ -5,7 +5,7 @@ description: Use when creating or editing slide decks, presentations or talks; w
 
 # talkdown
 
-By default, deliver one `.html` file: a boilerplate plus Markdown in a `<script type="text/markdown">` block. It presents as 16:9 slides and, on a phone or with **R**, reads as an article where the speaker notes become the prose. Write Markdown, not hand-built HTML: it is shorter, and a human can tweak it by hand.
+By default, deliver one `.html` file: a boilerplate plus Markdown in a `<script type="text/markdown">` block. It opens as slides on desktop and mobile. Use the phone's floating **Slides / Article** buttons, or **R** on desktop, to switch at the current section. Shared speaker notes become article prose. Share `?view=read#section-id` for a direct article link; set `<html data-view="read">` only when the author wants an article by default. Write Markdown, not hand-built HTML: it is shorter, and a human can tweak it by hand.
 
 ## File boilerplate
 
@@ -239,3 +239,4 @@ layout: center
 ---
 ## Questions?
 ```
+

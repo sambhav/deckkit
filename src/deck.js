@@ -3,7 +3,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
 
 /* talkdown — slide decks written in Markdown (or HTML), presented on a 16:9 stage, read like an article on a phone.
  *
- * Present view                               Read view (default on phones and portrait tablets, R to switch)
+ * Present view (default on every screen)      Read view (R or the mobile Article button)
  *   ← → Space PgUp PgDn   slides               one scrolling column; speaker notes become the prose,
  *   ↑ ↓ Enter             steps, then slides   builds show finished, fixed-layout slides become figures
  *   1–9                   jump to a step       ← → hop between slides
@@ -61,7 +61,6 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
   /* ---------- theme + view, set before first paint ---------- */
   const q = new URLSearchParams(location.search);
   const portrait = matchMedia('(orientation: portrait) and (max-width: 900px)');   // present view becomes slide-over-notes
-  const small = matchMedia('(max-width: 760px), (max-height: 520px) and (pointer: coarse), (orientation: portrait) and (pointer: coarse)');
   // data-mode: light or dark (the viewer's choice, remembered). data-theme: the look, set by the author.
   // ?theme=light|dark is still read as a mode, for old links.
   const lookOf = p => { const t = p.get('theme'), m = /^(light|dark)$/.test(t); return { mode: p.get('mode') || (m ? t : null), look: t && !m ? t : null }; };
@@ -109,8 +108,8 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
   }
   loadFonts();
   new MutationObserver(loadFonts).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
-  root.dataset.view = q.get('view') || (small.matches ? 'read' : 'present');
-  let viewChosen = q.has('view');
+  const initialView = q.get('view') || root.dataset.view;
+  root.dataset.view = initialView === 'read' ? 'read' : 'present';
   const reading = () => root.dataset.view === 'read';
 
   /* ================= Markdown ================= */
@@ -682,25 +681,40 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
   const done = s => at(s) >= total(s) - 1;
   function setAt(s, k) { for (const st of stepsOf(s)) { const take = Math.min(k, st.n - 1); st.go(take, true); k -= take; } if (started && s === slide()) sync(); }
   const finishForReading = () => slides().forEach(s => stepsOf(s).forEach(st => st.read === 'end' && st.go(st.n - 1, true)));
+  let presentationSteps = new Map();
+  const enterReading = () => {
+    presentationSteps = new Map([...steppers.values()].flat().map(st => [st, st.i]));
+    finishForReading();
+  };
+  const available = (s, view = root.dataset.view) => view === 'read' ? s.dataset.read !== 'hide' : s.dataset.present !== 'hide';
 
   /* ================= navigation ================= */
+  let readAnchor = null;
   // force: re-render the chrome even if the slide hasn't changed (after a view switch, or at startup)
   function go(i, step, force) {
     const list = slides(), from = cur;
     cur = Math.max(0, Math.min(list.length - 1, i));
-    if (!reading()) {                                   // present: hide slides are for the article only
-      const dir = cur < from ? -1 : 1;
-      while (list[cur]?.dataset.present === 'hide' && list[cur + dir]) cur += dir;
-      if (list[cur]?.dataset.present === 'hide') { cur = from; return; }
+    if (!available(list[cur])) {
+      const dir = cur < from ? -1 : 1, target = cur;
+      while (list[cur] && !available(list[cur])) cur += dir;
+      if (!list[cur]) {
+        cur = target;
+        while (list[cur] && !available(list[cur])) cur -= dir;
+      }
+      if (!list[cur]) { cur = from; return; }
     }
     const s = list[cur];
-    if (reading()) { s.closest('.frame').scrollIntoView({ behavior: force ? 'auto' : 'smooth' }); if (force) announce(); return; }
+    if (reading()) {
+      s.closest('.frame').scrollIntoView({ behavior: 'instant' });
+      readAnchor = { y: scrollY };    // short sections near the end cannot always reach the top third
+      announce(); return;
+    }
     if (cur !== from || step != null) setAt(s, step ?? (cur === from - 1 ? Infinity : 0));
-    if (cur !== from || force) { list[from]?.classList.remove('active'); s.classList.add('active'); announce(); }
+    if (cur !== from || force) { list.forEach(item => item.classList.toggle('active', item === s)); announce(); }
     sync();
   }
-  function next() { if (!stepsOf(slide()).some(st => st.next())) go(cur + 1); }
-  function prev() { if (![...stepsOf(slide())].reverse().some(st => st.prev())) go(cur - 1); }
+  function next() { if (reading() || !stepsOf(slide()).some(st => st.next())) go(cur + 1); }
+  function prev() { if (reading() || ![...stepsOf(slide())].reverse().some(st => st.prev())) go(cur - 1); }
 
   // the current slide changed: update the chrome around it
   let ovCur;
@@ -709,6 +723,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     ovCur?.classList.remove('cur'); ovCur = $('overview').children[cur]; ovCur?.classList.add('cur');
     $('sectionLabel').textContent = $('mSec').textContent = s.dataset.section || '';
     $('count').textContent = $('dCount').textContent = `${cur + 1} / ${n}`;
+    $('dCount').setAttribute('aria-label', `Slide ${cur + 1} of ${n}`);
     $('mProg').style.transform = `scaleX(${pct})`;
     if (!reading()) $('progress').style.transform = `scaleX(${pct})`;
     if ('notes' in root.dataset) fillNotes();
@@ -718,6 +733,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     if ($('src').classList.contains('on')) fillSource();
     handlers.slide.forEach(f => f(s, cur));
     if (reading()) history.replaceState(null, '', '#' + (cur + 1)); else if (portrait.matches) fit();
+    mobileState();
   }
   const fillNotes = () => { $('mNotes').innerHTML = slide().querySelector('.notes')?.innerHTML || ''; $('mNotes').scrollTop = 0; };   // the speaker's notes
 
@@ -728,6 +744,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     $('stepCount').textContent = `step ${k + 1}/${n}`;
     $('up').disabled = k === 0; $('down').disabled = k === n - 1;
     label(s);
+    mobileState();
     if (!reading()) history.replaceState(null, '', '#' + (cur + 1) + (n > 1 && k ? '.' + (k + 1) : ''));
     broadcast();
   }
@@ -739,12 +756,22 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     history.replaceState(null, '', '?' + keep + location.hash);
   }
   function setView(v, chosen = true) {
-    if (chosen) { viewChosen = true; setQuery(new Map([['view', v]])); }   // a reload or a shared link opens in the same view
+    if (v !== 'read' && v !== 'present') return;
+    if (chosen) setQuery(new Map([['view', v]]));   // a reload or a shared link opens in the same view
+    if (v === root.dataset.view) return;
+    if (reading()) onScroll();                 // use the visible section, even before the next scroll event
     const i = Math.max(cur, 0);
+    window.scrollTo({ top: scrollY, behavior: 'instant' });
     root.dataset.view = v;
-    if (v === 'read') finishForReading();
+    if (v === 'read') enterReading();
+    else {
+      for (const [st, k] of presentationSteps) st.go(k, true);
+      delete root.dataset.notes;
+      $('dNotes').classList.remove('on');
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
     fit();
-    go(i, v === 'read' ? undefined : 0, true);
+    go(i, undefined, true);
     icons();
   }
   const toggleView = () => setView(reading() ? 'present' : 'read');
@@ -754,19 +781,79 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
   function onScroll() {
     scrolling = false;
     if (!reading()) return;
-    const y = innerHeight * .35;
-    let i = frames.findIndex(f => f.getBoundingClientRect().bottom > y);
-    if (i < 0) i = frames.length - 1;
     const max = root.scrollHeight - innerHeight;
     $('progress').style.transform = `scaleX(${max > 0 ? scrollY / max : 1})`;
-    if (i !== cur) { cur = i; announce(); }
+    if (readAnchor && Math.abs(scrollY - readAnchor.y) < 2) return;
+    readAnchor = null;
+    const y = scrollY < 2 ? 0 : innerHeight * .35;
+    let i = max > 0 && scrollY >= max - 2
+      ? frames.findLastIndex(f => f.getClientRects().length)
+      : frames.findIndex(f => f.getClientRects().length && f.getBoundingClientRect().bottom > y);
+    if (i < 0) i = frames.findLastIndex(f => f.getClientRects().length);
+    if (i < 0) return;
+    if (i !== cur) { cur = i; announce(); } else mobileState();
+  }
+
+  function mobileState() {
+    if (!$('dSlides')) return;
+    $('dSlides').setAttribute('aria-pressed', String(!reading()));
+    $('dRead').setAttribute('aria-pressed', String(reading()));
+    $('dNotes').setAttribute('aria-pressed', String('notes' in root.dataset));
+    const list = slides(), s = slide();
+    if (!s) return;
+    $('dPrev').disabled = !list.slice(0, cur).some(item => available(item)) && (reading() || at(s) === 0);
+    $('dNext').disabled = !list.slice(cur + 1).some(item => available(item)) && (reading() || done(s));
+    $('dHome').disabled = !list.slice(0, cur).some(item => available(item)) && (reading() ? scrollY < 2 : at(s) === 0);
+    const step = !reading() && total(s) > 1 ? `step ${at(s) + 1}/${total(s)}` : '';
+    $('dCount').innerHTML = `<span>${cur + 1} / ${list.length}</span>${step ? `<small>${step}</small>` : ''}`;
+    $('dCount').setAttribute('aria-label', `Slide ${cur + 1} of ${list.length}${step ? ', ' + step : ''}`);
+  }
+
+  function mobileNavigation() {
+    const dialog = $('mobileNav'), list = $('mobileNavList');
+    let sections = true;
+    const render = () => {
+      $('navSections').setAttribute('aria-selected', String(sections));
+      $('navSlides').setAttribute('aria-selected', String(!sections));
+      $('navSections').tabIndex = sections ? 0 : -1;
+      $('navSlides').tabIndex = sections ? -1 : 0;
+      list.setAttribute('aria-labelledby', sections ? 'navSections' : 'navSlides');
+      list.replaceChildren();
+      let previous;
+      slides().forEach((s, i) => {
+        if (!available(s)) return;
+        const section = s.dataset.section || 'Opening';
+        const chapter = previous !== section || s.classList.contains('layout-section');
+        previous = section;
+        if (sections && !chapter) return;
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.innerHTML = `<span>${pad2(i + 1)}</span><b>${esc(sections ? section : (s.dataset.name || s.querySelector('h1, h2')?.textContent || 'Untitled'))}</b>`;
+        const end = slides().findIndex((item, j) => j > i && (item.dataset.section || 'Opening') !== section);
+        if (sections ? cur >= i && (end < 0 || cur < end) : cur === i) b.setAttribute('aria-current', 'location');
+        b.onclick = () => { dialog.close(); go(i, undefined, true); };
+        list.append(b);
+      });
+    };
+    $('dSections').onclick = () => { sections = true; render(); dialog.showModal(); };
+    $('navClose').onclick = () => dialog.close();
+    dialog.onclick = e => { if (e.target === dialog) { const r = dialog.getBoundingClientRect(); if (e.clientY < r.top || e.clientY > r.bottom || e.clientX < r.left || e.clientX > r.right) dialog.close(); } };
+    for (const [id, value] of [['navSections', true], ['navSlides', false]]) {
+      $(id).onclick = () => { sections = value; render(); };
+      $(id).onkeydown = e => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+        e.preventDefault(); sections = e.key === 'Home' || (e.key !== 'End' && !sections); render();
+        $(sections ? 'navSections' : 'navSlides').focus();
+      };
+    }
   }
 
   /* ================= fitting the stage ================= */
-  const DOCK_GAP = 24;
+  const dockSpace = () => $('dock').offsetHeight ? root.clientHeight - $('dock').getBoundingClientRect().top + 12 : 0;
   function fit() {
     const st = $('stage');
     st.style.top = st.style.width = st.style.height = '';
+    root.style.setProperty('--dock-space', `${dockSpace()}px`);
     delete root.dataset.tall;
     if (reading()) {
       // fixed slides are scaled to the width of their figures
@@ -781,7 +868,11 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
       st.style.transform = `translate(-50%,-50%) scale(${Math.min(w / W, h / H)})`;
       return;
     }
-    if (!portrait.matches) { st.style.transform = `translate(-50%,-50%) scale(${Math.min(root.clientWidth / W, root.clientHeight / H)})`; return; }
+    if (!portrait.matches) {
+      const height = root.clientHeight - dockSpace();
+      st.style.top = `${height / 2}px`;
+      st.style.transform = `translate(-50%,-50%) scale(${Math.min(root.clientWidth / W, height / H)})`; return;
+    }
     const s = slide(), head = $('mhead').offsetHeight;
     if (s && tall(s, st, head)) return;
     // a fixed 16:9 slide spans the width under a native header, its own bar tucked behind it
@@ -791,14 +882,14 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
 
   // portrait: the slide sits under the header, centred above the dock, or at the top with its notes below
   function place(st, head, h, shift, k) {
-    const room = root.clientHeight - head - $('dock').offsetHeight - DOCK_GAP;
+    const room = root.clientHeight - head - dockSpace();
     const top = 'notes' in root.dataset ? head : head + Math.max(0, (room - h) / 2);
     st.style.top = `${top + shift}px`;
     st.style.transform = `translateX(-50%) scale(${k})`;
     root.style.setProperty('--slide-bottom', `${top + h}px`);
   }
   function toggleNotes() {
-    if (portrait.matches && !reading()) { root.toggleAttribute('data-notes'); $('dNotes').classList.toggle('on', 'notes' in root.dataset); fillNotes(); fit(); }
+    if (portrait.matches && !reading()) { root.toggleAttribute('data-notes'); $('dNotes').classList.toggle('on', 'notes' in root.dataset); mobileState(); fillNotes(); fit(); }
     else $('notes').classList.toggle('on');
   }
 
@@ -811,7 +902,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     const c = s.querySelector('.content');
     if (!c) return false;
     const md = s.classList.contains('md'), w = md ? root.clientWidth : PW, k = root.clientWidth / w;
-    const avail = (root.clientHeight - head - $('dock').offsetHeight - DOCK_GAP) / k;
+    const avail = (root.clientHeight - head - dockSpace()) * ('notes' in root.dataset ? .58 : 1) / k;
     root.dataset.tall = md ? 'fluid' : 'scaled';
     st.style.width = `${w}px`; st.style.height = `${avail}px`;
     if (!md && s.classList.contains('fixed')) {
@@ -829,6 +920,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
 
   /* ================= chrome ================= */
   const ICON = {
+    home: '<path d="M2 8.5L9 2l7 6.5M4 7v9h10V7M7 16v-5h4v5"/>',
     code: '<path d="M6.5 5L2.5 9l4 4M11.5 5l4 4-4 4"/>',
     notes: '<path d="M3.5 4.5h11M3.5 9h11M3.5 13.5h7"/>',
     palette: '<path d="M9 2a7 7 0 1 0 0 14c1 0 1.5-.6 1.5-1.4 0-.5-.3-.8-.3-1.3 0-.7.6-1.3 1.3-1.3h1.6A3 3 0 0 0 16 9c0-3.9-3.1-7-7-7z"/><circle cx="5.6" cy="8.4" r="1" fill="currentColor"/><circle cx="8.2" cy="5.4" r="1" fill="currentColor"/><circle cx="11.6" cy="6.2" r="1" fill="currentColor"/>',
@@ -895,7 +987,11 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
       <div id="overview"></div>
       <div id="mhead"><b>${esc(bar.querySelector('.title')?.textContent || document.title)}</b><span id="mSec"></span><i id="mProg"></i></div>
       <div id="mNotes"></div>
-      <div id="dock"><button id="dPrev" title="Back">‹</button><span id="dCount"></span><button id="dNext" title="Next">›</button><button id="dNotes" title="Speaker notes (N)">${svg('notes')}</button><button id="dRead" title="Read as an article">${svg('read')}</button></div>
+      <nav id="dock" aria-label="Presentation navigation">
+        <div class="view-switch" role="group" aria-label="Reading format"><button id="dSlides" aria-pressed="true">${svg('present')}<span>Slides</span></button><button id="dRead" aria-pressed="false">${svg('read')}<span>Article</span></button></div>
+        <div class="dock-actions"><button id="dHome" aria-label="Back to top" title="Back to top">${svg('home')}</button><button id="dSections" aria-label="Jump to a section or slide" title="Sections" aria-haspopup="dialog">${svg('grid')}</button><button id="dPrev" aria-label="Previous slide or step" title="Previous">‹</button><span id="dCount"></span><button id="dNext" aria-label="Next slide or step" title="Next">›</button><button id="dNotes" aria-label="Speaker notes" aria-pressed="false" title="Speaker notes">${svg('notes')}</button></div>
+      </nav>
+      <dialog id="mobileNav" aria-labelledby="navTitle"><div class="nav-heading"><h2 id="navTitle">Jump to</h2><button id="navClose" aria-label="Close navigation">×</button></div><div class="nav-tabs" role="tablist" aria-label="Browse presentation"><button id="navSections" role="tab" aria-controls="mobileNavList" aria-selected="true">Sections</button><button id="navSlides" role="tab" aria-controls="mobileNavList" aria-selected="false" tabindex="-1">Slides</button></div><div id="mobileNavList" role="tabpanel" aria-labelledby="navSections"></div></dialog>
       <div id="help">← → slides · ↑ ↓ steps · O overview · R read · T theme · ? keys</div>
       <div id="keys"><div class="kcard"><h3>Keyboard</h3>
         <p><kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd> previous / next slide · <kbd>Home</kbd> <kbd>End</kbd> first / last</p>
@@ -916,8 +1012,14 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     $('next').onclick = () => go(cur + 1);
     $('up').onclick = $('dPrev').onclick = prev;
     $('down').onclick = $('dNext').onclick = next;
+    $('dSlides').onclick = () => setView('present');
     $('dRead').onclick = () => setView('read');
+    $('dHome').onclick = () => {
+      go(0, reading() ? undefined : 0, true);
+      if (reading()) { window.scrollTo({ top: 0, behavior: 'instant' }); onScroll(); }
+    };
     $('dNotes').onclick = toggleNotes;
+    mobileNavigation();
     $('keys').onclick = () => $('keys').classList.remove('on');
     const ov = $('overview');
     all.forEach((s, i) => {
@@ -976,6 +1078,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
 
   /* ================= input ================= */
   function onKey(e) {
+    if ($('mobileNav').open) return;    // the dialog owns focus, tab arrows and Escape
     if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
     const t = e.target, k = e.key, lk = k.toLowerCase();
     if (t.isContentEditable || /^(TEXTAREA|SELECT)$/.test(t.tagName) || (t.tagName === 'INPUT' && !/^(range|checkbox|radio)$/.test(t.type))) return;
@@ -1019,14 +1122,18 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
   }
 
   function swipe() {
-    let x0 = null, y0, idle;
-    // in landscape the dock sits over the slide, so it fades after a few seconds and returns on the next touch
-    const wake = () => { $('dock').classList.remove('idle'); clearTimeout(idle); idle = setTimeout(() => $('dock').classList.add('idle'), 2500); };
-    addEventListener('touchstart', e => { wake(); x0 = !reading() && e.touches.length === 1 ? e.touches[0].clientX : null; y0 = e.touches[0].clientY; }, { passive: true });
-    wake();
+    let x0 = null, y0;
+    // Let controls, horizontal tables, code and media own their gestures.
+    const interactive = 'button, a, input, select, textarea, pre, table, iframe, video, [role="button"], [role="tab"], #dock, #mobileNav, #mNotes';
+    addEventListener('touchstart', e => {
+      x0 = !reading() && e.touches.length === 1 && !e.target.closest(interactive) ? e.touches[0].clientX : null;
+      y0 = e.touches[0].clientY;
+    }, { passive: true });
+    addEventListener('touchcancel', () => { x0 = null; }, { passive: true });
     addEventListener('touchend', e => {
       if (x0 == null) return;
       const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+      x0 = null;
       if (Math.abs(dx) > 40 && Math.abs(dx) > 1.5 * Math.abs(dy)) dx < 0 ? next() : prev();
     }, { passive: true });
   }
@@ -1185,12 +1292,11 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     let resizing = false;
     addEventListener('resize', () => { if (!resizing) { resizing = true; requestAnimationFrame(() => { resizing = false; fit(); }); } });
     addEventListener('scroll', () => { if (!scrolling) { scrolling = true; requestAnimationFrame(onScroll); } }, { passive: true });
-    small.addEventListener('change', e => { if (!viewChosen) setView(e.matches ? 'read' : 'present', false); });
     swipe();
     handlers.ready.forEach(f => f());
     started = true;
     const [sl, sp] = fromHash();
-    if (reading()) finishForReading();
+    if (reading()) enterReading();
     all.forEach(label);
     if (reading() && !sl) { cur = 0; announce(); fit(); onScroll(); }      // an article opens at the top
     else { cur = Math.max(0, sl - 1); fit(); go(cur, reading() ? undefined : sp - 1, true); }
@@ -1206,3 +1312,4 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     key(k, f) { customKeys[k] = f; },
   };
 })();
+

@@ -24,7 +24,7 @@ Human-editable source · Themed components · Custom HTML and JavaScript · No a
 
 talkdown turns Markdown into interactive slides and a readable article. Built-in widgets share the active theme; custom HTML and JavaScript can join the same navigation.
 
-Write the slide content in Markdown and the explanation in `::: notes`. On desktop, present it as a 16:9 deck. On a phone, the same link opens as an article with the notes as prose. Desktop readers can press **R** to switch views.
+Write the slide content in Markdown and the explanation in `::: notes`. On desktop, present it as a 16:9 deck. Phones open as responsive slides, with a floating **Slides / Article** switch. Article view includes the notes as prose. On desktop, press **R** to switch views.
 
 | To… | Start with… |
 |---|---|
@@ -388,13 +388,15 @@ Every colour, typeface and size is a CSS custom property. Override them after `d
 | `L` · `D` | Laser pointer · draw on the slide (cleared on the next slide) |
 | `S` | Show the current slide's Markdown (view source) |
 
-On touch screens a dock replaces the keyboard, with buttons for back, next, notes and read view, and you can swipe between slides and steps.
+On phones and touch screens, a floating dock stays available in both views. **Slides / Article** switches format at the current section; **Home** returns to the beginning. The **Sections** button opens a picker with section and slide tabs. Previous/next buttons step through slides and widgets while presenting, or jump between entries while reading. The notes button opens speaker notes in portrait slides. Swipe on slide content to move between steps; code blocks, tables and controls keep their own gestures.
+
+Switching to the article shows the complete explanation. Switching back restores your presenter step. Rotating the phone keeps the selected view.
 
 ## 📱 Reading
 
 <img src="docs/phones.png" alt="Three phones: a vertical slide, a walkthrough, and read view" width="760">
 
-Phones and portrait tablets open in **read view**, and on a laptop **R** switches to it:
+Choose **Article** in the floating mobile dock, or press **R** on a laptop:
 
 - Markdown slides reflow into article typography, with a chapter label on each.
 - **Speaker notes become the prose.** Timing cues like `[~60s]` are dropped.
@@ -435,7 +437,7 @@ The hit rate rose from 61% to 94% once the cache moved to the edge.
 :::
 ```
 
-Present view works on phones too. Held upright, slides go vertical and reflow at the phone's width, and speaker notes hide until you tap the notes button. Force a view with `?view=read` or `?view=present`.
+Present view works on phones too. Held upright, slides go vertical and reflow at the phone's width, and speaker notes hide until you tap the notes button. Share an article link with `?view=read`, or slides with `?view=present`; append a slide id such as `#widgets` to open that section. Authors can set `<html data-view="read">` to open an article by default. The default is slides on every screen.
 
 ## 🛠 HTML slides
 
@@ -505,3 +507,4 @@ talkdown is pre-release (0.2.0), so the syntax may still change before 1.0.
 ## License
 
 [MIT](LICENSE) © Sambhav Kothari
+

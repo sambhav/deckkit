@@ -27,6 +27,7 @@ async function verify(page, base) {
     }));
     check(!clipped.length, width + 'px phone/tablet clipping: ' + clipped.join(', '));
   }
+  await verifyMobileNavigation(page, base);
   const fixture = [
     '## Syntax fixtures', '', '<!-- Notes with `inline code`', '---', 'still notes -->', '',
     'Real footnote[^real]', '', '[^real]: A `code` footnote.', '',
@@ -134,6 +135,92 @@ async function verify(page, base) {
   check(!errors.length, 'Browser errors: ' + errors.join(', '));
   return { slides: count, widths: sizes.map(s => s[0]), errors };
 }
+async function verifyMobileNavigation(page, base) {
+  const check = (ok, message) => { if (!ok) throw new Error(message); };
+  const notes = 'This is the explanation that accompanies the walkthrough. '.repeat(45);
+  const source = [
+    'layout: title', 'id: opening', 'section: Opening', '---', '# Opening',
+    '---', 'id: process', 'section: Process', '---', '## Process',
+    '::: steps', '### First', 'Start here.', '### Second', 'Continue here.', '### Third', 'Finish here.', ':::',
+    '```text', 'A wide code sample that can be scrolled without changing slides.', '```',
+    '::: notes', notes, ':::',
+    '---', 'id: stage', 'read: hide', '---', '## Stage only',
+    '---', 'id: background', 'present: hide', '---', '## Background',
+    'Article-only detail.',
+    '---', 'id: finish', 'section: Finish', '---', '## Finish',
+  ].join('\n');
+  await page.route('**/mobile-navigation.html*', route => route.fulfill({ contentType: 'text/html', body:
+    '<!doctype html><html data-fonts="off" data-highlight="off"><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + source + '</script></body></html>' }));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(base + '/mobile-navigation.html');
+  await page.waitForFunction(() => window.Deck?.slides.length === 5);
+  check(await page.locator('html').getAttribute('data-view') === 'present', 'Phones should open as slides');
+  check(await page.locator('#dock').isVisible(), 'Mobile controls must be reachable in slides');
+  await page.evaluate(() => Deck.go(1, 1));
+  await page.locator('#dNotes').click();
+  check(await page.locator('#mNotes').evaluate(el => el.clientHeight > 70), 'Long phone slides must leave room for speaker notes');
+  await page.locator('#dNotes').click();
+  for (let i = 0; i < 3; i++) {
+    await page.locator('#dRead').click();
+    check(await page.locator('#dock').isVisible(), 'Article controls must remain visible');
+    await page.locator('#dSlides').click();
+    check(await page.evaluate(() => Deck.cur) === 1, 'Switching views must keep the visible section');
+    check(await page.locator('.slide.active').count() === 1, 'Returning to slides must leave exactly one active slide');
+    check(await page.locator('.slide.active .w-steps .w-pane.on h3').textContent() === 'Second', 'Article expansion must not overwrite the presenter step');
+    check(await page.evaluate(() => scrollY) === 0, 'Article scroll offset must not displace the slide stage');
+  }
+  await page.locator('#dRead').click();
+  await page.locator('#dSections').click();
+  check(await page.locator('#mobileNav').isVisible(), 'Section picker must open as a dialog');
+  await page.locator('#navSlides').click();
+  check(!(await page.locator('#mobileNavList').textContent()).includes('Stage only'), 'Article navigation must omit presentation-only slides');
+  await page.locator('#mobileNavList button').filter({ hasText: 'Background' }).click();
+  check(await page.evaluate(() => Deck.cur) === 3, 'Slide picker must jump within the article');
+  await page.locator('#dSlides').click();
+  check(await page.evaluate(() => Deck.cur) === 4, 'Article-only content must switch to the next presentable slide');
+  check(await page.locator('.slide.active').count() === 1, 'Changing sections in the article must clear the old active slide');
+  await page.locator('#dSections').click();
+  await page.locator('#navSlides').click();
+  check(!(await page.locator('#mobileNavList').textContent()).includes('Background'), 'Slide navigation must omit article-only content');
+  await page.keyboard.press('Escape');
+  check(!(await page.locator('#mobileNav').isVisible()), 'Native Escape must dismiss the picker');
+  await page.locator('#dRead').click();
+  await page.evaluate(() => { Deck.go(0); Deck.go(2); });
+  check(await page.evaluate(() => Deck.cur) === 3, 'Read navigation must skip hidden article frames');
+  await page.locator('#dNext').click();
+  check(await page.evaluate(() => Deck.cur) === 4, 'Article next must advance a slide, not a hidden widget step');
+  await page.locator('#dHome').click();
+  check(await page.evaluate(() => scrollY === 0 && Deck.cur === 0), 'Home must return to the top of the article');
+  for (const [width, height] of [[320, 740], [844, 390], [390, 844]]) {
+    await page.setViewportSize({ width, height });
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    check(await page.locator('html').getAttribute('data-view') === 'read', 'Rotation must preserve the chosen view');
+    check(await page.locator('#dock').evaluate(el => {
+      const box = el.getBoundingClientRect();
+      return box.left >= 0 && box.right <= innerWidth + 1 && box.bottom <= innerHeight;
+    }), 'The dock must fit the phone viewport');
+  }
+  await page.locator('#dSlides').click();
+  await page.locator('#dRead').click();
+  await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+  await page.waitForFunction(() => Deck.cur === 4);
+  await page.locator('#dSlides').click();
+  check(await page.evaluate(() => Deck.cur) === 4 && await page.locator('.slide.active').count() === 1, 'Switching after scrolling to the article end must present its last visible section');
+  await page.evaluate(() => Deck.go(1));
+  await page.locator('.slide.active pre').evaluate(el => {
+    for (const [type, x] of [['touchstart', 220], ['touchend', 40]]) {
+      const event = new Event(type, { bubbles: true });
+      const touch = { clientX: x, clientY: 100 };
+      Object.defineProperty(event, 'touches', { value: [touch] });
+      Object.defineProperty(event, 'changedTouches', { value: [touch] });
+      el.dispatchEvent(event);
+    }
+  });
+  check(await page.evaluate(() => Deck.cur) === 1, 'Scrolling a code block must not swipe to another slide');
+  await page.goto(base + '/mobile-navigation.html?view=read#process');
+  await page.waitForFunction(() => window.Deck?.slides.length === 5);
+  check(await page.locator('html').getAttribute('data-view') === 'read' && await page.evaluate(() => Deck.cur) === 1, 'Explicit article links must preserve their section');
+}
 module.exports = verify;
 if (require.main === module) {
   (async () => {
@@ -143,3 +230,4 @@ if (require.main === module) {
     finally { await browser.close(); }
   })().catch(error => { console.error(error); process.exitCode = 1; });
 }
+

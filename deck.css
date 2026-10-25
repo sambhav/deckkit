@@ -218,27 +218,48 @@ aside.notes { display: none; }
 #stepCount { min-width: 56px; text-align: center; }
 #help { position: fixed; left: 18px; bottom: 16px; color: var(--muted); font: 11.5px var(--mono); z-index: 10; }
 
-/* touch screens present with a native-size dock instead of the scaled-down pager */
+/* A persistent touch dock keeps format switching and navigation within reach. */
 #dock { display: none; }
-@media (pointer: coarse), (max-width: 760px) {
+#mobileNav { color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 22px 22px 0 0;
+  width: min(560px, 100%); max-width: 100%; max-height: min(78dvh, 700px); margin: auto auto 0;
+  padding: 18px 18px max(18px, env(safe-area-inset-bottom)); overflow: hidden; box-shadow: 0 -12px 50px #0003; }
+#mobileNav[open] { display: flex; flex-direction: column; }
+#mobileNav::backdrop { background: var(--scrim); }
+#mobileNav .nav-heading { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 16px; }
+#mobileNav h2 { font-size: 22px; margin: 0; }
+#mobileNav button { color: var(--fg); }
+#navClose { width: 44px; height: 44px; font-size: 28px; border-radius: 12px; }
+.nav-tabs { display: flex; flex-shrink: 0; gap: 4px; margin: 10px 0; padding: 4px; background: var(--surface-2); border-radius: 12px; }
+.nav-tabs button { flex: 1; min-height: 44px; border-radius: 9px; font: 600 14px var(--sans); }
+.nav-tabs [aria-selected=true] { background: var(--surface); box-shadow: 0 1px 4px #0002; }
+#mobileNavList { display: grid; gap: 6px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+#mobileNavList button { display: flex; align-items: baseline; gap: 14px; min-height: 52px; padding: 12px; text-align: left; border: 1px solid transparent; border-radius: 12px; }
+#mobileNavList button span { font: 12px var(--mono); color: var(--muted); }
+#mobileNavList button b { font: 500 15px/1.4 var(--sans); }
+#mobileNavList [aria-current] { background: var(--accent-soft); border-color: var(--accent); }
+@media (pointer: coarse), (max-width: 760px), (orientation: portrait) and (max-width: 900px), (max-height: 520px) and (max-width: 1000px) {
   [data-view=present] #pager, [data-view=present] #help { display: none; }
-  [data-view=present] #dock { display: flex; position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 15;
-                              align-items: center; gap: 2px; padding: 5px; border-radius: 999px; border: 1px solid var(--line); font: 13px var(--mono); color: var(--muted);
-                              background: color-mix(in srgb, var(--surface) 86%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 10px 30px rgba(0,0,0,.14); }
-  #dock button { width: 42px; height: 42px; border-radius: 999px; display: grid; place-items: center; color: var(--fg); font-size: 20px; }
+  #dock { display: grid; position: fixed; left: 50%; bottom: max(12px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 20;
+    width: min(360px, calc(100% - 24px)); padding: 6px; border-radius: 20px; border: 1px solid var(--line); color: var(--muted);
+    background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 6px 28px #0003; }
+  #dock button { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 44px; height: 44px; border-radius: 12px; color: var(--fg); font: 600 13px var(--sans); touch-action: manipulation; }
   #dock button:active { background: var(--surface-2); }
-  #dock #dNotes { display: none; border-left: 1px solid var(--line); border-radius: 0; margin-left: 4px; width: 48px; }
-  #dock #dNotes.on { color: var(--accent-ink); }
-  #dock #dRead { border-left: 1px solid var(--line); border-radius: 0 999px 999px 0; margin-left: 4px; width: 48px; }
-  #dock #dNotes + #dRead { margin-left: 0; }
-  #dCount { min-width: 60px; text-align: center; }
+  #dock button:disabled { opacity: .35; cursor: default; }
+  #dock .view-switch { display: flex; gap: 4px; padding: 3px; border-radius: 14px; background: var(--surface-2); }
+  #dock .view-switch button { flex: 1; height: 44px; }
+  #dock .view-switch [aria-pressed=true] { color: var(--fg); background: var(--bg); box-shadow: 0 1px 5px #0002; }
+  .dock-actions { display: flex; align-items: center; justify-content: space-between; padding-top: 4px; }
+  #dock .dock-actions button { font-size: 24px; }
+  #dock #dNotes { display: none; }
+  #dock #dNotes.on { color: var(--accent-ink); background: var(--accent-soft); }
+  #dCount { display: grid; align-content: center; flex: 1; min-width: 38px; text-align: center; font: 11px/1.4 var(--mono); white-space: nowrap; }
+  #dCount small { font-size: 9px; color: var(--accent-ink); }
+  [data-view=read] #stage { padding-bottom: max(180px, calc(140px + env(safe-area-inset-bottom))); }
+  #mobileNav :focus-visible, #dock :focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
 }
-
-@media (pointer: coarse) and (orientation: landscape) {
-  [data-view=present] #dock { bottom: 10px; padding: 3px; transition: opacity .4s; }
-  #dock button { width: 36px; height: 36px; font-size: 17px; }
-  #dock #dRead { width: 42px; }
-  [data-view=present] #dock.idle { opacity: 0; pointer-events: none; }
+@media (pointer: coarse) and (orientation: landscape), (max-height: 520px) and (max-width: 1000px) and (orientation: landscape) {
+  #dock { grid-template-columns: 170px 1fr; align-items: center; gap: 6px; width: min(620px, calc(100% - 24px)); }
+  #dock .dock-actions { padding-top: 0; }
 }
 
 /* portrait phones present the slide across the top, its notes below, the dock at the bottom */
@@ -249,10 +270,10 @@ aside.notes { display: none; }
   [data-view=present] #mhead { display: flex; align-items: center; gap: 12px; position: fixed; top: 0; left: 0; right: 0; z-index: 6; height: 52px; padding: 0 20px;
                                background: var(--bg); border-bottom: 1px solid var(--line); }
   #mhead b { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #mSec { margin-left: auto; font: 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  #mSec { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
   #mProg { bottom: -1px; height: 2px; }
-  [data-view=present][data-notes] #mNotes { display: block; position: fixed; left: 0; right: 0; top: var(--slide-bottom, 50vh); bottom: 0; overflow: auto; z-index: 4;
-                                padding: 22px 22px 120px; background: var(--bg); border-top: 1px solid var(--line); }
+  [data-view=present][data-notes] #mNotes { display: block; position: fixed; left: 0; right: 0; top: var(--slide-bottom, 50vh); bottom: var(--dock-space, 132px); overflow: auto; z-index: 4;
+                                padding: 22px; background: var(--bg); border-top: 1px solid var(--line); }
   #mNotes p { font-size: 17px; line-height: 1.65; color: var(--muted); max-width: 40em; }
   #mNotes p + p { margin-top: 14px; }
   #mNotes:empty { border-top: 0; }
@@ -570,6 +591,8 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 .w-bar .w-b b { bottom: 100%; left: 50%; transform: translate(-50%, -.45em); }
 .w-chart .w-x { color: var(--muted); line-height: 1.2; }
 .w-bar .w-x { position: absolute; top: 100%; left: -15%; right: -15%; margin-top: .75em; text-align: center; }
+.w-bar .w-grp:first-child .w-x { left: 0; }
+.w-bar .w-grp:last-child .w-x { right: 0; }
 .w-rows { display: grid; grid-template-columns: max-content 1fr; gap: .8em 1.2em; align-items: center; }
 .w-row { display: contents; }
 .w-hbar .w-x { color: var(--fg); }
@@ -832,9 +855,10 @@ aside.article { display: none; }
   html, body { background: #fff; overflow: visible; height: auto; }
   #stage { position: static; transform: none !important; }
   .slide { display: block !important; position: relative; page-break-after: always; animation: none; }
-  #bar, #pager, #progress, #help, #notes, #overview, #keys, #src { display: none !important; }
+  #bar, #pager, #progress, #help, #notes, #overview, #keys, #src, #dock, #mhead, #mNotes, #mobileNav { display: none !important; }
   [data-build] [data-step] { opacity: 1 !important; transform: none !important; }
   .w-panes { display: block !important; }
   .w-pane { visibility: visible !important; opacity: 1 !important; }
   @page { size: 1280px 720px; margin: 0; }
 }
+
