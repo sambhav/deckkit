@@ -1,4 +1,4 @@
-/* deckkit — stage, chrome, Markdown layouts and the read view.
+/* talkdown — stage, chrome, Markdown layouts and the read view.
  * Everything is driven by tokens: html[data-theme] picks a theme, html[data-mode=dark] its dark palette, and
  * html[data-view=read] turns the deck into an article.
  * Override any token in your own :root after this file to theme a deck.

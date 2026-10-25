@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>deckkit</title>
+<title>talkdown</title>
 <meta name="description" content="Slides you write in Markdown, present on a 16:9 stage, and send to a phone as an essay. Two files, no build step.">
 <link rel="stylesheet" href="deck.css?v=0.1.0">
 <script src="deck.js?v=0.1.0"></script>
@@ -48,16 +48,16 @@
 <script type="text/markdown">
 layout: title
 ---
-# deckkit
+# talkdown
 
 Slides you write in Markdown, present on a stage, and send to a phone as an essay.
 
 v0.1 · MIT · Two files, no build step {.meta}
 
 <!--
-deckkit is a small, dependency-free engine for HTML slide decks. You write the deck in Markdown, present it full-screen from the keyboard, and when someone opens the same link on a phone it becomes a long-form article, with your speaker notes as the prose between the slides.
+talkdown is a small, dependency-free engine for HTML slide decks. You write the deck in Markdown, present it full-screen from the keyboard, and when someone opens the same link on a phone it becomes a long-form article, with your speaker notes as the prose between the slides.
 
-You're looking at a deckkit deck. Press → to present it, R to read it as an article, and T for dark mode.
+You're looking at a talkdown deck. Press → to present it, R to read it as an article, and T for dark mode.
 -->
 
 ---
@@ -66,10 +66,10 @@ section: Why
 ---
 Most slides only make sense while someone is presenting them.
 
-deckkit keeps your speaker notes in the deck, so anyone who opens the link later gets the whole story, not just the bullet points.
+talkdown keeps your speaker notes in the deck, so anyone who opens the link later gets the whole story, not just the bullet points.
 
 <!--
-Slides are written to be talked over. Send them to someone who missed the talk and they get the bullet points without the reasoning behind them. In deckkit the speaker notes are part of the deck, so the same file works on a stage, in a review, and on a phone the next morning.
+Slides are written to be talked over. Send them to someone who missed the talk and they get the bullet points without the reasoning behind them. In talkdown the speaker notes are part of the deck, so the same file works on a stage, in a review, and on a phone the next morning.
 -->
 
 ---
@@ -245,9 +245,9 @@ kicker: Widgets
 ---
 ## Compare, then explain
 
-| | Hand-built HTML | Slides app | deckkit | Why |
+| | Hand-built HTML | Slides app | talkdown | Why |
 |---|---|---|---|---|
-| Plain text you can diff | ◐ | ✗ | ✓ | A deckkit deck is one Markdown block in an HTML file, so a review is an ordinary diff. |
+| Plain text you can diff | ◐ | ✗ | ✓ | A talkdown deck is one Markdown block in an HTML file, so a review is an ordinary diff. |
 | Reads well on a phone | ✗ | ◐ | ✓ | Read view reflows Markdown slides and turns the speaker notes into the prose. |
 | Custom interactive diagrams | ✓ | ✗ | ✓ | Any slide can drop to HTML and register its walkthrough with Deck.steps(). |
 | No build step | ✓ | ✓ | ✓ | Two files and a browser. |
@@ -476,7 +476,7 @@ Press R to read this deck as an article. {.muted}
 :::
 
 <!--
-On a phone or a portrait tablet, deckkit opens in read view. Markdown slides reflow into article typography, each with a small chapter label, and their speaker notes follow as paragraphs, so the deck reads top to bottom like a blog post. On a laptop, press R or use the button in the top bar. Force a view with ?view=read or ?view=present in the URL. For content that belongs to one view, like a 'press R' hint or a longer explanation, wrap it in present-only or read-only.
+On a phone or a portrait tablet, talkdown opens in read view. Markdown slides reflow into article typography, each with a small chapter label, and their speaker notes follow as paragraphs, so the deck reads top to bottom like a blog post. On a laptop, press R or use the button in the top bar. Force a view with ?view=read or ?view=present in the URL. For content that belongs to one view, like a 'press R' hint or a longer explanation, wrap it in present-only or read-only.
 -->
 
 ---
@@ -602,10 +602,10 @@ section: Start
 ---
 ## Two files. No build step.
 
-[Get started](#start) · [Source on GitHub](https://github.com/sambhav/deckkit) · MIT licensed
+[Get started](#start) · [Source on GitHub](https://github.com/sambhav/talkdown) · MIT licensed
 
 <!--
-That's deckkit. View the source of this page: it's the deck you just read. The code and the documentation are on GitHub.
+That's talkdown. View the source of this page: it's the deck you just read. The code and the documentation are on GitHub.
 -->
 </script>
 

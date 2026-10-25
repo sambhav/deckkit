@@ -1,4 +1,4 @@
-/* deckkit — slide decks written in Markdown (or HTML), presented on a 16:9 stage, read like an article on a phone.
+/* talkdown — slide decks written in Markdown (or HTML), presented on a 16:9 stage, read like an article on a phone.
  *
  * Present view                               Read view (default on phones and portrait tablets, R to switch)
  *   ← → Space PgUp PgDn   slides               one scrolling column; speaker notes become the prose,
@@ -36,8 +36,8 @@
   const $ = id => document.getElementById(id);
   const root = document.documentElement;
   const store = {
-    get(k, d) { try { return JSON.parse(localStorage.getItem('deckkit:' + k)) ?? d; } catch { return d; } },
-    set(k, v) { try { localStorage.setItem('deckkit:' + k, JSON.stringify(v)); } catch {} },
+    get(k, d) { try { return JSON.parse(localStorage.getItem('talkdown:' + k)) ?? d; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('talkdown:' + k, JSON.stringify(v)); } catch {} },
   };
 
   /* ---------- theme + view, set before first paint ---------- */

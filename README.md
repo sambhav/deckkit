@@ -2,29 +2,29 @@
 
 <img src="docs/logo.svg" width="88" height="88" alt="">
 
-# deckkit
+# talkdown
 
 **Write slides in Markdown. Present them on a stage. Send the same link to a phone and it reads like an essay.**
 
 Two files · No build step · 23 themes, light and dark · MIT
 
-[**Live demo**](https://sambhav.dev/deckkit/) &nbsp;·&nbsp; [Quick start](#-quick-start) &nbsp;·&nbsp; [Syntax](#-writing-slides) &nbsp;·&nbsp; [Widgets](#-widgets) &nbsp;·&nbsp; [Themes](#-themes) &nbsp;·&nbsp; [API](#-api)
+[**Live demo**](https://sambhav.dev/talkdown/) &nbsp;·&nbsp; [Quick start](#-quick-start) &nbsp;·&nbsp; [Syntax](#-writing-slides) &nbsp;·&nbsp; [Widgets](#-widgets) &nbsp;·&nbsp; [Themes](#-themes) &nbsp;·&nbsp; [API](#-api)
 
 ![version](https://img.shields.io/badge/version-0.1.0-F1B000?style=flat-square) ![status](https://img.shields.io/badge/status-pre--release-555?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-3C9A5F?style=flat-square) ![build](https://img.shields.io/badge/build_step-none-2B63F5?style=flat-square) ![size](https://img.shields.io/badge/files-2-E8428E?style=flat-square)
 
 <br>
 
-<img src="docs/hero.png" alt="A deckkit slide on a laptop, and the same deck as an article on a phone" width="900">
+<img src="docs/hero.png" alt="A talkdown slide on a laptop, and the same deck as an article on a phone" width="900">
 
 </div>
 
 <br>
 
-## Why deckkit?
+## Why talkdown?
 
 Most slides only make sense while someone is presenting them. Send a deck to someone who missed the talk and they get the bullet points without the reasoning behind them.
 
-deckkit keeps your speaker notes in the deck. Present it and the notes stay with you; open the same link later and they become the text between the slides. One file works in three places:
+talkdown keeps your speaker notes in the deck. Present it and the notes stay with you; open the same link later and they become the text between the slides. One file works in three places:
 
 | | On a laptop | On a phone | In a review |
 |---|---|---|---|
@@ -54,8 +54,8 @@ Create `talk.html`:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dynamic Tools</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sambhav/deckkit@main/deck.css">
-  <script src="https://cdn.jsdelivr.net/gh/sambhav/deckkit@main/deck.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sambhav/talkdown@main/deck.css">
+  <script src="https://cdn.jsdelivr.net/gh/sambhav/talkdown@main/deck.js"></script>
 </head>
 <body>
 <script type="text/markdown">
@@ -322,7 +322,7 @@ Add the class `flow` if the slide can reflow in read view; otherwise it is shown
 | `Deck.key('d', e => …)` | Bind a key |
 | `Deck.setView('read' \| 'present')` | Switch views |
 | `Deck.markdown(text)` | Render Markdown to HTML |
-| `Deck.store.get(k, fallback)` · `.set(k, v)` | localStorage, namespaced `deckkit:` |
+| `Deck.store.get(k, fallback)` · `.set(k, v)` | localStorage, namespaced `talkdown:` |
 
 ## 🌐 Browser support
 
@@ -332,7 +332,7 @@ Current Chrome, Edge, Firefox and Safari, on desktop and mobile. Print from the 
 
 Issues and pull requests are welcome. There's no toolchain: edit `deck.js` or `deck.css`, then open [`index.html`](index.html), which is the demo deck and the best test page. Before sending a change, check present view, read view (**R**), dark mode (**T**) and a phone-sized window.
 
-deckkit is pre-release (0.1.0), so the syntax may still change before 1.0.
+talkdown is pre-release (0.1.0), so the syntax may still change before 1.0.
 
 ## License
 
