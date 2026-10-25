@@ -549,6 +549,7 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 :root:not([data-view=read]):not([data-tall]) .w-chart-box[data-chart-view=both] > :is(figcaption, .w-chart-tools) { grid-column: 1 / -1; }
 :root:not([data-view=read]):not([data-tall]) .w-chart-box[data-chart-view=both] > .w-chart-table { margin-top: 0; }
 .td-error { padding: 12px; border: 1px solid var(--red); border-radius: 8px; color: var(--fg); background: var(--surface); font-size: var(--t-small); }
+.td-load-error { position: relative; z-index: 30; margin: 72px 24px 24px; max-width: 60em; }
 .w-zero { position: absolute; left: 0; right: 0; height: 1px; background: var(--muted); pointer-events: none; }
 .w-bar .w-b { bottom: var(--bottom, 0%); }
 .w-hbar .w-b { margin-left: var(--start, 0%); }

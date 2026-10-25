@@ -10,8 +10,12 @@ const context = {
   URLSearchParams, matchMedia: () => ({ matches: false }),
   MutationObserver: class { observe() {} }, window: {},
 };
-vm.runInNewContext(fs.readFileSync(require.resolve('../deck.js'), 'utf8'), context);
+vm.runInNewContext(fs.readFileSync(require.resolve('../dist/deck.js'), 'utf8'), context);
 const md = s => context.window.Deck.markdown(s).trim().replace(/>\n</g, '><');
+
+test('legacy asset URLs are byte-identical to the published dist assets', () => {
+  for (const name of ['deck.js', 'deck.css']) assert.deepEqual(fs.readFileSync(require.resolve('../' + name)), fs.readFileSync(require.resolve('../dist/' + name)));
+});
 
 test('literal punctuation escapes do not become formatting', () => {
   assert.equal(md('\\*literal\\* \\_name\\_ \\[link\\]'), '<p>*literal* _name_ [link]</p>');

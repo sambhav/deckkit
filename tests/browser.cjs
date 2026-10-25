@@ -39,7 +39,7 @@ async function verify(page, base) {
     '---', '## End',
   ].join('\n');
   await page.route('**/regression.html*', r => r.fulfill({ contentType: 'text/html', body:
-    '<!doctype html><html data-fonts="off" data-highlight="off" data-diagrams="off" data-icons="off"><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + fixture + '</script></body></html>' }));
+    '<!doctype html><html data-fonts="off" data-highlight="off" data-diagrams="off" data-icons="off"><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="dist/deck.css"><script src="dist/deck.js"></script></head><body><script type="text/markdown">' + fixture + '</script></body></html>' }));
   await page.goto(base + '/regression.html?view=present');
   await page.waitForFunction(() => window.Deck?.slides.length === 2);
   check((await page.locator('pre code').first().textContent()).includes('[^demo]: keep in code'), 'Footnote definitions in fenced code must survive');
@@ -70,7 +70,7 @@ async function verify(page, base) {
   ].join('\n');
   const native = '<section class="slide flow"><div class="content"><h2>Native HTML</h2><figure data-chart="line" data-chart-view="both"><figcaption>Native data</figcaption><table><thead><tr><th>Label</th><th>Value</th></tr></thead><tbody><tr><th>A</th><td>1</td></tr><tr><th>B</th><td>2</td></tr></tbody></table></figure></div></section>';
   await page.route('**/charts.html*', r => r.fulfill({ contentType: 'text/html', body:
-    '<!doctype html><html data-fonts="off" data-highlight="off"><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + charts + '</script>' + native + '</body></html>' }));
+    '<!doctype html><html data-fonts="off" data-highlight="off"><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="dist/deck.css"><script src="dist/deck.js"></script></head><body><script type="text/markdown">' + charts + '</script>' + native + '</body></html>' }));
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(base + '/charts.html?view=present');
   await page.waitForFunction(() => window.Deck?.slides.length === 7);
@@ -111,6 +111,26 @@ async function verify(page, base) {
   await first.locator('select').selectOption('auto');
   check(await first.locator('.w-chart-table').isVisible(), 'Auto view must expose data in the article');
   check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Chart data must not widen the phone page');
+  // Exercise both published asset paths and multiple asynchronous references.
+  for (const assets of ['dist/', '']) {
+    const source = '## External\n\n```html\n<script>hello</script>\n```';
+    await page.route('**/first.md', r => r.fulfill({ contentType: 'text/plain', body: source }));
+    await page.route('**/second.md', r => r.fulfill({ contentType: 'text/plain', body: '## Second external' }));
+    await page.route('**/missing.md', r => r.fulfill({ status: 404, body: 'missing' }));
+    await page.route('**/references.html*', r => r.fulfill({ contentType: 'text/html', body:
+      '<!doctype html><html data-fonts="off" data-highlight="off"><head><link rel="stylesheet" href="' + assets + 'deck.css"><script src="' + assets + 'deck.js"></script></head><body><script type="text/markdown">## Inline</script><script type="text/markdown" data-src="first.md"></script><section class="slide flow"><div class="content"><h2>Native</h2></div></section><script type="text/markdown" data-src="second.md"></script><script type="text/markdown" data-src="missing.md"></script></body></html>' }));
+    await page.goto(base + '/references.html?view=read');
+    await page.waitForFunction(() => window.Deck?.slides.length === 4);
+    check(await page.evaluate(() => Deck.slides.map(s => s.dataset.name || s.querySelector('h2').textContent).join('|')) === 'Inline|External|Native|Second external', 'Reference loading must preserve slide order');
+    check(await page.locator('#stage pre code').textContent() === '<script>hello</script>', 'Referenced Markdown must preserve literal closing script tags');
+    check(await page.locator('.td-load-error').count() === 1, 'Failed references must be diagnosed without breaking other slides');
+    check(await page.locator('#stage').evaluate(e => getComputedStyle(e).position) === 'static', 'Both asset URLs must load the stylesheet');
+  }
+  await page.route('**/empty-reference.html*', r => r.fulfill({ contentType: 'text/html', body:
+    '<!doctype html><html data-fonts="off"><head><link rel="stylesheet" href="dist/deck.css"><script src="dist/deck.js"></script></head><body><script type="text/markdown" data-src="missing.md"></script></body></html>' }));
+  await page.goto(base + '/empty-reference.html');
+  await page.waitForFunction(() => window.Deck && document.querySelector('.td-load-error'));
+  check(await page.locator('.td-load-error').isVisible(), 'A failed standalone reference needs a visible error');
   check(!errors.length, 'Browser errors: ' + errors.join(', '));
   return { slides: count, widths: sizes.map(s => s[0]), errors };
 }

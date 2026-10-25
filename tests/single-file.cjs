@@ -8,7 +8,7 @@ async function verifySingleFile(page, files, fs, os) {
   page.on('pageerror', onError); page.on('request', onRequest);
   try {
     // Fonts are optional, and this test intentionally requests no web assets.
-    const html = files.html.replace('<html lang="en">', '<html lang="en" data-fonts="off">').replaceAll('../deck.', 'deck.');
+    const html = files.html.replace('<html lang="en">', '<html lang="en" data-fonts="off">').replaceAll('../dist/deck.', 'deck.');
     await Promise.all([
       fs.writeFile(dir + '/index.html', html),
       fs.writeFile(dir + '/deck.js', files.js),
@@ -50,8 +50,8 @@ if (require.main === module) {
     const root = path.join(__dirname, '..');
     const files = {
       html: await fs.readFile(path.join(root, 'examples/starter.html'), 'utf8'),
-      js: await fs.readFile(path.join(root, 'deck.js'), 'utf8'),
-      css: await fs.readFile(path.join(root, 'deck.css'), 'utf8'),
+      js: await fs.readFile(path.join(root, 'dist/deck.js'), 'utf8'),
+      css: await fs.readFile(path.join(root, 'dist/deck.css'), 'utf8'),
     };
     const browser = await chromium.launch();
     try { console.log(await verifySingleFile(await browser.newPage(), files, fs, os)); }

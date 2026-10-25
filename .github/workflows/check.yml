@@ -15,7 +15,7 @@ jobs:
       - run: node --check deck.js
       - run: npm ci
       - run: npm run build
-      - run: git diff --exit-code -- deck.js
+      - run: git diff --exit-code -- dist/ deck.js deck.css
       - run: npm test
   single-file:
     runs-on: ubuntu-latest

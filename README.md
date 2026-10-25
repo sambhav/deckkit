@@ -56,8 +56,8 @@ Create `talk.html`:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dynamic Tools</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sambhav/talkdown@main/deck.css">
-  <script src="https://cdn.jsdelivr.net/gh/sambhav/talkdown@main/deck.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sambhav/talkdown@main/dist/deck.css">
+  <script src="https://cdn.jsdelivr.net/gh/sambhav/talkdown@main/dist/deck.js"></script>
 </head>
 <body>
 <script type="text/markdown">
@@ -89,7 +89,7 @@ Open it in a browser and press →. That's it.
 
 <br>
 
-Copy [`deck.css`](deck.css) and [`deck.js`](deck.js) next to your HTML and link them directly. [`examples/starter.html`](examples/starter.html) is a ready-made starting point. To publish, put the folder anywhere that serves static files: GitHub Pages, a bucket, an intranet share.
+Copy [`dist/deck.css`](dist/deck.css) and [`dist/deck.js`](dist/deck.js) next to your HTML and link them directly. [`examples/starter.html`](examples/starter.html) is a ready-made starting point. To publish, put the folder anywhere that serves static files: GitHub Pages, a bucket, an intranet share.
 
 </details>
 
@@ -167,6 +167,16 @@ The existing single-file workflow stays supported: put your content in `index.ht
 For a single self-contained HTML file, write `<\/script>` instead of a literal closing script tag inside the Markdown script. **S → Copy** preserves that escape so the result can be pasted back into the HTML safely.
 
 Markdown, CSV data, HTML slides and custom JavaScript can all stay in that one HTML file. The tokenizer and CSV decoder are already bundled into `deck.js`; no additional script tags or per-deck generated files are needed.
+
+Published assets live in `dist/`; editable code and styles live in `src/`. The old root `deck.js` and `deck.css` URLs remain supported for existing CDN and sambhav.dev embeds. The build generates byte-identical compatibility copies, so old URLs keep the same loading behavior.
+
+To reference a Markdown file instead of embedding it, use:
+
+```html
+<script type="text/markdown" data-src="talk.md"></script>
+```
+
+Serve referenced decks over HTTP; direct `file://` use remains supported for inline decks. You can mix references, inline Markdown, and hand-written HTML slides in document order. Relative image and recording URLs resolve against the HTML wrapper. A failed reference displays an error without preventing the other slides from loading.
 
 - Escape punctuation in prose with a backslash: `\*literal asterisks\*`.
 - Use two backticks around inline code that contains one backtick, and a longer matching fence around fenced code examples.
@@ -452,7 +462,7 @@ Current Chrome, Edge, Firefox and Safari, on desktop and mobile. Print from the 
 
 ## 🤝 Contributing
 
-Deck authors do not build anything: use the committed `deck.js` and `deck.css`. Maintainers edit `src/` or `deck.css`, run `npm ci`, then `npm run build` and `npm test`. Commit the generated `deck.js` alongside source changes. CI checks that rebuilding produces the committed bundle and tests the original single-file starter directly from disk with networking disabled.
+Deck authors do not build anything: use the committed `dist/deck.js` and `dist/deck.css`. Maintainers edit `src/`, run `npm ci`, then `npm run build` and `npm test`. Commit `dist/` and the generated root compatibility copies alongside source changes. Root `/deck.js` and `/deck.css` URLs stay supported and are byte-identical to the `dist/` assets. CI checks that rebuilding produces the committed bundle and tests the original single-file starter directly from disk with networking disabled.
 
 For browser checks, run `npx playwright install chromium`, then `npm run test:single-file` and `node tests/run-browser.cjs`. The browser suite covers the full demo, phone layouts, CSV and Markdown table equivalence, view switching, downloads, invalid data, native HTML charts, notes and keyboard controls.
 

@@ -1130,8 +1130,24 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
   }
   const openPresenter = () => { const u = new URL(location.href); u.searchParams.set('presenter', ''); u.searchParams.set('view', 'present'); window.open(u, 'talkdown-presenter', 'width=1280,height=800'); };
 
-  function start() {
+  async function start() {
+    // Only decks that explicitly reference Markdown perform a source fetch.
+    // Inline decks still assemble synchronously, including when opened from disk.
+    const references = [...document.querySelectorAll('script[type="text/markdown"][data-src]')];
+    if (references.length) await Promise.all(references.map(async node => {
+      try {
+        if (!node.dataset.src.trim()) throw new Error('Missing Markdown URL');
+        const response = await fetch(node.dataset.src);
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        node.textContent = await response.text();
+      } catch (error) {
+        const message = document.createElement('p'); message.className = 'td-error td-load-error'; message.setAttribute('role', 'alert');
+        message.textContent = `Could not load slides from ${node.dataset.src || '(empty URL)'}: ${error.message}. External Markdown requires HTTP; inline decks can open directly from disk.`;
+        node.before(message); node.remove();
+      }
+    }));
     assemble();
+    if (!all.length) return;
     agendas();
     qrs();
     lucide();

@@ -10,10 +10,13 @@ const notices = ['markdown-it', 'papaparse', 'mdurl', 'uc.micro', 'linkify-it', 
   if (!license) throw new Error('Missing license for ' + name);
   return '/* ' + name + '\n' + fs.readFileSync(path.join(dir, license), 'utf8').replace(/\*\//g, '* /') + '\n*/';
 }).join('\n');
-// Authors use the committed deck.js directly. This build is for maintainers.
+// Authors use the committed dist/ assets directly. Root copies preserve all
+// existing CDN and sambhav.dev links without changing script execution timing.
 buildSync({
-  entryPoints: ['src/deck.js'], outfile: 'deck.js', bundle: true,
+  entryPoints: ['src/deck.js'], outfile: 'dist/deck.js', bundle: true,
   platform: 'browser', format: 'iife', target: 'es2022', minify: true,
   legalComments: 'inline', charset: 'utf8',
   banner: { js: '/* talkdown 0.2 — bundled runtime; edit src/deck.js, then npm run build. */\n' + notices },
 });
+fs.copyFileSync('src/deck.css', 'dist/deck.css');
+for (const name of ['deck.js', 'deck.css']) fs.copyFileSync(path.join('dist', name), name);
