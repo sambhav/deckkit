@@ -139,13 +139,13 @@ Q2,340
 - Callout: `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]`.
 - Pull quote: a `>` quote whose last line is `> — Name`.
 - Flip card: `::: flip`; the `###` is the front, the rest the back.
-- Diagram: a ` ```mermaid ` fence (add `{source}` to show the text beside it).
+- Diagram: a ` ```mermaid ` fence (add `{source}` to show the text beside it). Readers can click it to open it full screen and zoom, so dense diagrams are fine.
 - Terminal: a ` ```terminal ` fence; each `$ cmd` line types out per step, then its output.
 - Also: `- [x]` checklists, `text[^1]` + `[^1]: source` footnotes, `$x^2$` / `$$..$$` maths, `:rocket:` Lucide icons, `::: agenda` (links every section), `::: qr` (QR of the deck URL), `![](youtube-or-.mp4-link)` video, `![](demo.cast)` recording.
 
 ## Themes and mode
 
-Set on `<html>`: `data-theme="rose"`. Themes: clean (default), paper, slate, ledger, noir, editorial, swiss, atelier, mocha, rose, sunset, chalk, clinic, forest, ocean, nord, solar, terminal, ai, blueprint, punk, volt, synth. Every theme has light and dark; decks open dark, `data-mode="light"` flips the default. `data-theme-picker` adds a viewer picker. `?theme=rose&mode=light` in the URL overrides both.
+Set on `<html>`: `data-theme="rose"`. Themes: clean (default), paper, slate, ledger, noir, editorial, swiss, atelier, mocha, rose, sunset, chalk, clinic, forest, ocean, nord, solar, terminal, ai, blueprint, punk, volt, synth. Every theme has light and dark; decks open in the viewer's system mode, `data-mode="light"` or `"dark"` fixes the default. `data-theme-dark="clean"` is the theme for dark mode (T switches between the two). `data-theme-picker` adds a viewer picker. For a custom top bar (name plus links), put `<div id="bar"><div class="title">Name</div><a href="…">Link</a></div>` in the page. `?theme=rose&mode=light` in the URL overrides both.
 
 ## Rules for agents
 

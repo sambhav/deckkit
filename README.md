@@ -6,11 +6,11 @@
 
 **Interactive presentations in Markdown. Present as slides. Share as an article.**
 
-Human-editable source · Themed components · Custom HTML and JavaScript · No author build
+Markdown an agent can write and you can edit · Themed interactive components · Escape hatches to HTML and JavaScript · No author build
 
-[**Live demo**](https://sambhav.dev/talkdown/) &nbsp;·&nbsp; [Overview](#what-talkdown-does) &nbsp;·&nbsp; [Quick start](#-quick-start) &nbsp;·&nbsp; [For agents](#-for-agents) &nbsp;·&nbsp; [Syntax](#-writing-slides) &nbsp;·&nbsp; [Widgets](#-widgets) &nbsp;·&nbsp; [Themes](#-themes) &nbsp;·&nbsp; [API](#-api)
+[**Live demo**](https://sambhav.dev/talkdown/) &nbsp;·&nbsp; [Why](#why-talkdown) &nbsp;·&nbsp; [Quick start](#-quick-start) &nbsp;·&nbsp; [For agents](#-for-agents) &nbsp;·&nbsp; [Syntax](#-writing-slides) &nbsp;·&nbsp; [Widgets](#-widgets) &nbsp;·&nbsp; [Themes](#-themes) &nbsp;·&nbsp; [API](#-api)
 
-![version](https://img.shields.io/badge/version-0.2.0-F1B000?style=flat-square) ![status](https://img.shields.io/badge/status-pre--release-555?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-3C9A5F?style=flat-square) ![build](https://img.shields.io/badge/build_step-none-2B63F5?style=flat-square) ![size](https://img.shields.io/badge/files-2-E8428E?style=flat-square)
+![version](https://img.shields.io/badge/version-0.3.0-F1B000?style=flat-square) ![status](https://img.shields.io/badge/status-pre--release-555?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-3C9A5F?style=flat-square) ![build](https://img.shields.io/badge/build_step-none-2B63F5?style=flat-square) ![size](https://img.shields.io/badge/files-2-E8428E?style=flat-square)
 
 <br>
 
@@ -20,25 +20,41 @@ Human-editable source · Themed components · Custom HTML and JavaScript · No a
 
 <br>
 
-## What talkdown does
+## Why talkdown
 
-talkdown turns Markdown into interactive slides and a readable article. Built-in widgets share the active theme; custom HTML and JavaScript can join the same navigation.
+Agents have gotten really good at building slides, and I make more and more of my talks that way. The results are great: interactive, quick to build, pretty, easy to iterate on with the agent, and easy to host as a static page.
 
-Write the slide content in Markdown and the explanation in `::: notes`. On desktop, present it as a 16:9 deck. Phones open as slides. Floating **Previous / Next** buttons move through steps and then slides. The menu opens **Slides / Article**, section jumps, and Home. Article view includes the notes as prose. On desktop, press **R** to switch views.
+But every deck is a pile of generated HTML:
+
+- **Only an agent can maintain it.** The markup, styling and navigation are regenerated for every talk.
+- **No two decks look the same.** Each one, and often each slide, invents its own layout and spacing.
+- **A small edit means digging through markup.** Fixing a word or a number by hand is harder than it should be.
+- **Every change burns tokens.** Even a typo goes back through the agent.
+
+I also wanted things slide apps don't do, and agents only do with a lot of prompting:
+
+- **Slides that work as a blog post**, so the link I share after a talk carries the whole idea, not just the bullets.
+- **Themes** that restyle the whole deck at once.
+- **Widgets** for technical talks: terminals, tables, charts, code walkthroughs and diagrams.
+- **No build step, and nothing to host but static files.**
+
+So I built talkdown:
+
+- **Write Markdown, get interactive slides.** The agent writes only the content, so it uses far fewer tokens, and talkdown supplies the layout, theme, keyboard controls and phone layout, so every deck is consistent. The source is small enough to edit by hand.
+- **One link, two formats.** Present it as slides. Afterwards, readers skim the slides or switch to an article where your speaker notes become the prose.
+- **Themes and widgets built in.** 23 themes, each light and dark, and widgets that are a few lines of Markdown each.
+- **Escape hatches when Markdown runs out.** Inline HTML, hand-built slides with your own JavaScript, CSS tokens, different words for slides and article, a small API, and a pinned or self-hosted runtime. Drop down for one slide; the rest stays Markdown.
+- **No build, static hosting.** One HTML file and one script tag. GitHub Pages, a bucket or an intranet share all work.
+
+The [live demo](https://sambhav.dev/talkdown/) is itself a talkdown deck: a short pitch, then a live tour of every feature. Use **← →** for slides and **↑ ↓** for steps; press **S** to see any slide's Markdown, **R** to read it as an article, and **T** for light or dark.
 
 | To… | Start with… |
 |---|---|
-| Understand why the format exists | [The opening presentation](https://sambhav.dev/talkdown/#why) |
+| See the pitch | [The opening presentation](https://sambhav.dev/talkdown/#why) |
 | Explore live components | [The widget tour](https://sambhav.dev/talkdown/#widgets) |
 | Create a deck | [Quick start](#-quick-start) or [the starter file](examples/starter.html) |
 | Have an agent write a deck | [For agents](#-for-agents) |
 | Add a custom interaction | [HTML slides](#-html-slides) and [the API](#-api) |
-
-## Using the demo
-
-The [live demo](https://sambhav.dev/talkdown/) opens with a short presentation about the format, followed by the feature tour. Use **← →** for slides and **↑ ↓** for steps. Press **S** to inspect a Markdown slide's source, **R** to read the article, and **T** to switch light/dark mode.
-
-The examples run in the deck itself. Try a tab, inspect a chart's data, and use the theme picker to see how components change together.
 
 ## 🚀 Quick start
 
@@ -99,7 +115,7 @@ For decks that should follow Talkdown updates, include this one stable URL:
 
 The loader itself can be cached. It requests `latest.json` with `cache: no-store` and a unique URL, then loads the named, integrity-checked JS/CSS pair. Those content-hashed files can be cached indefinitely. Every `npm run build` updates the manifest automatically; keep the older hashed files available for readers who already loaded a manifest.
 
-This updates decks on a new visit or reload, not halfway through a presentation. It requires a network connection. Existing `deck.js` / `deck.css` links and offline authoring continue to work.
+This updates decks on a new visit or reload, not halfway through a presentation. It requires a network connection. While it loads, readers see a spinner in their light or dark mode; if the release can't be fetched or the runtime fails to start, they get an error screen with a Reload button instead of a blank page. Existing `deck.js` / `deck.css` links and offline authoring continue to work.
 
 Custom JavaScript must wait for the asynchronous loader:
 
@@ -260,11 +276,12 @@ Widgets use a few lines of Markdown. Stateful widgets take part in ↑ ↓ navig
 | **Explained table** | `{.explain}` after a table. The last column becomes the detail for the selected row |
 | **Marks** | ✓ ◐ ✗ at the start of a cell become icons in the theme's green, accent and red |
 | **Stepped code** | ` ```python {steps: 1-2 \| 3-4} ` lights up each group of lines in turn |
+| **Copy buttons** | Every code block gets a **Copy** button, shown on hover and always on touch screens |
 | **Flip cards** | `::: flip`: the `###` heading is the front, the rest is the back |
 | **Timeline** | `::: timeline`, then a `###` heading per milestone. Vertical on phones |
 | **Stats** | `::: stats` around a list like `- **42%** faster first response` |
 | **Callouts** | `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]` |
-| **Diagrams** | ` ```mermaid `: flowcharts, networks, sequence, architecture, state, charts and more. Add `{source}` to show the text beside it |
+| **Diagrams** | ` ```mermaid `: flowcharts, networks, sequence, architecture, state, charts and more. Add `{source}` to show the text beside it. Readers can click a diagram to open it full screen and zoom |
 | **Charts** | `::: chart type=line` around a table or fenced CSV. Plot, table and download share one dataset. Legacy `{.chart}` table attributes still work |
 | **Pull quotes** | A `>` quote whose last line starts with `—` becomes a large quote with that attribution |
 | **Checklists** | `- [x] done` and `- [ ] to do` |
@@ -275,7 +292,7 @@ Widgets use a few lines of Markdown. Stateful widgets take part in ↑ ↓ navig
 | **Recordings** | `![title](demo.cast)` plays an [asciinema](https://asciinema.org/) recording in the same window, without the asciinema player. A file needs the page served over http; paste the recording into a ` ```cast ` block to play it anywhere |
 | **Video** | `![title](youtube, vimeo or .mp4 link)` embeds a player |
 | **Accordion** | `::: accordion`, then a `###` heading per item; ↓ opens them in turn |
-| **Feature cards** | `::: features`, then a `###` heading per card. An `:icon:` or image at the start of the heading becomes its icon |
+| **Feature cards** | `::: features`, then a `###` heading per card. An `:icon:` or image at the start of the heading becomes its icon. Up to three per row; set `--n` on `.w-features` for more |
 | **Agenda** | An empty `::: agenda` lists every section slide, each linking to it |
 | **QR code** | `::: qr` draws a QR code of the deck's link, or of a URL written inside it |
 | **Icons** | `:rocket:` anywhere: any of the [Lucide](https://lucide.dev/icons) icons, drawn in the theme's colours. A feature card's heading can also start with `![](icon.svg)` |
@@ -361,9 +378,10 @@ Themes apply across slides and built-in components, including charts, code highl
 | **Tech** | `solar` ☾ · `terminal` ☾ · `ai` ☾ · `blueprint` ☾ |
 | **Loud** | `punk` · `volt` ☾ · `synth` ☾ |
 
-Every theme is a light and dark pair; ☾ marks the ones designed dark first, and the picker shows the same mark. Decks open in dark mode; `<html data-mode="light">` makes light the default. Viewers switch with **T**, and their choice is remembered.
+Every theme is a light and dark pair; ☾ marks the ones designed dark first, and the picker shows the same mark. Decks open in the viewer's system light or dark mode; `<html data-mode="light">` or `"dark"` fixes the default. Viewers switch with **T**, and their choice is remembered.
 
 - `?theme=rose` and `?mode=dark` in the URL override both. Handy for sharing.
+- `<html data-theme="paper" data-theme-dark="clean">` opens in paper for light-mode viewers and clean for dark-mode ones, and **T** switches between them (until the viewer picks a theme).
 - `<html data-theme-picker>` adds a picker to the top bar so viewers can choose.
 - Typefaces load from Google Fonts for the active theme only. `<html data-fonts="off">` keeps system fonts.
 
@@ -413,6 +431,8 @@ Every colour, typeface and size is a CSS custom property. Override them after `d
 | `P` | Presenter view: a second window with the next slide, your notes and a timer, kept in step with the audience screen |
 | `L` · `D` | Laser pointer · draw on the slide (cleared on the next slide) |
 | `S` | Show the current slide's Markdown (view source) |
+| Click a diagram | Open it full screen: scroll or pinch to zoom, drag to move, `Esc` to close |
+| Click a link to a slide | Jumps there; the browser's Back button returns to the slide you were on |
 
 On phones, the default is slides. A compact row of **Previous**, **Next**, and **Menu** buttons stays available near the bottom. The menu contains **Slides / Article**, **Home**, and a section/slide picker. Opening it does not resize the content.
 
@@ -499,6 +519,19 @@ When a slide needs something Markdown can't express, write it by hand, anywhere 
 
 Add the class `flow` if the slide can reflow in read view; otherwise it is shown as a scaled figure. A slide can have several steppers. `<div data-build>` with `[data-step]` children and `<button data-next>` work without any script.
 
+### Your own top bar
+
+The top bar shows `document.title`, the current section and the deck's buttons. To use your own name or add links, put a `#bar` anywhere in the page:
+
+```html
+<div id="bar">
+  <div class="title">My talk</div>
+  <a href="https://github.com/you/repo">GitHub</a>
+</div>
+```
+
+Links show as small pills beside the title, and talkdown still adds the section label and buttons. There is no footer slot.
+
 ## 📚 API
 
 | | |
@@ -538,7 +571,7 @@ Deck authors never build anything: use `latest.js`, or local `deck.js` and `deck
 
 For browser checks, run `npx playwright install chromium`, then `npm run test:single-file` and `node tests/run-browser.cjs`. The browser suite covers the full demo, phone layouts, CSV and Markdown table equivalence, view switching, downloads, invalid data, native HTML charts, notes and keyboard controls.
 
-talkdown is pre-release (0.2.0), so the syntax may still change before 1.0.
+talkdown is pre-release (0.3.0), so the syntax may still change before 1.0.
 
 
 ## License

@@ -9,8 +9,9 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
  *   1–9                   jump to a step       ← → hop between slides
  *   Home End · O overview · N notes · T light / dark · R read / present · F fullscreen · S view source · ? keys · Esc close
  *
- * Themes: <html data-theme="rose">, 23 of them, each with a light and a dark mode and its own typefaces (fetched for the
+ * Themes: <html data-theme="rose"> (data-theme-dark="clean" for a different look in dark mode), 23 of them, each with a light and a dark mode and its own typefaces (fetched for the
  * active theme; <html data-fonts="off"> keeps system fonts). <html data-theme-picker> adds a picker to the top bar.
+ * Top bar: <div id="bar"><div class="title">Name</div><a href="…">Link</a></div> in the page replaces the default title.
  *
  * Steps. A slide's steps come from its steppers, run in document order (↓ advances the first unfinished one):
  *   Deck.steps(el, n, show, {read})   show(i) renders step i (0 = initial); read: 'end' shows the last step in read view
@@ -29,7 +30,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
  *   ::: stats                           big numbers: "- **42%** faster first response"
  *   > [!NOTE] / [!TIP] / [!WARNING]     callouts
  *   ```mermaid                          diagrams (Mermaid, fetched only if the deck has one; <html data-diagrams="off"> to skip);
- *                                       ```mermaid {source} sets the source beside the diagram
+ *                                       ```mermaid {source} sets the source beside the diagram; a click opens it full screen to zoom
  *   [text](#id)                         link to the slide whose frontmatter says id: …
  *   a table then {.chart}               a bar chart; {.chart .hbar}, {.chart .line} or {.chart .donut} for the others.
  *                                       First column: labels; each other column: a series (↓ adds them one by one)
@@ -64,11 +65,14 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
   // ?theme=light|dark is still read as a mode, for old links.
   const lookOf = p => { const t = p.get('theme'), m = /^(light|dark)$/.test(t); return { mode: p.get('mode') || (m ? t : null), look: t && !m ? t : null }; };
   const qLook = lookOf(q);
-  root.dataset.mode = qLook.mode || store.get('mode', store.get('theme', root.dataset.mode || 'dark'));   // dark unless the author says <html data-mode="light">
+  root.dataset.mode = qLook.mode || store.get('mode', store.get('theme', root.dataset.mode || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')));   // else the author's <html data-mode>, else the system's
   const picker = root.hasAttribute('data-theme-picker');
   if (q.has('presenter')) root.dataset.presenter = '';
   const chosen = qLook.look || (picker && store.get('look', null));
-  root.dataset.theme = chosen || root.dataset.theme || 'clean';
+  // <html data-theme-dark="clean">: the look to open with when the deck starts in dark mode
+  const looks = { light: root.dataset.theme || 'clean', dark: root.dataset.themeDark || root.dataset.theme || 'clean' };
+  let picked = !!chosen;
+  root.dataset.theme = chosen || looks[root.dataset.mode] || looks.light;
 
   // each theme's typefaces, fetched from Google Fonts for the active theme only (<html data-fonts="off"> skips this)
   const GF = 'https://fonts.googleapis.com/css2?display=swap&family=';
@@ -154,7 +158,8 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     if (meta.id) el.dataset.id = meta.id;
     if (meta.read) el.dataset.read = meta.read;            // hide: leave it out of the article · text: only its prose
     if (meta.present) el.dataset.present = meta.present;   // hide: an article-only section, skipped when presenting
-    if (meta.image) { el.style.setProperty('--image', `url("${encodeURI(meta.image)}")`); el.classList.add('has-image'); }
+    // absolute, because a relative url() in a custom property resolves against the stylesheet (dist/), not the page
+    if (meta.image) { el.style.setProperty('--image', `url("${new URL(meta.image, document.baseURI).href.replace(/"/g, '%22')}")`); el.classList.add('has-image'); }
     const c = el.firstChild;
     widgets(c);
     if (meta.build && meta.build !== 'false') {
@@ -182,6 +187,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     c.querySelectorAll('table.explain').forEach(explain);
     c.querySelectorAll('td, th').forEach(marks);
     c.querySelectorAll('pre[data-steps]').forEach(codeSteps);
+    c.querySelectorAll('pre.code').forEach(copyable);
     c.querySelectorAll('.flip').forEach(flip);
     c.querySelectorAll('.accordion').forEach(accordion);
     c.querySelectorAll('.features').forEach(features);
@@ -268,6 +274,24 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
 
   // ```lang {steps: 2 | 3-4 | 6} — each step highlights those lines
   const sources = new WeakMap();       // <pre> -> its code as written, for the syntax highlighter
+  // every code block gets a Copy button (shown on hover, always on touch screens). Its label comes from CSS,
+  // so the block's textContent stays exactly its code for the diagrams, charts and highlighter that read it.
+  function copyable(pre) {
+    if (pre.querySelector('.w-copy') || pre.closest('#src')) return;
+    pre.insertAdjacentHTML('beforeend', '<button type="button" class="w-copy" aria-label="Copy code"></button>');
+  }
+  async function copyText(text, button) {
+    try { await navigator.clipboard.writeText(text); }
+    catch {      // file:// and older browsers: copy through a hidden textarea
+      const t = Object.assign(document.createElement('textarea'), { value: text });
+      t.style.cssText = 'position:fixed;opacity:0'; document.body.append(t); t.select(); document.execCommand('copy'); t.remove();
+    }
+    button.dataset.copied = ''; clearTimeout(button.reset); button.reset = setTimeout(() => delete button.dataset.copied, 1400);
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('.w-copy'); if (!b) return;
+    const pre = b.closest('pre'); copyText(sources.get(pre) ?? pre.firstChild.textContent, b);
+  });
   function codeSteps(pre) {
     const code = pre.firstChild;
     sources.set(pre, code.textContent);
@@ -324,6 +348,8 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     const boxes = [...document.querySelectorAll('.w-diagram')], opt = root.dataset.diagrams;
     if (!boxes.length || opt === 'off') return;
     boxes.forEach(b => b.dataset.src = b.textContent);
+    document.addEventListener('click', e => { const b = e.target.closest('.w-diagram.drawn'); if (b && !b.closest('#zoom')) zoom(b); });
+    document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('.w-diagram.drawn')) { e.preventDefault(); e.stopPropagation(); zoom(e.target, true); } }, true);
     let n = 0, queued;
     const draw = async () => {
       const v = k => getComputedStyle(root).getPropertyValue(k).trim(), font = v('--sans');
@@ -345,8 +371,9 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
           archEdgeColor: v('--muted'), archEdgeArrowColor: v('--muted'), archEdgeWidth: '2', archGroupBorderColor: v('--muted'), archGroupBorderWidth: '1.5px',
           labelBoxBkgColor: v('--surface'), labelBoxBorderColor: v('--accent'), labelTextColor: v('--fg'), loopTextColor: v('--fg') } });
       for (const b of boxes) {
-        try { const { svg } = await mermaid.render(`dk-diagram-${++n}`, b.dataset.src); b.innerHTML = svg; b.classList.add('drawn'); themeIcons(b); }
-        catch { b.innerHTML = `<pre class="code w-diagram-src">${esc(b.dataset.src)}</pre>`; b.classList.remove('drawn'); }
+        try { const { svg } = await mermaid.render(`dk-diagram-${++n}`, b.dataset.src); b.innerHTML = svg; b.classList.add('drawn'); themeIcons(b);
+          Object.assign(b, { tabIndex: 0, title: 'Open full screen' }); b.setAttribute('role', 'button'); b.setAttribute('aria-label', 'Diagram: open full screen'); }
+        catch { b.innerHTML = `<pre class="code w-diagram-src">${esc(b.dataset.src)}</pre>`; b.classList.remove('drawn'); b.removeAttribute('tabindex'); b.removeAttribute('role'); }
       }
       if (portrait.matches && !reading()) fit();
     };
@@ -365,6 +392,76 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
       new MutationObserver(() => document.fonts.ready.then(redraw)).observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-mode'] });
     };
     window.mermaid ? ready() : load(opt || MERMAID, ready);
+  }
+
+  /* a diagram opened full screen: wheel or pinch zooms around the pointer, drag pans, double-click zooms in or back out.
+     The SVG itself moves into the viewer (Mermaid's styles and arrowheads are keyed to its ids) and back on close. */
+  let zoomBox, zoomByKey;
+  function zoom(b, byKey) {
+    let z = $('zoom');
+    if (!z) {
+      document.body.insertAdjacentHTML('beforeend', `<div id="zoom" role="dialog" aria-modal="true" aria-label="Diagram"><div class="z-stage"><div class="z-layer w-diagram drawn"></div></div>
+        <div class="z-bar"><button data-z="out" aria-label="Zoom out" title="Zoom out (−)">${svg('minus')}</button><span class="z-pct" aria-live="polite"></span><button data-z="in" aria-label="Zoom in" title="Zoom in (+)">${svg('plus')}</button><button data-z="fit" aria-label="Fit to screen" title="Fit (0)">${svg('fit')}</button><i></i><button data-z="close" aria-label="Close" title="Close (Esc)">${svg('close')}</button></div>
+        <p class="z-hint">Scroll or pinch to zoom · drag to move</p></div>`);
+      z = $('zoom');
+      const stage = z.querySelector('.z-stage'), layer = z.querySelector('.z-layer'), pct = z.querySelector('.z-pct'), pts = new Map();
+      let s = 1, x = 0, y = 0, pinch = null, drag = null, moved = false, down = null;
+      const apply = () => { layer.style.transform = `translate(${x}px, ${y}px) scale(${s})`; pct.textContent = Math.round(s * 100) + '%'; z.classList.toggle('zoomed', s > 1); };
+      const at = (k, cx, cy) => {      // zoom by k around a point in stage coordinates
+        const n = Math.min(8, Math.max(1, s * k));
+        if (n === 1) { s = 1; x = y = 0; } else { x = cx - (cx - x) * n / s; y = cy - (cy - y) * n / s; s = n; }
+        apply();
+      };
+      let r = stage.getBoundingClientRect();      // read once per gesture, not on every pointer event
+      const local = e => [e.clientX - r.left, e.clientY - r.top];
+      const centre = () => [stage.clientWidth / 2, stage.clientHeight / 2];
+      z.reset = () => { s = 1; x = y = 0; apply(); };
+      z.measure = () => r = stage.getBoundingClientRect();
+      addEventListener('resize', z.measure);
+      z.key = k => { if (k === '+' || k === '=') at(1.4, ...centre()); else if (k === '-' || k === '_') at(1 / 1.4, ...centre()); else if (k === '0') z.reset(); else return false; return true; };
+      stage.addEventListener('wheel', e => { e.preventDefault(); at(Math.exp(-e.deltaY * (e.ctrlKey ? .01 : .0015)), ...local(e)); }, { passive: false });
+      stage.addEventListener('pointerdown', e => {
+        r = stage.getBoundingClientRect(); down = e.target; stage.setPointerCapture(e.pointerId); pts.set(e.pointerId, local(e)); moved = false;
+        if (pts.size === 2) { const [a, c] = [...pts.values()]; pinch = { d: Math.hypot(a[0] - c[0], a[1] - c[1]), m: [(a[0] + c[0]) / 2, (a[1] + c[1]) / 2] }; drag = null; }
+        else drag = { p: local(e), x, y };
+      });
+      stage.addEventListener('pointermove', e => {
+        if (!pts.has(e.pointerId)) return;
+        pts.set(e.pointerId, local(e));
+        if (pinch && pts.size === 2) {
+          const [a, c] = [...pts.values()], d = Math.hypot(a[0] - c[0], a[1] - c[1]), m = [(a[0] + c[0]) / 2, (a[1] + c[1]) / 2];
+          x += m[0] - pinch.m[0]; y += m[1] - pinch.m[1]; at(d / pinch.d, ...m); pinch = { d, m }; moved = true;
+        } else if (drag && s > 1) {
+          const p = local(e); x = drag.x + p[0] - drag.p[0]; y = drag.y + p[1] - drag.p[1]; moved ||= Math.hypot(p[0] - drag.p[0], p[1] - drag.p[1]) > 4; apply();
+        }
+      });
+      const up = e => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (!pts.size) drag = null; };
+      stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
+      stage.addEventListener('dblclick', e => s > 1 ? z.reset() : at(2.5, ...local(e)));
+      // a click on the backdrop, away from the diagram, closes; a click that ended a drag doesn't
+      stage.addEventListener('click', () => { if (!moved && s === 1 && !down?.closest('svg')) unzoom(); });
+      z.querySelector('.z-bar').onclick = e => {
+        const k = e.target.closest('button')?.dataset.z;
+        if (k === 'close') unzoom(); else if (k === 'fit') z.reset(); else if (k) at(k === 'in' ? 1.4 : 1 / 1.4, ...centre());
+      };
+      z.addEventListener('keydown', e => { if (e.key === 'Tab') { const bs = [...z.querySelectorAll('button')], i = bs.indexOf(document.activeElement); e.preventDefault(); bs[(i + (e.shiftKey ? -1 : 1) + bs.length) % bs.length].focus(); } });
+    }
+    const g = b.querySelector('svg'); if (!g) return;
+    zoomBox = b; zoomByKey = byKey;
+    b.style.minHeight = b.offsetHeight + 'px';
+    z.querySelector('.z-layer').replaceChildren(g);
+    z.reset(); z.measure();
+    z.classList.add('on');
+    z.querySelector('[data-z=close]').focus({ preventScroll: true });
+  }
+  function unzoom() {
+    const z = $('zoom'), b = zoomBox; if (!z?.classList.contains('on')) return;
+    z.classList.remove('on'); zoomBox = null;
+    const g = z.querySelector('.z-layer svg');
+    if (g && !b.querySelector('svg')) b.append(g); else g?.remove();     // a theme change redrew it while open: keep the new one
+    b.style.minHeight = '';
+    // hand focus back only to keyboard users, so Space and Enter keep stepping the deck after a click
+    if (zoomByKey) b.focus({ preventScroll: true }); else document.activeElement?.blur();
   }
 
   // split highlighted HTML into line spans, closing and reopening any token that runs across a line break
@@ -545,7 +642,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
       const m = h?.innerHTML.match(/^\s*(<i class="ico"[^>]*><\/i>|<img [^>]*>)\s*/);
       return `<div class="w-feature">${m ? `<span class="w-icon">${m[1]}</span>` : ''}<h3>${h ? h.innerHTML.slice(m ? m[0].length : 0) : ''}</h3>${g.map(x => x.outerHTML).join('')}</div>`;
     }).join('');
-    w.style.setProperty('--n', Math.min(3, w.children.length));
+    w.style.setProperty('--n-auto', Math.min(3, w.children.length));   // an author's --n overrides it
     box.replaceWith(w);
   }
 
@@ -733,7 +830,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     $('notesBody').textContent = s.querySelector('.notes')?.textContent.trim() || '—';
     if ($('src').classList.contains('on')) fillSource();
     handlers.slide.forEach(f => f(s, cur));
-    if (reading()) history.replaceState(null, '', '#' + (cur + 1)); else if (portrait.matches) fit();
+    if (reading()) writeHash('#' + (cur + 1)); else if (portrait.matches) fit();
     mobileState();
   }
   const fillNotes = () => { $('mNotes').innerHTML = slide().querySelector('.notes')?.innerHTML || ''; $('mNotes').scrollTop = 0; };   // the speaker's notes
@@ -746,7 +843,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     $('up').disabled = k === 0; $('down').disabled = k === n - 1;
     label(s);
     mobileState();
-    if (!reading()) history.replaceState(null, '', '#' + (cur + 1) + (n > 1 && k ? '.' + (k + 1) : ''));
+    if (!reading()) writeHash('#' + (cur + 1) + (n > 1 && k ? '.' + (k + 1) : ''));
     broadcast();
   }
 
@@ -952,6 +1049,10 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     read: '<path d="M2 3.5h4.5A2.5 2.5 0 0 1 9 6v8.5a2 2 0 0 0-2-2H2zM16 3.5h-4.5A2.5 2.5 0 0 0 9 6v8.5a2 2 0 0 1 2-2h5z"/>',
     present: '<rect x="2" y="3" width="14" height="9.5" rx="1.5"/><path d="M9 12.5V16M6 16h6"/>',
     dark: '<path d="M15.5 11A6.5 6.5 0 1 1 7 2.5a5 5 0 0 0 8.5 8.5z"/>',
+    plus: '<path d="M9 4v10M4 9h10"/>',
+    minus: '<path d="M4 9h10"/>',
+    fit: '<path d="M2.5 6.5v-4h4M11.5 2.5h4v4M15.5 11.5v4h-4M6.5 15.5h-4v-4"/>',
+    close: '<path d="M4.5 4.5l9 9M13.5 4.5l-9 9"/>',
     light: '<circle cx="9" cy="9" r="3.2"/><path d="M9 1.5v2M9 14.5v2M1.5 9h2M14.5 9h2M3.7 3.7l1.4 1.4M12.9 12.9l1.4 1.4M3.7 14.3l1.4-1.4M12.9 5.1l1.4-1.4"/>',
   };
   const svg = k => `<svg viewBox="0 0 18 18" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
@@ -971,7 +1072,10 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
       if (isMd && n.closest('#stage')) n.before(...made); else stage.append(...made);
       if (isMd) n.remove();
     }
-    if (!$('bar')) stage.insertAdjacentHTML('afterbegin', `<div id="bar"><div class="title">${esc(document.title)}</div></div>`);
+    // an author's own <div id="bar"> (a .title plus any links) becomes the top bar; talkdown adds the section and tools
+    const own = $('bar');
+    if (own && !stage.contains(own)) stage.prepend(own);
+    if (!own) stage.insertAdjacentHTML('afterbegin', `<div id="bar"><div class="title">${esc(document.title)}</div></div>`);
     const bar = $('bar');
     if (!$('sectionLabel')) bar.insertAdjacentHTML('beforeend', '<div class="section" id="sectionLabel"></div>');
     bar.insertAdjacentHTML('beforeend', `<div class="tools"><button class="ib" id="ovBtn" title="Overview (O)">${svg('grid')}</button><button class="ib" id="srcBtn" title="View source (S)">${svg('code')}</button><button class="ib" id="viewBtn"></button>${picker ? `<button class="ib" id="lookBtn" title="Theme" aria-haspopup="true">${svg('palette')}</button>` : ''}<button class="ib" id="themeBtn" title="Light / dark (T)"></button></div>`);
@@ -1027,7 +1131,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
         <p><kbd>R</kbd> read as an article / present · <kbd>T</kbd> light / dark · <kbd>O</kbd> overview · <kbd>N</kbd> notes · <kbd>F</kbd> fullscreen · <kbd>S</kbd> view the slide's Markdown · <kbd>Esc</kbd> close</p>
         <p><kbd>P</kbd> presenter view · <kbd>L</kbd> laser pointer · <kbd>D</kbd> draw on the slide</p>
       </div></div>
-      <div id="src"><div class="kcard"><div class="sh"><h3>Markdown source</h3><button id="srcCopy">Copy</button></div><pre class="code"><code></code></pre></div></div>`);
+      <div id="src"><div class="kcard"><div class="sh"><h3>Markdown source</h3><button id="srcCopy" class="w-copy" aria-label="Copy the Markdown"></button></div><pre class="code"><code></code></pre></div></div>`);
 
     $('srcBtn').onclick = toggleSource;
     $('srcCopy').onclick = copySource;
@@ -1064,8 +1168,8 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     ov.onclick = e => { if (e.target === ov) ov.classList.remove('on'); };
     icons();
   }
-  function setMode(m) { root.dataset.mode = m; store.set('mode', m); icons(); }
-  function setLook(t) { root.dataset.theme = t; if (picker) store.set('look', t); }
+  function setMode(m) { root.dataset.mode = m; store.set('mode', m); if (!picked) root.dataset.theme = looks[m]; icons(); }
+  function setLook(t) { root.dataset.theme = t; picked = true; if (picker) store.set('look', t); }
   const toggleTheme = () => setMode(root.dataset.mode === 'dark' ? 'light' : 'dark');
 
   // the theme picker (<html data-theme-picker>): each swatch carries the theme's own tokens
@@ -1103,15 +1207,16 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     if (window.hljs?.getLanguage('markdown')) code.innerHTML = hljs.highlight(md, { language: 'markdown', ignoreIllegals: true }).value;
   }
   function toggleSource() { $('src').classList.toggle('on'); if ($('src').classList.contains('on')) fillSource(); }
-  function copySource() {
-    const b = $('srcCopy');
-    navigator.clipboard?.writeText($('src').querySelector('code').textContent).then(() => { b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy', 1400); }, () => {});
-  }
+  const copySource = () => copyText($('src').querySelector('code').textContent, $('srcCopy'));
   function toggleOverview() { const ov = $('overview'); ov.classList.toggle('on'); if (ov.classList.contains('on')) ov.querySelector('.cur')?.focus(); }
 
   /* ================= input ================= */
   function onKey(e) {
     if ($('mobileNav').open) return;    // the dialog owns focus, tab arrows and Escape
+    if ($('zoom')?.classList.contains('on')) {    // the diagram viewer owns the keyboard
+      if (e.key === 'Escape') unzoom(); else if (!e.metaKey && !e.ctrlKey && $('zoom').key(e.key)) e.preventDefault();
+      return;
+    }
     if (e.key === 'Escape' && !$('dPanel').hidden) { setDock(false); e.preventDefault(); return; }
     if (e.target.closest('#dock')) return;
     if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -1158,6 +1263,8 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
 
 
   // #slide or #slide.step, 1-based; [0, 1] when there's no hash
+  let wrote = '';   // the hash the deck last wrote itself, so its own updates aren't followed back
+  const writeHash = h => { history.replaceState(null, '', h); wrote = location.hash; };
   function fromHash() {
     const h = decodeURIComponent(location.hash.slice(1)), m = h.match(/^(\d+)(?:\.(\d+))?$/);
     if (m) return [+m[1], +(m[2] || 1)];
@@ -1274,7 +1381,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
       }
     }));
     assemble();
-    if (!all.length) return;
+    if (!all.length) { document.dispatchEvent(new CustomEvent('talkdown:error', { detail: new Error('No slides found on this page') })); return; }
     agendas();
     qrs();
     lucide();
@@ -1305,10 +1412,13 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
       if (look) setLook(look);
       if (mode) setMode(mode);
       if (restyle) setQuery(u.searchParams);
-      if (i >= 0 && i !== cur) go(i, reading() ? undefined : 0);
+      // a jump to another slide gets its own history entry, so Back returns to where you were
+      if (i >= 0 && i !== cur) { history.pushState(null, '', location.href); go(i, reading() ? undefined : 0); }
     });
     addEventListener('keydown', onKey);
-    addEventListener('hashchange', () => { const [sl, sp] = fromHash(); if (sl) go(sl - 1, reading() ? undefined : sp - 1); });
+    const followUrl = () => { if (location.hash === wrote) return; const [sl, sp] = fromHash(); if (sl) go(sl - 1, reading() ? undefined : sp - 1); };
+    addEventListener('hashchange', followUrl);
+    addEventListener('popstate', followUrl);   // Back and Forward after a link jump
     let resizing = false;
     addEventListener('resize', () => { if (!resizing) { resizing = true; requestAnimationFrame(() => { resizing = false; fit(); }); } });
     addEventListener('scroll', () => { if (!scrolling) { scrolling = true; requestAnimationFrame(onScroll); } }, { passive: true });
@@ -1321,7 +1431,9 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     if (reading() && !sl) { cur = 0; announce(); fit(); onScroll(); }      // an article opens at the top
     else { cur = Math.max(0, sl - 1); fit(); go(cur, reading() ? undefined : sp - 1, true); }
   }
-  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : setTimeout(start);
+  // the loader waits for talkdown:setup or talkdown:error
+  const boot = () => start().catch(error => { document.dispatchEvent(new CustomEvent('talkdown:error', { detail: error })); throw error; });
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', boot) : setTimeout(boot);
 
   window.Deck = {
     steps, tabs, build, go, next, prev, store, setView, chart, markdown: s => renderMarkdown(dedent(s.split('\n')).join('\n')),

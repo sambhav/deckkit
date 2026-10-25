@@ -18,7 +18,7 @@ buildSync({
   alias: { 'linkify-it': './scripts/linkify-stub.js', entities: './scripts/entities-stub.js' },
   platform: 'browser', format: 'iife', target: 'es2022', minify: true,
   legalComments: 'inline', charset: 'utf8',
-  banner: { js: '/* talkdown 0.2 — bundled runtime; edit src/deck.js, then npm run build. */\n' + notices },
+  banner: { js: '/* talkdown 0.3 — bundled runtime; edit src/deck.js, then npm run build. */\n' + notices },
 });
 
 // Old content-hashed assets stay available for cached manifests and pinned decks.

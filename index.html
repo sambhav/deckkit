@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" data-theme-picker>
+<html lang="en" data-theme="paper" data-theme-dark="clean" data-theme-picker>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>talkdown</title>
 <meta name="description" content="Interactive presentations in Markdown, with themed components and custom JavaScript. Present as slides and share the same link as a readable article.">
-<link rel="icon" href="docs/logo.svg">
+<link rel="icon" href="docs/logo.svg?v=3">
 <script src="latest.js"></script>
 <style>
   /* quick start: what the Markdown on the left turns into */
@@ -18,6 +18,74 @@
   .mini-slide b { font: 700 46px/1.05 var(--display); letter-spacing: -.025em; color: var(--fg); }
   .mini-slide span { margin-top: 14px; font-size: 19px; color: var(--muted); }
   .mini-slide em { position: absolute; right: 22px; bottom: 16px; font: normal 12px var(--mono); color: var(--muted); }
+  /* the loader's URL is the longest line: give the code the wider column */
+  .quick .cols { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 44px; }
+  .quick pre.code { font-size: calc(var(--t-code) * .86); }
+  :is([data-view=read], [data-tall=fluid]) .quick .cols { grid-template-columns: none; }
+  /* the logo on the cover and in the top bar */
+  .cover-logo { display: block; width: 104px; height: 104px; margin-bottom: 34px; }
+  .md .content > .cover-logo + h1, .md .content > p:has(> .cover-logo) + h1 { margin-top: 0; }
+  :is([data-view=read], [data-tall]) .cover-logo { width: 64px; height: 64px; margin-bottom: 18px; }
+  #bar .title { display: flex; align-items: center; gap: 9px; }
+  .bar-logo { width: 22px; height: 22px; flex: none; }
+  @media (max-width: 560px) { .bar-logo { display: none; } }
+  /* the turn in the story: big and centred */
+  .built h1 { font-size: 112px; letter-spacing: -.04em; line-height: 1.05; }
+  .built h1 mark { color: var(--on-accent); background: var(--accent); padding: 0 .14em .04em; border-radius: .14em; margin-left: .04em;
+    box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+  .built h1 + p { margin-top: 34px; font-size: 36px; color: var(--fg); letter-spacing: -.01em; }
+  .built h1 + p mark { color: var(--accent-ink); font-weight: 600; }
+  .md .built .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 30px; }
+  .built .chips span { padding: 7px 15px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font: 500 18px var(--sans); color: var(--muted); }
+  :is([data-view=read], [data-tall]) .built h1 { font-size: 2.3em; }
+  :is([data-view=read], [data-tall]) .built h1 + p { font-size: 1.2em; margin-top: 16px; }
+  :is([data-view=read], [data-tall]) .built .chips { justify-content: flex-start; gap: 6px; margin-top: 16px; }
+  :is([data-view=read], [data-tall]) .built .chips span { font-size: 13px; padding: 4px 10px; }
+  /* the widget index: a compact grid of name + syntax */
+  .md .widget-index ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 14px; }
+  .md .widget-index ul li { margin: 0; padding: 10px 14px 11px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); display: flex; flex-direction: column; align-items: flex-start; gap: 5px; font-size: 18px; line-height: 1.2; white-space: nowrap; }
+  .md .widget-index ul li::before { display: none; }
+  .md .widget-index ul a { color: var(--fg); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 9px; background: none; }
+  .md .widget-index ul a:hover { color: var(--accent-ink); }
+  .md .widget-index ul a i.ico { color: var(--accent-ink); flex: none; }
+  .md .widget-index ul code { font-size: 13px; padding: 1px 6px; color: var(--muted); white-space: nowrap; }
+  :is([data-view=read], [data-tall]) .md .widget-index ul { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  :is([data-view=read], [data-tall]) .md .widget-index ul li { font-size: 15px; padding: 10px 12px; gap: 6px; }
+  :is([data-view=read], [data-tall]) .md .widget-index ul code { font-size: 12px; white-space: normal; }
+  /* five short cards in one row on the stage */
+  .great .w-features { --n: 5; gap: 18px; }
+  .great .w-feature h3 { white-space: nowrap; }
+  /* the same content as a slide and as an article */
+  .two-ways { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 8px; }
+  .two-ways figure { margin: 0; }
+  .tw-card { aspect-ratio: 16 / 9; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: 0 24px 60px -30px color-mix(in srgb, var(--fg) 40%, transparent); }
+  .tw-slide { background: var(--bg); padding: 7% 9%; display: flex; flex-direction: column; justify-content: center; gap: 22px; position: relative; }
+  .tw-slide b { font: 700 34px/1.05 var(--display); letter-spacing: -.02em; color: var(--fg); }
+  .tw-steps { display: flex; gap: 10px; }
+  .tw-steps i { flex: 1; height: 54px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); }
+  .tw-steps i:first-child { border-color: var(--accent); background: var(--accent-soft); }
+  .tw-slide em { position: absolute; right: 18px; bottom: 12px; font: normal 12px var(--mono); color: var(--muted); }
+  .tw-article { background: var(--surface); display: flex; justify-content: center; padding-top: 6%; }
+  .tw-article > div { width: 62%; display: flex; flex-direction: column; gap: 9px; }
+  .tw-article b { font: 700 19px/1.1 var(--display); color: var(--fg); margin-bottom: 4px; }
+  .tw-thumb { display: flex; align-items: flex-end; gap: 5px; aspect-ratio: 16 / 6; padding: 0 9% 9%; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); margin-bottom: 6px; }
+  .tw-thumb u { flex: 1; height: 30%; border-radius: 3px; border: 1px solid var(--line); background: var(--surface); }
+  .tw-thumb u:first-child { border-color: var(--accent); background: var(--accent-soft); }
+  .tw-article i { height: 7px; border-radius: 4px; background: var(--line); }
+  .tw-article i.s { width: 70%; }
+  .two-ways figcaption { margin-top: 16px; font: 21px/1.4 var(--sans); letter-spacing: 0; text-transform: none; color: var(--muted); }
+  .two-ways figcaption b { color: var(--fg); font-weight: 600; margin-right: 6px; }
+  .md .tw-hint { margin-top: 20px; font-size: 19px; }
+  :is([data-view=read], [data-tall]) .two-ways { gap: 18px; }
+  :is([data-view=read], [data-tall]) .two-ways figcaption { font-size: 15px; margin-top: 10px; }
+  :is([data-view=read], [data-tall]) .tw-thumb { margin-bottom: 2px; }
+  :is([data-view=read], [data-tall]) .tw-slide b { font-size: 18px; }
+  :is([data-view=read], [data-tall]) .tw-slide { gap: 10px; }
+  :is([data-view=read], [data-tall]) .tw-steps i { height: 24px; border-radius: 6px; }
+  :is([data-view=read], [data-tall]) .tw-article b { font-size: 11px; }
+  :is([data-view=read], [data-tall]) .tw-article > div { gap: 5px; }
+  :is([data-view=read], [data-tall]) .tw-article i { height: 4px; }
+  :is([data-view=read], [data-tall]) .tw-slide em { display: none; }
   .md .mini-cap { margin-top: 30px; font-size: calc(var(--t-body) * .85); }
   [data-view=read] .mini { max-width: 520px; }
   /* the one hand-built slide: a diagram with its own walkthrough */
@@ -50,11 +118,16 @@
 </head>
 <body>
 
+<div id="bar"><div class="title"><img class="bar-logo" src="docs/logo.svg" alt="">talkdown</div><a href="https://github.com/sambhav/talkdown" title="sambhav/talkdown on GitHub"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>Star on GitHub</span></a></div>
+
 <script type="text/markdown">
 layout: title
-section: Why talkdown
+section: Why I built it
 id: why
+class: cover
 ---
+<img class="cover-logo" src="docs/logo.svg" alt="">
+
 # talkdown
 
 Interactive presentations in Markdown.
@@ -62,274 +135,213 @@ Interactive presentations in Markdown.
 Present as slides. Share as an article. {.meta}
 
 ::: notes
-Over the last few months, I've seen more people move from Google Slides to interactive presentations built with coding agents. I built talkdown because I wanted that freedom in a format I could still read and edit myself. I also wanted the link I shared after a talk to contain the explanation, not just the slides.
+Agents have gotten really good at building slides, and I make more and more of my talks that way. But the decks they produce are hard to live with, and they still didn't give me everything I wanted from a talk. talkdown is what I built instead. This deck covers why, how it works, and then every feature in detail.
 
 This page is both the presentation and the article. On desktop, use the arrow keys to present and R to switch to reading. On a phone, it opens as slides. The floating arrows move through steps and then slides, or choose Article from the menu to scroll the full explanation.
 :::
 
 ---
-kicker: Why a browser?
-id: browser
+kicker: Where it started
+id: great
+class: great
 ---
-## Put working examples inside the talk
+## Agents have gotten really good at building slides
 
 ::: features
-### :git-branch: Follow a flow
-Step through a request, a decision or a piece of code.
-### :chart-no-axes-combined: Explore the data
-Show a chart, inspect its values, download the dataset.
-### :sliders-horizontal: Try an idea
-Change an input and show what happens.
+### :mouse-pointer-click: Interactive
+Step through it live.
+### :zap: Quick to build
+One prompt, one deck.
+### :sparkles: Pretty
+Polished by default.
+### :repeat: Easy to iterate
+Ask for a change.
+### :globe: Easy to host
+One static page.
 :::
 
 ::: notes
-A browser lets a presentation include working examples. You can follow a request through a system, explore a dataset, or change an input in a simulation while you explain the result. Coding agents make these kinds of presentations easier to build.
-
-But generating an entire HTML deck also means generating its markup, styling and navigation. That adds source to maintain and tokens to produce. Much of that work is repeated from one talk to the next.
+I build more and more of my talks with a coding agent, and the results are great. The deck is a web page, so it can be interactive: step through a request, explore the data, change an input and show what happens. It takes one prompt to get a first version, it looks polished, iterating is a matter of asking for changes, and the result is a static page you can host anywhere.
 :::
 
 ---
-kicker: Why Markdown?
-id: markdown
+kicker: The catch
+id: catch
+build: true
 ---
-## Write the explanation in Markdown
+## But every deck is a pile of generated HTML
 
 |||
 
-````md
-## Follow a request
-
-::: steps
-### Check the cache
-Return a fresh saved result.
-
-### Fetch on a miss
-Ask the service for a new result.
-
-### Save the response
-The next request can reuse it.
-:::
+````html
+<section class="slide">
+  <h2>How talkdown works</h2>
+  <ol class="steps">
+    <li class="step on">
+      <h3>Write Markdown</h3>
+      <p>Headings, sentences, notes.</p>
+    </li>
+    <li class="step">
+      <h3>Present it</h3> …
+</section>
+<style>/* layout, theme */</style>
+<script>/* keys, steps */<\/script>
 ````
 
 |||
 
-- The agent writes content and structure
-- talkdown supplies layout and interaction
-- You can edit the source by hand
-
-Press **S** to inspect any Markdown slide. {.muted}
-
-::: notes
-Most of a talk is headings, sentences, examples and notes. Markdown keeps that source compact and readable. Here, a few headings inside a steps block are enough to create a walkthrough. The runtime supplies its controls and appearance, so the agent does not have to generate that scaffolding for every slide.
-
-The benefit carries over to editing: change a sentence, correct a number or move a slide in the source. Custom HTML and JavaScript are still available when an explanation needs more than the built-in components.
-:::
-
-</script>
-
-<section class="slide flow" data-section="Why talkdown" data-id="custom" data-name="Keep room for custom JavaScript">
-  <div class="content hand">
-    <div class="kicker">Custom JavaScript</div>
-    <h2>Build the example your talk needs</h2>
-    <div class="pipe" id="pipe" role="img" aria-label="A request checks the cache, fetches from the service on a miss, and returns a response.">
-      <div class="n"><b>Request</b><span>arrives</span></div><i aria-hidden="true">→</i>
-      <div class="n"><b>Cache</b><span>check for a hit</span></div><i aria-hidden="true">→</i>
-      <div class="n"><b>Service</b><span>fetch on a miss</span></div><i aria-hidden="true">→</i>
-      <div class="n"><b>Response</b><span>save and return</span></div>
-    </div>
-    <p class="caption" id="pipeCap" aria-live="polite"></p>
-    <button class="chip" data-next style="margin-top:8px"></button>
-  </div>
-  <aside class="notes">Sometimes the best explanation needs custom code. This request flow is a hand-written HTML slide with a small JavaScript walkthrough. Press down to follow a cache miss from the request through to the response. The interaction uses Deck.steps, so it shares the deck's keyboard controls, step counter and deep links. Its colours come from the active theme. In the article, the diagram shows its completed state. You can build a calculator, simulation or animated diagram this way while keeping the surrounding talk in Markdown.</aside>
-</section>
-
-<script type="text/markdown">
-kicker: Components and themes
-id: components
----
-## One theme across every component
-
-|||
-
-::: tabs
-### Walk through
-Reveal a process at the pace of the explanation.
-### Compare
-Use tabs or an explained table to examine alternatives.
-### Inspect
-Keep the chart and its backing data together.
-:::
-
-|||
-
-::: chart type=bar title="Example request latency (ms)"
-| Path | Latency |
-|---|---|
-| Cache hit | 20 |
-| Cache miss | 180 |
-:::
-
-23 themes, each with light and dark palettes. Try the theme picker above, or press **T**. {.muted}
+- Only an agent can maintain it
+- No two decks look the same
+- A small edit means digging through markup
+- Every change burns tokens
 
 ::: notes
-A technical talk often needs several kinds of interaction. A walkthrough suits a process; tabs suit a comparison; a chart helps show a numeric relationship. talkdown provides these as Markdown components, with keyboard navigation and reading behaviour included.
-
-The theme applies to the components as well as the slide. Typography, charts, code highlighting, diagrams and callouts follow the same palette. Try the theme picker on this page: the tabs and chart change together. These latency values are illustrative data, not a benchmark.
+The catch is what you get back: a page of generated HTML, with its own styling, keyboard handling and scaling, repeated in every deck. Only an agent can really maintain it. Ask twice and you get two different designs, and even slides within one deck drift in layout and spacing. Fixing one word or one number by hand means finding it in the markup, so in practice even a typo goes back through the agent, and every change burns tokens.
 :::
 
 ---
-layout: statement
-kicker: After the talk
-id: afterwards
+kicker: What I wanted
+id: wanted
 ---
-## “Can you send me the slides?”
+## Slides that also work as a blog post
 
-The slides contain what you showed. The reader also needs what you said.
+::: features
+### :book-open: Slides as a blog
+Share the idea, not just the bullets.
+### :palette: Themes
+One switch restyles everything.
+### :square-terminal: Widgets
+Terminals, tables, charts, diagrams.
+:::
+
+No build step, and nothing to host but static files. Slide apps can't do this, and agents need a lot of prompting to. {.muted}
 
 ::: notes
-After a presentation, someone usually asks for the slides. I want to send them something they can understand without me in the room. Short headings and diagrams make sense while someone is explaining them, but leave out much of the argument when read alone.
+I also wanted things that slide tools don't give you. I wanted to use my slides as a blog post: after a talk, people come back to it, some for a quick reminder and some for the whole argument, and slides alone leave out what I said. I wanted themes that restyle the whole deck at once, and widgets I use in technical talks: terminals, tables, charts, code walkthroughs and diagrams.
 
-This was a big motivation for talkdown. I wanted slides while presenting, and something that reads like a blog when sharing the talk afterwards.
-:::
-
----
-kicker: One source, two views
-id: share
----
-## Keep the explanation with the slides
-
-::: toggle
-### Present
-A 16:9 stage. Reveal each step as you speak. Keep the explanation in your speaker notes.
-### Read
-A scrolling article. Content reflows, steps are shown, and shared notes become paragraphs.
-:::
-
-::: present-only
-Press **R**, or tap **Article** on a phone. The explanation is already here. {.muted}
-:::
-
-::: read-only
-You are reading the article version. Tap the floating navigation button and choose Slides to present this section.
-:::
-
-::: notes
-The same source serves both views. Markdown slides reflow into article typography, and shared notes become the prose underneath them. Built-in step sequences expose their content so readers can follow the explanation at their own pace. Charts can show the backing data alongside the plot.
-
-Write the explanation as full sentences in notes blocks. Keep delivery cues in say blocks and add reader-only context in read blocks. An article still needs an argument that makes sense without the speaker; these blocks give you a place to write it.
+And I wanted it simple to run: no build step, and nothing to host but static files. Slide apps can't do most of this. Agents can, but only with a lot of prompting, every time.
 :::
 
 ---
 layout: center
-id: tour
+id: built
+section: How it works
+class: built
 ---
-## That's the format. Now try the pieces.
+# So I built ==talkdown==
 
-Markdown for the narrative. Components for interaction. JavaScript when you need it.
+Write Markdown. Get interactive ==slides== and a ==blog==.
 
-[Writing slides](#writing) · [Widgets](#widgets) · [Themes](#themes) · [Make a deck](#start)
+<p class="chips"><span>Made for tech demos</span><span>20+ widgets</span><span>20+ themes</span><span>No build step</span><span>Static hosting</span></p>
 
 ::: notes
-That is the idea behind talkdown: a compact source you can edit, interactive components that belong to the same theme, and a shared version that carries the explanation with it.
-
-The rest of this deck is a feature tour and authoring reference. Each example is live. Press S to inspect its Markdown, use down to step through an interaction, or jump to a section using the links above.
+So I built talkdown. You write the talk in Markdown, the way you would write a blog post, and the same file presents as interactive slides and reads as an article. The rest of this section shows how that works.
 :::
 
 ---
-kicker: For agents
-id: agents
+kicker: How it works
+id: markdown
 ---
-## Give your agent one URL
-
-```text
-https://sambhav.dev/talkdown/skills/talkdown/SKILL.md
-```
-
-Also on jsDelivr:
-
-```text
-https://cdn.jsdelivr.net/gh/sambhav/talkdown@main/skills/talkdown/SKILL.md
-```
-
-An example prompt:
-
-```text
-Read https://sambhav.dev/talkdown/skills/talkdown/SKILL.md and write a
-12-slide talkdown deck about our Postgres migration, with speaker notes.
-```
-
-::: notes
-To get an agent writing talkdown, give it the address of the skill file. It lists the whole syntax: layouts, widgets, how notes work, and how to verify the result. Paste the URL into a prompt, or install the file as a skill, and ask for a deck on whatever you like. If the first address is blocked, the same file is served from jsDelivr, at the second address on the slide.
-
-Ask for speaker notes, because they are what turns the deck into an article later. The agent returns a single HTML file with the deck inside it.
-:::
-
----
-kicker: Quick start
-id: start
----
-## Your first deck in a minute
+## Ten lines of Markdown, one live slide
 
 |||
 
-````html {steps: 1-2 | 4-10}
-<script src="https://sambhav.dev/talkdown/latest.js"><\/script>
-
-<script type="text/markdown">
-# My talk
-The one idea worth remembering
----
-## Why it matters
-::: notes
-What you would say out loud.
+````md
+::: steps
+### Write Markdown
+Headings, sentences and notes.
+### Present it
+talkdown adds the theme and the keys.
+### Share the link
+Readers get slides and an article.
 :::
-<\/script>
 ````
 
 |||
 
-<div class="mini" aria-hidden="true"><div class="mini-bar"><i></i><i></i><i></i><span>talk.html</span></div><div class="mini-slide"><b>My talk</b><span>The one idea worth remembering</span><em>1 / 2 &nbsp;→</em></div></div>
+::: steps
+### Write Markdown
+Headings, sentences and notes.
+### Present it
+talkdown adds the theme and the keys.
+### Share the link
+Readers get slides and an article.
+:::
 
-Use the loader, write Markdown, open it in a browser. {.muted .mini-cap}
+Press ↓ to step through it. {.muted}
+
+::: notes
+This is the same walkthrough as the generated HTML a few slides back, written as a steps block: a few headings and sentences. The agent writes only the content and structure, which is far fewer tokens. talkdown supplies the controls, the theme, the keyboard and the phone layout, so every slide and every deck comes out consistent.
+
+The source stays small enough to read and edit yourself. An agent writes the first draft, and you change a sentence, correct a number or move a slide by hand, without asking anyone.
+:::
+
+---
+kicker: One link, two formats
+id: share
+---
+## Skim it as slides. Read it as an article.
+
+<div class="two-ways" aria-hidden="true">
+<figure><div class="tw-card tw-slide"><b>How talkdown works</b><span class="tw-steps"><i></i><i></i><i></i></span><em>4 / 12</em></div><figcaption><b>Slides</b> The gist, for the talk and a quick look back.</figcaption></figure>
+<figure><div class="tw-card tw-article"><div><b>How talkdown works</b><span class="tw-thumb"><u></u><u></u><u></u></span><i></i><i></i><i class="s"></i><i></i><i class="s"></i></div></div><figcaption><b>Article</b> The whole argument, with your notes as the prose.</figcaption></figure>
+</div>
+
+::: present-only
+Press **R** now to read this page as an article, or tap **Article** in the menu on a phone. {.muted .tw-hint}
+:::
 
 ::: read-only
-For code-heavy or separately edited source, replace the inline Markdown block with a reference and serve the files over HTTP:
-
-```html
-<script type="text/markdown" data-src="talk.md"><\/script>
-```
-
-Keep inline Markdown when you want one authored HTML file. Media paths in either form resolve against that HTML wrapper.
+You are reading the article. Press **R**, or choose **Slides** from the menu, to present it. {.muted}
 :::
 
 ::: notes
-For a new published deck, use one HTML file containing inline Markdown and the stable latest.js loader; there is no author build. The loader checks a fresh manifest on each visit and loads matching, content-hashed JavaScript and CSS. The code on the left becomes the slide on the right. If the source is code-heavy or edited separately, a script tag with data-src can reference a Markdown file instead; serve that version over HTTP. For offline decks, keep using local deck.js and deck.css files. Open it in any modern browser. To publish it, put the folder anywhere that serves static files: GitHub Pages, a bucket, an intranet share.
+The same file is both. Present it and you get slides; switch to the article and each slide reflows into one readable column, with your speaker notes underneath as paragraphs. Write the notes as full sentences and the article reads like a post, with nothing extra to keep in sync. Readers can switch at any point and keep their place, and a link ending in ?view=read opens straight into the article. This page works the same way, so try it now.
 :::
 
 ---
-kicker: Every slide is an example
+kicker: Escape hatches
+id: hatches
 ---
-## Press S on any slide to see its Markdown
+## Drop down a level when Markdown runs out
 
-> [!TIP]
-> Press **S** on any slide of this deck to see the Markdown that produced it. Press **S** again to close it.
-
-This deck is written in talkdown, so every slide shows its own syntax. Copy what you see into your own deck.
+::: features
+### :code-xml: Inline HTML
+Any block can be HTML, in the theme's colours.
+### :braces: Your own JavaScript
+A hand-built slide joins the deck's navigation.
+### :paintbrush: Your own CSS
+Override a token, or style one slide with a class.
+### :eye: Words per format
+Say it on stage, write it for readers.
+### :plug: A small API
+Steps, slide events and custom keys.
+### :package: Your own copy
+Pin a release, or keep two files offline.
+:::
 
 ::: notes
-This walkthrough is itself a talkdown deck, so each slide is its own example. Where a slide shows code beside the result, that is the syntax to copy. Where it does not, press S and the slide's Markdown opens over it. The source of the whole page is also one view-source away.
+A format that agents can write is only useful if it never traps you. Every built-in piece has a way out, and each one is local: drop to HTML for one diagram, write JavaScript for one slide, override one colour, and the rest of the deck stays Markdown.
+
+You can write HTML anywhere in the Markdown. A section element with your own script becomes a slide, and Deck.steps puts its interaction on the deck's arrow keys; there is one in the Make it yours section. CSS tokens restyle everything, and a class restyles one slide. Say, read and present-only blocks let the talk and the article differ where they need to. And if you would rather not follow the latest runtime, pin a release or copy deck.js and deck.css next to your deck.
 :::
 
 ---
-kicker: Contents
+kicker: The tour
+id: tour
+section: The tour
 ---
-## What's inside
+## Every slide from here is a live example
 
 ::: agenda
 :::
 
+Press **S** on any slide to see the Markdown behind it. {.muted}
+
 ::: notes
-This contents slide writes itself: an agenda block lists every section slide in the deck, each linking to it. The block is two lines, and it stays correct when you add or move sections.
+That's why talkdown exists: a compact source that an agent can write and you can edit, one link that works as slides and as an article, and a way out whenever you need one.
+
+The rest of this deck is the feature tour and authoring reference. Each example is live: press down to step through it, or press S to see its Markdown and copy it into your own deck. This contents list writes itself: an agenda block lists every section, each linking to it.
 :::
 
 ---
@@ -433,28 +445,11 @@ Use explicit note blocks for new decks: they contain ordinary Markdown and make 
 
 ---
 layout: section
+id: formats
 ---
 # One deck, two formats
 
 Present it on a stage. Read it as a post.
-
----
-kicker: Two formats
----
-## The same file presents and reads
-
-::: toggle
-### Present
-The 16:9 stage, scaled to the screen. Arrow keys on a laptop; on a phone, use the visible arrows. Steps reveal one at a time.
-### Read
-One column of text, like a blog post. Slides reflow, widgets lay everything out, builds show finished, and the notes become the prose.
-:::
-
-Press **R**, or tap the phone's floating button for **Slides / Article**. Both keep your place. Share `?view=read` to open the article directly. {.muted}
-
-::: notes
-There is one file and two ways to see it. On a laptop the deck presents full screen from the keyboard. Phones open as slides. Choose Article from the menu to read it: each slide reflows into article typography, and the shared notes follow as paragraphs. Tap Slides to return to that section. Your presenter step is restored. The Home button returns to the beginning; Sections opens a picker with section and slide tabs. Send the link to someone who missed the talk and they get the reasoning as well as the bullets.
-:::
 
 ---
 kicker: Two formats
@@ -572,6 +567,42 @@ The interactive patterns that come up in almost every technical deck are built i
 
 ---
 kicker: Widgets
+id: w-all
+---
+## Every widget is a few lines of Markdown
+
+::: widget-index
+- [:panels-top-left: Tabs](#w-tabs) `::: tabs`
+- [:list: Agenda](#tour) `::: agenda`
+- [:list-ordered: Walkthrough](#w-steps) `::: steps`
+- [:table: Explained table](#w-explain) `{.explain}`
+- [:code: Stepped code](#w-code) `{steps: 1-2}`
+- [:square-terminal: Terminal](#w-terminal) ` ```terminal `
+- [:circle-play: Recording](#w-cast) `![](demo.cast)`
+- [:chevrons-up-down: Accordion](#w-accordion) `::: accordion`
+- [:refresh-cw: Flip cards](#w-accordion) `::: flip`
+- [:layout-grid: Feature cards](#w-features) `::: features`
+- [:workflow: Diagram](#w-diagrams) ` ```mermaid `
+- [:trending-up: Stats](#w-stats) `::: stats`
+- [:milestone: Timeline](#w-timeline) `::: timeline`
+- [:chart-column: Chart](#w-charts) `::: chart`
+- [:quote: Pull quote](#w-quotes) `> … — name`
+- [:info: Callout](#w-checklists) `> [!TIP]`
+- [:list-checks: Checklist](#w-checklists) `- [x]`
+- [:sigma: Maths](#w-checklists) `$x^2$`
+- [:image: Image slide](#w-image) `layout: image`
+- [:video: Video](#w-video) `![](video link)`
+:::
+
+Plus toggles, icons, footnotes and QR codes. Click any widget to see it live. {.muted}
+
+::: notes
+This is the whole set on one slide, each with the Markdown that starts it. Click a name to jump to its live example, or keep pressing right to go through them in order. Every widget follows the theme, takes part in the arrow keys, and lays itself out as plain content in the article.
+:::
+
+---
+kicker: Widgets
+id: w-tabs
 ---
 ## Tabs swap a detail panel
 
@@ -605,6 +636,7 @@ Every heading inside a tabs block becomes a tab, and the text under it becomes i
 
 ---
 kicker: Widgets
+id: w-steps
 ---
 ## Walk through it, one step at a time
 
@@ -636,6 +668,7 @@ A walkthrough is the same idea as tabs, laid out as a sequence: a step counter, 
 
 ---
 kicker: Widgets
+id: w-explain
 ---
 ## Compare, then explain
 
@@ -654,6 +687,7 @@ Put {.explain} on the line after a table and its last column becomes the explana
 
 ---
 kicker: Widgets
+id: w-code
 ---
 ## Highlight code as you talk
 
@@ -680,6 +714,7 @@ Fenced code takes a list of line groups after the language name. Each press of d
 
 ---
 kicker: Widgets
+id: w-terminal
 ---
 ## Type commands live
 
@@ -709,6 +744,7 @@ A terminal block types each command as you press down, then prints its output. L
 
 ---
 kicker: Widgets
+id: w-cast
 ---
 ## Or play a recording
 
@@ -742,6 +778,7 @@ For anything longer, record a real session with asciinema and drop the file in. 
 
 ---
 kicker: Widgets
+id: w-accordion
 ---
 ## Accordions and flip cards
 
@@ -775,6 +812,7 @@ An accordion opens one answer at a time as you press down, which suits a frequen
 
 ---
 kicker: Widgets
+id: w-features
 ---
 ## Feature cards and icons
 
@@ -808,6 +846,7 @@ A features block lays its items out as cards, and an icon at the start of a head
 
 ---
 kicker: Widgets
+id: w-diagrams
 ---
 ## Diagrams from text
 
@@ -828,11 +867,12 @@ flowchart LR
 ```
 
 ::: notes
-Write a mermaid code block and it becomes a diagram; add {source} after the language and the text sits beside it. This one is a network diagram: two zones, a load balancer, two app servers and a database with a replica, from a dozen lines of text. Mermaid also draws sequence diagrams, state machines, architecture diagrams and simple charts. It is fetched only when a deck has a diagram, and every diagram takes its colours and fonts from the theme, so it follows light and dark. If Mermaid cannot load, the source shows instead.
+Write a mermaid code block and it becomes a diagram; add {source} after the language and the text sits beside it. This one is a network diagram: two zones, a load balancer, two app servers and a database with a replica, from a dozen lines of text. Mermaid also draws sequence diagrams, state machines, architecture diagrams and simple charts. Click a diagram to open it full screen, then scroll or pinch to zoom in on the detail. Mermaid is fetched only when a deck has a diagram, and every diagram takes its colours and fonts from the theme, so it follows light and dark. If Mermaid cannot load, the source shows instead.
 :::
 
 ---
 kicker: Widgets
+id: w-stats
 ---
 ## Numbers that land
 
@@ -859,6 +899,7 @@ A stats block turns a list into big numbers: the bold part of each item is the n
 
 ---
 kicker: Widgets
+id: w-timeline
 ---
 ## Walk through a timeline
 
@@ -890,6 +931,7 @@ A timeline block lays milestones out on a line. Press down to walk it: each mile
 
 ---
 kicker: Widgets
+id: w-charts
 ---
 ## Charts and their backing data
 
@@ -908,6 +950,7 @@ This example uses view=both because the exact numbers belong in the talk. Normal
 
 ---
 kicker: Widgets
+id: w-quotes
 ---
 ## Quotes
 
@@ -921,6 +964,7 @@ A quote whose last line starts with a dash becomes a pull quote, with the line a
 
 ---
 kicker: Widgets
+id: w-checklists
 ---
 ## Checklists, footnotes and maths
 
@@ -959,6 +1003,7 @@ Dash-bracket lists become checklists. Write text[^1] and a [^1]: line anywhere o
 layout: image
 image: assets/dusk.svg
 kicker: Widgets
+id: w-image
 ---
 ## Put a picture behind it
 
@@ -970,6 +1015,7 @@ An image layout fills the slide with a picture and sets the text over it on a da
 
 ---
 kicker: Widgets
+id: w-video
 ---
 ## Video, embedded
 
@@ -1132,13 +1178,111 @@ Deck.go(Deck.slides.findIndex(s => s.dataset.id === 'start'));
 The API is deliberately small. Register a stepper for any interaction and it joins the navigation. Listen for slide changes, bind your own keys, or move the deck from code. Everything else is HTML and CSS you already know.
 :::
 
+</script>
+
+<section class="slide flow" data-section="Make it yours" data-id="custom" data-name="Keep room for custom JavaScript">
+  <div class="content hand">
+    <div class="kicker">Make it yours</div>
+    <h2>Build the example your talk needs</h2>
+    <div class="pipe" id="pipe" role="img" aria-label="A request checks the cache, fetches from the service on a miss, and returns a response.">
+      <div class="n"><b>Request</b><span>arrives</span></div><i aria-hidden="true">→</i>
+      <div class="n"><b>Cache</b><span>check for a hit</span></div><i aria-hidden="true">→</i>
+      <div class="n"><b>Service</b><span>fetch on a miss</span></div><i aria-hidden="true">→</i>
+      <div class="n"><b>Response</b><span>save and return</span></div>
+    </div>
+    <p class="caption" id="pipeCap" aria-live="polite"></p>
+    <button data-next style="margin-top:8px"></button>
+  </div>
+  <aside class="notes">Sometimes the best explanation needs custom code. This request flow is a hand-written HTML slide with a small JavaScript walkthrough. Press down to follow a cache miss from the request through to the response. The interaction uses Deck.steps, so it shares the deck's keyboard controls, step counter and deep links. Its colours come from the active theme. In the article, the diagram shows its completed state. You can build a calculator, simulation or animated diagram this way while keeping the surrounding talk in Markdown.</aside>
+</section>
+
+<script type="text/markdown">
+layout: section
+id: begin
+---
+# Start a deck
+
+Give an agent one URL, or write it by hand.
+
+---
+kicker: For agents
+id: agents
+---
+## Give your agent one URL
+
+```text
+https://sambhav.dev/talkdown/skills/talkdown/SKILL.md
+```
+
+Also on jsDelivr:
+
+```text
+https://cdn.jsdelivr.net/gh/sambhav/talkdown@main/skills/talkdown/SKILL.md
+```
+
+An example prompt:
+
+```text
+Read https://sambhav.dev/talkdown/skills/talkdown/SKILL.md and write a
+12-slide talkdown deck about our Postgres migration, with speaker notes.
+```
+
+::: notes
+To get an agent writing talkdown, give it the address of the skill file. It lists the whole syntax: layouts, widgets, how notes work, and how to verify the result. Paste the URL into a prompt, or install the file as a skill, and ask for a deck on whatever you like. If the first address is blocked, the same file is served from jsDelivr, at the second address on the slide.
+
+Ask for speaker notes, because they are what turns the deck into an article later. The agent returns a single HTML file with the deck inside it.
+:::
+
+---
+kicker: Quick start
+id: start
+class: quick
+---
+## Your first deck in a minute
+
+|||
+
+````html {steps: 1-2 | 5-11}
+<script src="https://sambhav.dev/talkdown/latest.js">
+<\/script>
+
+<script type="text/markdown">
+# My talk
+The one idea worth remembering
+---
+## Why it matters
+::: notes
+What you would say out loud.
+:::
+<\/script>
+````
+
+|||
+
+<div class="mini" aria-hidden="true"><div class="mini-bar"><i></i><i></i><i></i><span>talk.html</span></div><div class="mini-slide"><b>My talk</b><span>The one idea worth remembering</span><em>1 / 2 &nbsp;→</em></div></div>
+
+Use the loader, write Markdown, open it in a browser. {.muted .mini-cap}
+
+::: read-only
+For code-heavy or separately edited source, replace the inline Markdown block with a reference and serve the files over HTTP:
+
+```html
+<script type="text/markdown" data-src="talk.md"><\/script>
+```
+
+Keep inline Markdown when you want one authored HTML file. Media paths in either form resolve against that HTML wrapper.
+:::
+
+::: notes
+For a new published deck, use one HTML file containing inline Markdown and the stable latest.js loader; there is no author build. The loader checks a fresh manifest on each visit and loads matching, content-hashed JavaScript and CSS. The code on the left becomes the slide on the right. If the source is code-heavy or edited separately, a script tag with data-src can reference a Markdown file instead; serve that version over HTTP. For offline decks, keep using local deck.js and deck.css files. Open it in any modern browser. To publish it, put the folder anywhere that serves static files: GitHub Pages, a bucket, an intranet share.
+:::
+
 ---
 layout: center
-section: Start
 ---
 ## Write it once. Present it. Send the link.
 
-[Get started](#start) · [Source on GitHub](https://github.com/sambhav/talkdown) · MIT licensed
+[Star it on GitHub](https://github.com/sambhav/talkdown) · [Get started](#begin)
 
 ::: qr
 https://sambhav.dev/talkdown/
