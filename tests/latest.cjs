@@ -2,12 +2,13 @@
 async function verifyLatest(page, base) {
   const check = (value, message) => { if (!value) throw new Error(message); };
   const loader = base + '/latest.js';
-  const html = '<!doctype html><html data-fonts="off"><head><meta name="viewport" content="width=device-width, initial-scale=1"><script src="' + loader + '"></script></head><body><script type="text/markdown">## First</script><section class="slide flow" data-id="custom"><div class="content"><h2>Custom</h2><div id="customStep"></div></div></section><script>Talkdown.onReady(Deck => { window.setupCalls = (window.setupCalls || 0) + 1; Deck.steps(document.getElementById("customStep"), 3, i => document.getElementById("customStep").textContent = i); });</script></body></html>';
+  const html = '<!doctype html><html data-fonts="off"><head><meta name="viewport" content="width=device-width, initial-scale=1"><script src="' + loader + '"></script></head><body><script type="text/markdown">## First</script><section class="slide flow" data-id="custom"><div class="content"><h2>Custom</h2><div id="customStep"></div><p class="caption" id="customCaption"></p></div></section><script>Talkdown.onReady(Deck => { window.setupCalls = (window.setupCalls || 0) + 1; Deck.steps(document.getElementById("customStep"), 3, i => document.getElementById("customStep").textContent = i); });</script></body></html>';
   await page.route('**/latest-test.html*', r => r.fulfill({ contentType: 'text/html', body: html }));
   await page.goto(base + '/latest-test.html?view=present#custom');
   await page.evaluate(() => Talkdown.ready.then(() => {}));
   await page.waitForFunction(() => window.Deck?.slides.length === 2);
   check(await page.evaluate(() => window.setupCalls) === 1, 'Author setup must run exactly once');
+  check(await page.locator('#customStep').count() === 1 && await page.locator('#customCaption').count() === 1, 'Widget enhancement must preserve empty author mount points and captions');
   await page.keyboard.press('ArrowDown');
   check(await page.locator('#customStep').textContent() === '1', 'Author steppers must join navigation before startup');
   check(await page.locator('script[src*="/dist/deck."]').count() === 1, 'The loader must request a content-hashed script');

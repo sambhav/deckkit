@@ -170,8 +170,8 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
   /* ================= widgets, built from Markdown ================= */
   // Each one is a stepper (↑ ↓ walk it), and each degrades to plain, readable content in read view.
   function widgets(c) {
-    // a line holding only {.class} applies to the block above it, e.g. a table
-    c.querySelectorAll('p').forEach(p => { if (!p.textContent.trim() && !p.children.length && (p.className || p.id) && p.previousElementSibling) { p.previousElementSibling.classList.add(...p.classList); if (p.id) p.previousElementSibling.id = p.id; p.remove(); } });
+    // Markdown attributes are attached by the tokenizer. Leave authored empty
+    // HTML elements intact: they can be captions or JavaScript mount points.
     // Inner widgets must be transformed before an outer pane moves their nodes.
     [...c.querySelectorAll('.tabs, .toggle, .steps')].reverse().forEach(panes);
     c.querySelectorAll('.timeline').forEach(timeline);
@@ -283,7 +283,6 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
       pre.classList.toggle('stepping', i > 0 && !reading());
       [...code.children].forEach((l, j) => l.classList.toggle('on', i > 0 && groups[i - 1].has(j + 1)));
     });
-    localStepControls(pre, pre.stepper, 'Code');
   }
 
   /* syntax highlighting: highlight.js, fetched only when the deck has fenced code.
@@ -560,7 +559,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     if (!cmds.length) return;
     const out = w.lastChild, row = c => (c.cmd != null ? `<span class="t-p">$</span> <span class="t-c">${esc(c.cmd)}</span>\n` : '') + c.out.map(o => `<span class="t-o">${esc(o)}</span>\n`).join('');
     let timer;
-    const st = steps(w, cmds.length, i => {
+    steps(w, cmds.length, i => {
       clearInterval(timer);
       const done = cmds.slice(0, i).map(row).join(''), c = cmds[i];
       if (!started || reading() || matchMedia('(prefers-reduced-motion: reduce)').matches || c.cmd == null || w.closest('.slide') !== slide()) { out.innerHTML = done + row(c); return; }
@@ -571,7 +570,6 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
         if (k >= c.cmd.length) { clearInterval(timer); setTimeout(() => { if (out.isConnected) out.innerHTML = done + row(c); }, 260); }
       }, 34);
     }, { read: 'end' });
-    localStepControls(w, st, 'Command');
   }
 
   // asciinema v2: a JSON header line, then [time, "o", text] events. Plays when its slide opens; click to replay.
@@ -653,7 +651,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     const st = {
       n, i: 0, read,
       // quiet: a batch caller (setAt) syncs the chrome once at the end
-      go(k, quiet) { st.i = Math.max(0, Math.min(n - 1, k)); show(st.i); st.refreshControls?.(); if (!quiet && started && owner === slide()) sync(); return st; },
+      go(k, quiet) { st.i = Math.max(0, Math.min(n - 1, k)); show(st.i); if (!quiet && started && owner === slide()) sync(); return st; },
       next() { return st.i < n - 1 && (st.go(st.i + 1), true); },
       prev() { return st.i > 0 && (st.go(st.i - 1), true); },
     };
@@ -664,19 +662,6 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     return st;
   }
 
-  function localStepControls(el, st, name) {
-    if (st.n < 2) return;
-    const nav = document.createElement('div'); nav.className = 'local-steps';
-    nav.setAttribute('role', 'group'); nav.setAttribute('aria-label', name + ' steps');
-    nav.innerHTML = `<button aria-label="Previous ${name.toLowerCase()} step">‹</button><span></span><button aria-label="Next ${name.toLowerCase()} step">›</button>`;
-    const [back, next] = nav.querySelectorAll('button');
-    st.refreshControls = () => {
-      back.disabled = st.i === 0; next.disabled = st.i === st.n - 1;
-      nav.querySelector('span').textContent = `${name} ${st.i + 1} / ${st.n}`;
-    };
-    back.onclick = () => st.prev(); next.onclick = () => st.next();
-    el.after(nav); st.refreshControls();
-  }
 
   function tabs(container, onPick) {
     const bs = [...container.querySelectorAll('button')];
@@ -819,17 +804,17 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     if (!s) return;
     $('dPrev').disabled = reading() || at(s) === 0;
     $('dNext').disabled = reading() || done(s);
-    $('dBack').disabled = !list.slice(0, cur).some(item => available(item));
-    $('dForward').disabled = !list.slice(cur + 1).some(item => available(item));
-    $('dBack').setAttribute('aria-label', reading() ? 'Previous section' : 'Previous slide');
-    $('dForward').setAttribute('aria-label', reading() ? 'Next section' : 'Next slide');
+    $('dBack').disabled = !list.slice(0, cur).some(item => available(item)) && (reading() || at(s) === 0);
+    $('dForward').disabled = !list.slice(cur + 1).some(item => available(item)) && (reading() || done(s));
+    $('dBack').setAttribute('aria-label', reading() ? 'Previous section' : 'Previous step or slide');
+    $('dForward').setAttribute('aria-label', reading() ? 'Next section' : 'Next step or slide');
     $('dHome').disabled = !list.slice(0, cur).some(item => available(item)) && (reading() ? scrollY < 2 : at(s) === 0);
     const step = !reading() && total(s) > 1 ? `step ${at(s) + 1}/${total(s)}` : '';
     $('dCount').innerHTML = `<span>${cur + 1} / ${list.length}</span>${step ? `<small>${step}</small>` : ''}`;
     $('dCount').setAttribute('aria-label', `Slide ${cur + 1} of ${list.length}${step ? ', ' + step : ''}`);
     $('dPosition').textContent = cur + 1;
     $('dToggle').setAttribute('aria-label', `${$('dPanel').hidden ? 'Open' : 'Close'} navigation, slide ${cur + 1} of ${list.length}`);
-    $('dHint').textContent = reading() ? 'Scroll to read. Switch to Slides to present this section.' : 'Floating arrows change slides. Use widget controls for steps; these step buttons also work.';
+    $('dHint').textContent = reading() ? 'Scroll to read. Switch to Slides to present this section.' : 'Arrows move through steps, then slides. Scroll within long slides.';
   }
 
   function setDock(open) {
@@ -1055,8 +1040,8 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     $('next').onclick = () => go(cur + 1);
     $('up').onclick = prev;
     $('down').onclick = next;
-    $('dBack').onclick = () => go(cur - 1, 0);
-    $('dForward').onclick = () => go(cur + 1, 0);
+    $('dBack').onclick = prev;
+    $('dForward').onclick = next;
     $('dPrev').onclick = () => setAt(slide(), Math.max(0, at(slide()) - 1));
     $('dNext').onclick = () => setAt(slide(), Math.min(total(slide()) - 1, at(slide()) + 1));
     $('dSlides').onclick = () => { setDock(false); setView('present'); };

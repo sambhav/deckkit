@@ -260,11 +260,16 @@ async function verifyMobileNavigation(page, base) {
     check(await page.locator('#' + id).evaluate(el => el.offsetWidth >= 48 && el.offsetHeight >= 48), 'Primary touch targets must be at least 48 CSS pixels');
   }
   await page.locator('#dForward').click();
-  check(await page.evaluate(() => Deck.cur) === 2, 'The visible next button must change slides even when a widget has unfinished steps');
+  check(await page.evaluate(() => Deck.cur) === 1 && await activeStep() === 'Second', 'The floating next button must advance the current widget step');
   await page.locator('#dBack').click();
-  check(await page.evaluate(() => Deck.cur) === 1 && await activeStep() === 'First', 'The visible previous button must return to the previous slide');
+  check(await page.evaluate(() => Deck.cur) === 1 && await activeStep() === 'First', 'The floating previous button must reverse the current widget step');
   await page.locator('.slide.active .w-next').click();
   check(await activeStep() === 'Second', 'The walkthrough must advance from its own control');
+  await page.locator('#dForward').click();
+  check(await activeStep() === 'Third', 'Floating arrows must continue through widget steps');
+  await page.locator('#dForward').click();
+  check(await page.evaluate(() => Deck.cur) === 2, 'After the final step the floating next arrow must advance the slide');
+  check(await page.locator('.local-steps').count() === 0, 'No inline code or terminal navigation bars should be injected');
   await page.evaluate(() => Deck.go(1, 0));
   await gesture('.slide.active .content', [[250, 300], [140, 302], [60, 301]]);
   await gesture('.slide.active .content', [[362, 300], [362, 300]]);

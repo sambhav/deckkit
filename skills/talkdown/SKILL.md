@@ -5,7 +5,7 @@ description: Use when creating or editing slide decks, presentations or talks; w
 
 # talkdown
 
-By default, deliver one `.html` file: a boilerplate plus Markdown in a `<script type="text/markdown">` block. It opens as slides on desktop and mobile. Use the phone's visible Previous/Next buttons to change slides directly; widgets have their own controls. Open its menu for **Slides / Article**, or **R** on desktop, to switch at the current section. Shared speaker notes become article prose. Share `?view=read#section-id` for a direct article link; use `<html data-view="read">` or `<html data-view="present">` when the author wants to override the device default. Write Markdown, not hand-built HTML: it is shorter, and a human can tweak it by hand.
+By default, deliver one `.html` file: a boilerplate plus Markdown in a `<script type="text/markdown">` block. It opens as slides on desktop and mobile. Use the phone's floating Previous/Next buttons for steps, then slides. Do not add inline navigation bars to code or terminal examples. Open its menu for **Slides / Article**, or **R** on desktop, to switch at the current section. Shared speaker notes become article prose. Share `?view=read#section-id` for a direct article link; use `<html data-view="read">` or `<html data-view="present">` when the author wants to override the device default. Write Markdown, not hand-built HTML: it is shorter, and a human can tweak it by hand.
 
 ## File boilerplate
 

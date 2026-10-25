@@ -24,7 +24,7 @@ Human-editable source · Themed components · Custom HTML and JavaScript · No a
 
 talkdown turns Markdown into interactive slides and a readable article. Built-in widgets share the active theme; custom HTML and JavaScript can join the same navigation.
 
-Write the slide content in Markdown and the explanation in `::: notes`. On desktop, present it as a 16:9 deck. Phones open as slides. Floating **Previous / Next** buttons change slides directly; widget controls handle their own steps. The menu opens **Slides / Article**, section jumps, and Home. Article view includes the notes as prose. On desktop, press **R** to switch views.
+Write the slide content in Markdown and the explanation in `::: notes`. On desktop, present it as a 16:9 deck. Phones open as slides. Floating **Previous / Next** buttons move through steps and then slides. The menu opens **Slides / Article**, section jumps, and Home. Article view includes the notes as prose. On desktop, press **R** to switch views.
 
 | To… | Start with… |
 |---|---|
@@ -416,8 +416,8 @@ Every colour, typeface and size is a CSS custom property. Override them after `d
 
 On phones, the default is slides. A compact row of **Previous**, **Next**, and **Menu** buttons stays available near the bottom. The menu contains **Slides / Article**, **Home**, and a section/slide picker. Opening it does not resize the content.
 
-- The visible arrows always change slides; they never step through a widget first.
-- Use each widget's own controls for its interaction. Code and terminal examples have local step buttons. The menu also provides step controls.
+- The floating arrows advance or reverse the current step. After the last step, Next changes slides.
+- Tabs, walkthroughs, code highlights, terminal examples and reveal builds all use those same arrows. No extra inline navigation bars are added. Existing widget controls still work.
 - Choose **Article** for normal page scrolling; its arrows jump between entries. Switching views keeps your place.
 - Long slides scroll vertically; wide code blocks and tables scroll horizontally.
 - Browser scrolling, text selection, zoom, and back/forward gestures keep their normal behaviour. There is no custom swipe or edge-tap navigation.

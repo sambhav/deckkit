@@ -64,7 +64,7 @@ Present as slides. Share as an article. {.meta}
 ::: notes
 Over the last few months, I've seen more people move from Google Slides to interactive presentations built with coding agents. I built talkdown because I wanted that freedom in a format I could still read and edit myself. I also wanted the link I shared after a talk to contain the explanation, not just the slides.
 
-This page is both the presentation and the article. On desktop, use the arrow keys to present and R to switch to reading. On a phone, it opens as slides. The floating arrows change slides directly. Use each widget's own controls to explore it, or choose Article from the menu to scroll the full explanation.
+This page is both the presentation and the article. On desktop, use the arrow keys to present and R to switch to reading. On a phone, it opens as slides. The floating arrows move through steps and then slides, or choose Article from the menu to scroll the full explanation.
 :::
 
 ---
@@ -1002,7 +1002,7 @@ kicker: Presenting
 | `S` · `F` · `?` | View this slide's Markdown · fullscreen · all the keys |
 
 ::: notes
-Presenting needs nothing but the keyboard. P opens a presenter view in a second window, with the next slide, your notes and a timer, and the two windows stay in step. L turns the mouse into a laser pointer, and D lets you draw on the slide. S shows the Markdown of the slide you are on, which is how every slide in this deck doubles as an example. On phones, visible Previous and Next buttons change slides directly. The menu contains Slides and Article, which switch at the section you are viewing. Home returns to the beginning, and the grid button opens a section and slide picker. Widgets keep their own controls. Code and terminal examples have local step buttons; the menu also has step controls. In Article view, the floating arrows jump between entries. Portrait slides also have a notes button. Scroll the article normally. In slides, long content scrolls vertically and wide code or tables scroll sideways. Browser gestures and text selection remain available; content taps and swipes never advance the deck. Use the explicit arrows instead.
+Presenting needs nothing but the keyboard. P opens a presenter view in a second window, with the next slide, your notes and a timer, and the two windows stay in step. L turns the mouse into a laser pointer, and D lets you draw on the slide. S shows the Markdown of the slide you are on, which is how every slide in this deck doubles as an example. On phones, visible Previous and Next buttons advance or reverse steps, then move between slides. The menu contains Slides and Article, which switch at the section you are viewing. Home returns to the beginning, and the grid button opens a section and slide picker. The same floating arrows handle code highlights, tabs, walkthroughs and terminal steps without adding inline button bars. Existing widget controls still work. In Article view, the floating arrows jump between entries. Portrait slides also have a notes button. Scroll the article normally. In slides, long content scrolls vertically and wide code or tables scroll sideways. Browser gestures and text selection remain available; content taps and swipes never advance the deck. Use the explicit arrows instead.
 :::
 
 ---
@@ -1015,13 +1015,13 @@ id: mobile
 ### :presentation: Slides first
 The phone opens in presentation mode. Choose Article to read.
 ### :arrow-right: Previous / Next
-Visible buttons always change slides. Widgets have their own controls.
+The same floating arrows move through steps, then slides.
 ### :ellipsis: Choose your view
 The menu contains Slides, Article, sections and Home.
 :::
 
 ::: notes
-Phones open as slides. The visible Previous and Next buttons change slides immediately; they never walk through tabs or code highlights first. Widgets have their own controls, and code and terminal examples have small local step buttons. Reveal builds show all content on mobile so skipping a build cannot hide the explanation.
+Phones open as slides. The floating Previous and Next buttons move through each slide's steps, then move between slides. The same arrows handle code, terminal examples, tabs and walkthroughs; no extra inline navigation bars are added.
 
 Choose Article for ordinary scrolling. In that view, the same arrows jump between entries.
 
@@ -1158,7 +1158,6 @@ Talkdown.onReady(Deck => {
     'Save the result in the cache and return the <b>response</b>.',
   ];
   const nodes = document.querySelectorAll('#pipe .n');
-  if (!document.getElementById('pipe')) throw new Error('Demo pipeline missing at setup: ' + JSON.stringify({ url: location.href, state: document.readyState, slides: [...document.querySelectorAll('.slide')].map(s => s.dataset.name || s.textContent.slice(0, 50)), body: document.body.textContent.slice(0, 160) }));
   Deck.steps(document.getElementById('pipe'), caps.length, i => {
     nodes.forEach((n, j) => { n.classList.toggle('on', j === i); n.classList.toggle('done', j < i); });
     document.getElementById('pipeCap').innerHTML = caps[i];
