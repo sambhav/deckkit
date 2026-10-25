@@ -1158,6 +1158,7 @@ Talkdown.onReady(Deck => {
     'Save the result in the cache and return the <b>response</b>.',
   ];
   const nodes = document.querySelectorAll('#pipe .n');
+  if (!document.getElementById('pipe')) throw new Error('Demo pipeline missing at setup: ' + JSON.stringify({ url: location.href, state: document.readyState, slides: [...document.querySelectorAll('.slide')].map(s => s.dataset.name || s.textContent.slice(0, 50)), body: document.body.textContent.slice(0, 160) }));
   Deck.steps(document.getElementById('pipe'), caps.length, i => {
     nodes.forEach((n, j) => { n.classList.toggle('on', j === i); n.classList.toggle('done', j < i); });
     document.getElementById('pipeCap').innerHTML = caps[i];
