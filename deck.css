@@ -419,6 +419,13 @@ td.mk-only, th.mk-only { text-align: center; }
 /* diagrams */
 .w-diagram { display: flex; justify-content: center; min-width: 0; }
 .w-diagram.drawn svg { width: 100%; max-width: 100% !important; height: auto; max-height: var(--diagram-h, 400px); }   /* fill the column, never the pager */
+/* Mermaid architecture icons ship as blue tiles with white strokes in inline styles; repaint them in the theme */
+.w-diagram [aria-roledescription=architecture] svg rect[width="80"][height="80"] { fill: var(--accent-soft) !important; stroke: color-mix(in srgb, var(--accent) 45%, transparent) !important; stroke-width: 2px !important; rx: 18px; }
+.w-diagram [aria-roledescription=architecture] svg [style*="stroke: #fff"] { stroke: var(--accent-ink) !important; stroke-width: 2.5px !important; }
+.w-diagram [aria-roledescription=architecture] svg [style*="fill: #fff"] { fill: var(--accent-ink) !important; }
+.w-diagram [aria-roledescription=architecture] .edge { stroke: var(--muted) !important; stroke-width: 2px !important; }
+.w-diagram [aria-roledescription=architecture] .arrow { fill: var(--muted) !important; }
+.w-diagram [aria-roledescription=architecture] .architecture-groups .node-bkg { fill: none !important; stroke: color-mix(in srgb, var(--accent) 40%, var(--line)) !important; stroke-width: 1.5px !important; stroke-dasharray: 6 5; rx: 14px; }
 :is(.w-tabs, .w-toggle) .w-diagram.drawn svg { --diagram-h: 270px; }
 .cols .w-diagram.drawn svg { --diagram-h: 360px; }
 :is(.w-tabs, .w-toggle) .w-pane:has(> .w-diagram) { padding: .7em 1em; }
@@ -484,6 +491,8 @@ td.mk-only, th.mk-only { text-align: center; }
 #looks button[aria-checked=true] { box-shadow: inset 0 0 0 1.5px var(--accent); }
 #looks i { width: 26px; height: 18px; flex: none; border-radius: 5px; border: 1px solid var(--line); background: linear-gradient(135deg, var(--bg) 0 55%, var(--accent) 55%); }
 #looks button { background: transparent; }
+#looks em { margin-left: auto; display: flex; color: var(--muted); }
+#looks em svg { width: 14px; height: 14px; }
 @media (max-width: 760px) { #looks { top: 56px; right: 10px; left: 10px; width: auto; } }
 #notes { position: fixed; left: 0; right: 0; bottom: 0; max-height: 34vh; overflow: auto; background: var(--surface); border-top: 2px solid var(--accent);
          padding: 16px 28px; font-size: 17px; line-height: 1.55; z-index: 20; display: none; box-shadow: 0 -12px 40px rgba(0,0,0,.25); }
@@ -504,6 +513,9 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 
 /* ================= read view: the deck as a long-form article ================= */
 /* one centred column on a type scale of ~1.25 from a 19px body; hand-built slides break out into wide figures */
+/* view-only content: .present-only shows on the stage, .read-only in the article (::: present-only / ::: read-only in Markdown) */
+:root:not([data-view=read]) .read-only, [data-view=read] .present-only { display: none !important; }
+
 [data-view=read] { --col: 680px; --figw: 100%; }
 @media (min-width: 1100px) { [data-view=read] { --figw: min(1040px, 100vw - 96px); } }
 

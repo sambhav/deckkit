@@ -8,6 +8,18 @@
 <link rel="stylesheet" href="deck.css?v=0.1.0">
 <script src="deck.js?v=0.1.0"></script>
 <style>
+  /* quick start: what the Markdown on the left turns into */
+  .mini { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--surface); box-shadow: 0 24px 60px -28px color-mix(in srgb, var(--fg) 45%, transparent); }
+  .mini-bar { display: flex; align-items: center; gap: 7px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+  .mini-bar i { width: 11px; height: 11px; border-radius: 50%; background: var(--line); }
+  .mini-bar i:first-child { background: var(--accent); }
+  .mini-bar span { margin-left: 10px; font: 13px var(--mono); color: var(--muted); }
+  .mini-slide { aspect-ratio: 16 / 9; padding: 9% 9% 7%; display: flex; flex-direction: column; justify-content: center; position: relative; background: var(--bg); }
+  .mini-slide b { font: 700 46px/1.05 var(--display); letter-spacing: -.025em; color: var(--fg); }
+  .mini-slide span { margin-top: 14px; font-size: 19px; color: var(--muted); }
+  .mini-slide em { position: absolute; right: 22px; bottom: 16px; font: normal 12px var(--mono); color: var(--muted); }
+  .md .mini-cap { margin-top: 30px; font-size: calc(var(--t-body) * .85); color: var(--muted); }
+  [data-view=read] .mini { max-width: 520px; }
   /* the one hand-built slide: a diagram with its own walkthrough */
   .pipe { display: flex; align-items: center; gap: 14px; margin-top: 64px; }
   .pipe .n { flex: 1; height: 120px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); padding: 20px 22px; display: flex; flex-direction: column; justify-content: space-between; transition: all .3s; }
@@ -52,46 +64,43 @@ You're looking at a deckkit deck. Press → to present it, R to read it as an ar
 layout: statement
 section: Why
 ---
-A deck is usually a script with the words missing.
+Most slides only make sense while someone is presenting them.
 
-deckkit keeps the words. The notes you'd say out loud become the text people read later.
+deckkit keeps your speaker notes in the deck, so anyone who opens the link later gets the whole story, not just the bullet points.
 
 <!--
-Most decks are written to be spoken over. Send one to someone who missed the talk and they get the bullet points without the argument. In deckkit the speaker notes are part of the deck, so the same file works on a stage, in a review, and on a phone the next morning.
+Slides are written to be talked over. Send them to someone who missed the talk and they get the bullet points without the reasoning behind them. In deckkit the speaker notes are part of the deck, so the same file works on a stage, in a review, and on a phone the next morning.
 -->
 
 ---
 kicker: Quick start
 id: start
 ---
-## Two files and a browser
+## Your first deck in a minute
 
 |||
 
-````html
+````html {steps: 1-2 | 4-10}
 <link rel="stylesheet" href="deck.css">
 <script src="deck.js"><\/script>
 
 <script type="text/markdown">
 # My talk
+The one idea worth remembering
 ---
-## The first idea
-- One point per line
-<!-- What you'll say -->
+## Why it matters
+<!-- What you'll say out loud -->
 <\/script>
 ````
 
 |||
 
-1. Copy `deck.css` and `deck.js`, or load them from a CDN
-2. Write slides in a `text/markdown` script
-3. Open the file in a browser and press →
+<div class="mini" aria-hidden="true"><div class="mini-bar"><i></i><i></i><i></i><span>talk.html</span></div><div class="mini-slide"><b>My talk</b><span>The one idea worth remembering</span><em>1 / 2 &nbsp;→</em></div></div>
 
-> [!TIP]
-> Press R to read this deck as an article, and T for dark mode.
+Link two files, write Markdown, open it in a browser. {.mini-cap}
 
 <!--
-There is nothing to install and nothing to build. An HTML page links the stylesheet and the script, and holds the deck in a script tag of type text/markdown. Open it in any modern browser. To publish it, put the folder anywhere that serves static files: GitHub Pages, a bucket, an intranet share.
+There is nothing to install and nothing to build. An HTML page links the stylesheet and the script, and holds the deck in a script tag of type text/markdown: the code on the left becomes the slide on the right. Open it in any modern browser. To publish it, put the folder anywhere that serves static files: GitHub Pages, a bucket, an intranet share.
 -->
 
 ---
@@ -304,7 +313,7 @@ kicker: Widgets
 ## Diagrams from text
 
 ```mermaid {source}
-flowchart TB
+flowchart LR
   users([Users]) --> cdn[CDN]
   subgraph edge [Edge]
     cdn --> waf[WAF]
@@ -343,14 +352,14 @@ sequenceDiagram
 ### Architecture
 ```mermaid
 architecture-beta
-  group cloud(cloud)[Cloud]
-  service web(internet)[Web] in cloud
+  group cloud(cloud)[Production]
+  service web(internet)[Gateway] in cloud
   service api(server)[API] in cloud
   service db(database)[Database] in cloud
-  service files(disk)[Storage] in cloud
+  service backup(disk)[Backups] in cloud
   web:R --> L:api
   api:R --> L:db
-  api:B --> T:files
+  db:R --> L:backup
 ```
 ### State
 ```mermaid
@@ -457,8 +466,17 @@ The 16:9 stage, scaled to the screen. Arrow keys on a laptop; on a phone, a dock
 One column of text, like a blog post. Slides reflow, widgets lay everything out, builds show finished, and speaker notes become the body.
 :::
 
+::: present-only
+Press R to read this deck as an article. {.muted}
+:::
+
+::: read-only
+> [!TIP]
+> This box only appears in read view. Wrap anything in `::: read-only` or `::: present-only` to show it in one view.
+:::
+
 <!--
-On a phone or a portrait tablet, deckkit opens in read view. Markdown slides reflow into article typography, each with a small chapter label, and their speaker notes follow as paragraphs, so the deck reads top to bottom like a blog post. On a laptop, press R or use the button in the top bar. Force a view with ?view=read or ?view=present in the URL.
+On a phone or a portrait tablet, deckkit opens in read view. Markdown slides reflow into article typography, each with a small chapter label, and their speaker notes follow as paragraphs, so the deck reads top to bottom like a blog post. On a laptop, press R or use the button in the top bar. Force a view with ?view=read or ?view=present in the URL. For content that belongs to one view, like a 'press R' hint or a longer explanation, wrap it in present-only or read-only.
 -->
 
 ---
@@ -522,35 +540,37 @@ id: themes
 
 ::: tabs
 ### Everyday
-- [Paper](?theme=paper#themes): cream and gold, the default
-- [Clean](?theme=clean#themes): product and engineering reviews
-- [Slate](?theme=slate#themes): strategy and business
-- [Ledger](?theme=ledger#themes): finance and board updates
-- [Noir](?theme=noir#themes): high-contrast editorial
+- [Paper](?theme=paper#themes) ☀︎: cream and gold, the default
+- [Clean](?theme=clean#themes) ☀︎: product and engineering reviews
+- [Slate](?theme=slate#themes) ☀︎: strategy and business
+- [Ledger](?theme=ledger#themes) ☀︎: finance and board updates
+- [Noir](?theme=noir#themes) ☾: high-contrast editorial
 ### Editorial
-- [Editorial](?theme=editorial#themes): research and long-form keynotes
-- [Swiss](?theme=swiss#themes): design systems, grids and red
-- [Atelier](?theme=atelier#themes): fashion, architecture, luxury
-- [Mocha](?theme=mocha#themes): food, hospitality, cafés
+- [Editorial](?theme=editorial#themes) ☀︎: research and long-form keynotes
+- [Swiss](?theme=swiss#themes) ☀︎: design systems, grids and red
+- [Atelier](?theme=atelier#themes) ☀︎: fashion, architecture, luxury
+- [Mocha](?theme=mocha#themes) ☀︎: food, hospitality, cafés
 ### Warm
-- [Rose](?theme=rose#themes): design, brand, community
-- [Sunset](?theme=sunset#themes): workshops and friendly talks
-- [Chalk](?theme=chalk#themes): teaching and classrooms
-- [Clinic](?theme=clinic#themes): health and care
+- [Rose](?theme=rose#themes) ☀︎: design, brand, community
+- [Sunset](?theme=sunset#themes) ☀︎: workshops and friendly talks
+- [Chalk](?theme=chalk#themes) ☾: teaching and classrooms
+- [Clinic](?theme=clinic#themes) ☀︎: health and care
 ### Nature
-- [Forest](?theme=forest#themes): sustainability and the outdoors
-- [Ocean](?theme=ocean#themes): data and infrastructure
-- [Nord](?theme=nord#themes): cool technical explainers
+- [Forest](?theme=forest#themes) ☀︎: sustainability and the outdoors
+- [Ocean](?theme=ocean#themes) ☀︎: data and infrastructure
+- [Nord](?theme=nord#themes) ☾: cool technical explainers
 ### Tech
-- [Solar](?theme=solar#themes): developer talks
-- [Terminal](?theme=terminal#themes): CLIs and hacker talks
-- [AI](?theme=ai#themes): AI and machine learning
-- [Blueprint](?theme=blueprint#themes): hardware, engineering, specs
+- [Solar](?theme=solar#themes) ☾: developer talks
+- [Terminal](?theme=terminal#themes) ☾: CLIs and hacker talks
+- [AI](?theme=ai#themes) ☾: AI and machine learning
+- [Blueprint](?theme=blueprint#themes) ☾: hardware, engineering, specs
 ### Loud
-- [Punk](?theme=punk#themes): loud, opinionated talks
-- [Volt](?theme=volt#themes): sport, launches, energy
-- [Synth](?theme=synth#themes): gaming, music, nightlife
+- [Punk](?theme=punk#themes) ☀︎: loud, opinionated talks
+- [Volt](?theme=volt#themes) ☾: sport, launches, energy
+- [Synth](?theme=synth#themes) ☾: gaming, music, nightlife
 :::
+
+☀︎ designed light first · ☾ designed dark first. Every theme has both. {.muted}
 
 <!--
 Pick a theme with one attribute on the html element, data-theme="rose", and every slide, widget and code block follows. Each theme has a light and a dark palette drawn as a pair, with typefaces chosen for it, and T switches between them. Click a theme name to try it, or use the palette button in the top bar: this deck turns on the theme picker with data-theme-picker.

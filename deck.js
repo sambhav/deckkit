@@ -29,6 +29,7 @@
  *   ```mermaid                          diagrams (Mermaid, fetched only if the deck has one; <html data-diagrams="off"> to skip);
  *                                       ```mermaid {source} sets the source beside the diagram
  *   [text](#id)                         link to the slide whose frontmatter says id: …
+ *   ::: present-only / ::: read-only   content for one view only (or {.present-only} / {.read-only} on a block)
  */
 (() => {
   const W = 1280, H = 720;
@@ -552,7 +553,11 @@
 
   /* ================= views ================= */
   function setView(v, chosen = true) {
-    if (chosen) viewChosen = true;
+    if (chosen) {   // keep the choice in the URL, so a reload or a shared link opens in the same view
+      viewChosen = true;
+      const keep = new URLSearchParams(location.search); keep.set('view', v);
+      history.replaceState(null, '', '?' + keep + location.hash);
+    }
     const i = Math.max(cur, 0);
     root.dataset.view = v;
     if (v === 'read') finishForReading();
@@ -738,10 +743,12 @@
     Tech: ['solar', 'terminal', 'ai', 'blueprint'],
     Loud: ['punk', 'volt', 'synth'],
   };
+  // the mode each theme was designed in first (both always work); shown in the picker
+  const DARK_FIRST = ['noir', 'chalk', 'nord', 'solar', 'terminal', 'ai', 'blueprint', 'volt', 'synth'];
   function buildPicker() {
     const pop = document.createElement('div'); pop.id = 'looks'; pop.setAttribute('role', 'menu');
     pop.innerHTML = Object.entries(THEMES).map(([group, ts]) => `<div class="lg">${group}</div>`
-      + ts.map(t => `<button role="menuitemradio" data-look="${t}" data-theme="${t}"><i></i><span>${t === 'ai' ? 'AI' : t[0].toUpperCase() + t.slice(1)}</span></button>`).join('')).join('');
+      + ts.map(t => `<button role="menuitemradio" data-look="${t}" data-theme="${t}"><i></i><span>${t === 'ai' ? 'AI' : t[0].toUpperCase() + t.slice(1)}</span><em title="Designed ${DARK_FIRST.includes(t) ? 'dark' : 'light'} first">${svg(DARK_FIRST.includes(t) ? 'dark' : 'light')}</em></button>`).join('')).join('');
     document.body.append(pop);
     const mark = () => pop.querySelectorAll('button').forEach(b => { b.dataset.mode = root.dataset.mode; b.setAttribute('aria-checked', b.dataset.look === root.dataset.theme); });
     pop.onclick = e => {
@@ -825,10 +832,25 @@
     }));
     // a clicked button keeps focus, so Space / Enter would press it again; hand the keys back to the deck
     document.addEventListener('click', e => { const b = e.target.closest('#stage button'); if (b) b.blur(); });
-    // [text](#id) links to the slide with that id
+    // [text](#id) links to the slide with that id; [text](?theme=rose#id) and ?mode=dark restyle this page in place,
+    // so the slide and step you're on stay put
     document.addEventListener('click', e => {
-      const a = e.target.closest('a[href^="#"]'), i = a ? slides().findIndex(s => s.dataset.id === decodeURIComponent(a.hash.slice(1))) : -1;
-      if (i >= 0) { e.preventDefault(); go(i, 0); }
+      const a = e.target.closest('a[href]'); if (!a || e.metaKey || e.ctrlKey || e.shiftKey) return;
+      const u = new URL(a.href, location.href);
+      if (u.origin + u.pathname !== location.origin + location.pathname) return;
+      const theme = u.searchParams.get('theme'), mode = u.searchParams.get('mode') || (/^(light|dark)$/.test(theme) ? theme : null);
+      const look = theme && !/^(light|dark)$/.test(theme) ? theme : null;
+      if (u.search && !look && !mode) return;
+      const i = u.hash ? slides().findIndex(s => s.dataset.id === decodeURIComponent(u.hash.slice(1))) : -1;
+      if (!look && !mode && i < 0) return;
+      e.preventDefault();
+      if (look) { root.dataset.theme = look; if (picker) store.set('look', look); }
+      if (mode) { root.dataset.mode = mode; store.set('mode', mode); icons(); }
+      if (look || mode) {
+        const keep = new URLSearchParams(location.search); u.searchParams.forEach((v, k) => keep.set(k, v));
+        history.replaceState(null, '', '?' + keep + location.hash);
+      }
+      if (i >= 0 && i !== cur) go(i, reading() ? undefined : 0);
     });
     addEventListener('keydown', onKey);
     addEventListener('hashchange', () => { const [sl, sp] = fromHash(); if (sl) go(sl - 1, reading() ? undefined : sp - 1); });

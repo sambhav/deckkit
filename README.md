@@ -22,9 +22,9 @@ Two files · No build step · 23 themes, light and dark · MIT
 
 ## Why deckkit?
 
-A slide deck is usually **a script with the words missing**. Send it to someone who missed the talk and they get the bullet points without the argument.
+Most slides only make sense while someone is presenting them. Send a deck to someone who missed the talk and they get the bullet points without the reasoning behind them.
 
-deckkit keeps the words. Your speaker notes live inside the deck, so the same file works in three places:
+deckkit keeps your speaker notes in the deck. Present it and the notes stay with you; open the same link later and they become the text between the slides. One file works in three places:
 
 | | On a laptop | On a phone | In a review |
 |---|---|---|---|
@@ -138,6 +138,7 @@ build: true
 | `{.class #id}` | Adds a class or id. On its own line, applies to the block above |
 | `==text==` | Accent-coloured text |
 | `[text](#id)` | Links to the slide with that `id` |
+| `::: present-only` · `::: read-only` | Content for one view only. `{.present-only}` or `{.read-only}` works on a single block, and the classes work in HTML slides too |
 
 Everything else is ordinary Markdown, and inline HTML passes through. Inside a Markdown script, write `<\/script>` for a literal closing script tag.
 
@@ -214,14 +215,14 @@ One attribute picks the look:
 
 | | |
 |---|---|
-| **Everyday** | `paper` (default) · `clean` · `slate` · `ledger` · `noir` |
+| **Everyday** | `paper` (default) · `clean` · `slate` · `ledger` · `noir` ☾ |
 | **Editorial & craft** | `editorial` · `swiss` · `atelier` · `mocha` |
-| **Warm & friendly** | `rose` · `sunset` · `chalk` · `clinic` |
-| **Nature & calm** | `forest` · `ocean` · `nord` |
-| **Tech** | `solar` · `terminal` · `ai` · `blueprint` |
-| **Loud** | `punk` · `volt` · `synth` |
+| **Warm & friendly** | `rose` · `sunset` · `chalk` ☾ · `clinic` |
+| **Nature & calm** | `forest` · `ocean` · `nord` ☾ |
+| **Tech** | `solar` ☾ · `terminal` ☾ · `ai` ☾ · `blueprint` ☾ |
+| **Loud** | `punk` · `volt` ☾ · `synth` ☾ |
 
-Every theme is a light and dark pair. The mode follows the system until someone presses **T**, and the choice is remembered.
+Every theme is a light and dark pair; ☾ marks the ones designed dark first, and the picker shows the same mark. The mode follows the system until someone presses **T**, and the choice is remembered.
 
 - `?theme=rose` and `?mode=dark` in the URL override both. Handy for sharing.
 - `<html data-theme-picker>` adds a picker to the top bar so viewers can choose.
