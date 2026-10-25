@@ -259,9 +259,8 @@ aside.notes { display: none; }
   [data-view=present] #dock #dNotes { display: grid; }
   /* vertical slides: Markdown reflows at the phone's width (fluid); hand-built slides get a scaled 540px canvas */
   [data-view=present][data-tall] .slide .content { top: 0; padding: 32px 30px 36px; }
-  [data-view=present][data-tall=fluid] .slide .content { padding: 26px 22px 30px; }
-  /* Dense phone slides remain readable; scroll the slide instead of clipping it. */
-  [data-view=present][data-tall=fluid] .slide .content { overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y pinch-zoom; }
+  /* dense phone slides scroll instead of clipping */
+  [data-view=present][data-tall=fluid] .slide .content { padding: 26px 22px 30px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y pinch-zoom; }
 }
 
 /* ================= type + components ================= */
@@ -525,7 +524,7 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 
 /* ================= read view: the deck as a long-form article ================= */
 /* one centred column on a type scale of ~1.25 from a 19px body; hand-built slides break out into wide figures */
-/* charts: a table then {.chart}. Series colours are --chart-1 … --chart-6 */
+/* charts: ::: chart around a table or CSV (or a legacy {.chart} table). Series colours are --chart-1 … --chart-6 */
 .w-chart { --chart-h: 290px; margin: 0; display: flow-root; font-size: calc(var(--t-body) * .62); color: var(--fg); }
 .w-chart-box { position: relative; min-width: 0; margin: 0; }
 .w-chart-box > figcaption { font: 600 var(--t-ui) var(--sans); margin: 0 0 10px; }
@@ -555,9 +554,6 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 .w-hbar .w-b { margin-left: var(--start, 0%); }
 .w-chart .s0 { --c: var(--chart-1, var(--accent)); } .w-chart .s1 { --c: var(--chart-2, var(--c-fn)); } .w-chart .s2 { --c: var(--chart-3, var(--green)); }
 .w-chart .s3 { --c: var(--chart-4, var(--orange)); } .w-chart .s4 { --c: var(--chart-5, var(--blue)); } .w-chart .s5 { --c: var(--chart-6, var(--muted)); }
-.w-chart-data { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-/* The responsive table rule must not unhide the accessible chart data. */
-.md table.w-chart-data { display: block; top: 0; left: 0; width: 1px; height: 1px; max-width: 1px; overflow: hidden; white-space: nowrap; }
 .w-legend { display: flex; flex-wrap: wrap; gap: .4em 1.4em; margin-bottom: 1.4em; color: var(--muted); }
 .w-legend span { display: inline-flex; align-items: center; gap: .5em; transition: opacity .3s; }
 .w-legend i { width: .8em; height: .8em; border-radius: 3px; background: var(--c); flex: none; }

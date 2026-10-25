@@ -1,20 +1,24 @@
 import MarkdownIt from 'markdown-it';
 
 const escape = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const md = new MarkdownIt({ html: true, typographer: true }).disable('lheading');
+// Typographer keeps smart quotes; 'replacements' would also turn (c) into © and +- into ±,
+// so talkdown_typography below restores only the ellipsis and dashes the old parser made.
+const md = new MarkdownIt({ html: true, typographer: true }).disable(['lheading', 'replacements']);
 const lineAt = (state, n) => state.src.slice(state.bMarks[n] + state.tShift[n], state.eMarks[n]);
 
 // Individual markers are tokens. Code fences and HTML blocks own their content;
 // container grouping never scans their raw text for a closing delimiter.
 md.block.ruler.before('fence', 'talkdown', (state, start, end, silent) => {
-  if (state.sCount[start] !== 0) return false;
+  if (state.sCount[start] - state.blkIndent >= 4) return false;   // indented code
   const line = lineAt(state, start);
   let type, content = line, meta;
-  if (/^---\s*$/.test(line)) type = 'td_slide';
+  // $$ math also works inside list items and quotes; slide structure stays top-level only.
+  if (line.startsWith('$$')) type = 'td_math';
+  else if (state.sCount[start] !== 0) return false;
+  else if (/^---\s*$/.test(line)) type = 'td_slide';
   else if (/^\|\|\|\s*$/.test(line)) type = 'td_column';
   else if ((meta = line.match(/^:::\s*(.*?)\s*$/))) { type = 'td_container'; content = meta[1]; }
   else if ((meta = line.match(/^\[\^([\w-]+)\]:\s*(.*)$/))) { type = 'td_foot'; content = meta[2]; }
-  else if (line.startsWith('$$')) type = 'td_math';
   else return false;
   if (silent) return true;
   const token = state.push(type, '', 0); token.block = true; token.content = content;
@@ -46,7 +50,7 @@ function cells(line) {
   out.push(cell.trim()); return out;
 }
 md.block.ruler.before('table', 'talkdown_table', (state, start, end, silent) => {
-  if (start + 1 >= end || !/^\|/.test(lineAt(state, start))) return false;
+  if (start + 1 >= end || state.sCount[start] - state.blkIndent >= 4 || !/^\|/.test(lineAt(state, start))) return false;
   const head = cells(lineAt(state, start)), sep = cells(lineAt(state, start + 1));
   if (head.length !== sep.length || !sep.every(s => /^:?-{2,}:?$/.test(s))) return false;
   if (silent) return true;
@@ -67,6 +71,13 @@ md.block.ruler.before('table', 'talkdown_table', (state, start, end, silent) => 
   let next = start + 2;
   while (next < end && /^\|/.test(lineAt(state, next))) row(cells(lineAt(state, next++)), 'td');
   close('tbody', 'tbody'); close('table', 'table'); token.map = [start, next]; state.line = next; return true;
+});
+
+md.core.ruler.after('inline', 'talkdown_typography', state => {
+  for (const token of state.tokens) {
+    if (token.type !== 'inline') continue;
+    for (const child of token.children) if (child.type === 'text') child.content = child.content.replace(/\.\.\./g, '…').replace(/ -- /g, ' – ').replace(/---/g, '—');
+  }
 });
 
 // Talkdown's small inline additions sit on top of the standard Markdown lexer.
@@ -209,11 +220,13 @@ function compile(tokens, env) {
 export const renderInline = text => md.renderInline(text);
 export function renderMarkdown(text, env = {}) { return compile(md.parse(text, env), env); }
 export function slideChunks(text) {
-  const lines = text.split('\n'), boundaries = []; let depth = 0;
+  const lines = text.split('\n'), boundaries = [], all = []; let depth = 0;
   for (const token of md.parse(text, {})) {
     if (token.type === 'td_container') depth = Math.max(0, depth + (token.content ? 1 : -1));
-    if (token.type === 'td_slide' && !depth) boundaries.push(token.map[0]);
+    if (token.type === 'td_slide') { all.push(token.map[0]); if (!depth) boundaries.push(token.map[0]); }
   }
+  // An unclosed ::: must not swallow every later slide: fall back to splitting on every ---.
+  if (depth) boundaries.splice(0, boundaries.length, ...all);
   const out = []; let start = 0;
   for (const line of boundaries) { out.push(lines.slice(start, line)); start = line + 1; }
   out.push(lines.slice(start)); return out;

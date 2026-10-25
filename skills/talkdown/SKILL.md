@@ -27,9 +27,9 @@ A talkdown deck is one `.html` file: a boilerplate plus Markdown in a `<script t
 </html>
 ```
 
-Inside the Markdown block write `<\/script>` for a literal closing script tag. Open the file in a browser; refresh to preview. Self-hosting: put `deck.css` and `deck.js` beside the file.
+Inside the Markdown block write `<\/script>` for a literal closing script tag. Open the file in a browser; refresh to preview. Self-hosting: put `dist/deck.css` and `dist/deck.js` beside the file (the root `deck.css` and `deck.js` URLs still work).
 
-Use the published assets in `dist/`; root `deck.js` and `deck.css` URLs remain compatible. To keep content in a separate file, use `<script type="text/markdown" data-src="talk.md"></script>` and serve it over HTTP. Keep inline Markdown as the default for a single-file deliverable; it also works from disk. References and inline/HTML slides can be mixed in document order. Resolve media paths relative to the HTML wrapper.
+To keep content in a separate file, use `<script type="text/markdown" data-src="talk.md"></script>` and serve it over HTTP. Keep inline Markdown as the default for a single-file deliverable; it also works from disk. References and inline/HTML slides can be mixed in document order. Resolve media paths relative to the HTML wrapper.
 
 ## Slides
 
@@ -105,14 +105,16 @@ The article.
 :::
 ```
 - Explained table: `{.explain}` on the line after a table; the last column is the detail for the selected row. Cells starting `✓ ◐ ✗` become marks.
-- Chart: `{.chart}` after a table (also `.hbar`, `.line`, `.donut`); column one = labels, other columns = series.
-```md
-| Quarter | Users |
-|---|---|
-| Q1 | 120 |
-| Q2 | 340 |
-{.chart}
+- Chart: `::: chart` around a table or a ` ```csv ` block; column one = labels, other columns = plain numbers (units go in `title`). Options: `type=bar|hbar|line|donut`, `view=chart|table|both`, `title="…"`, `series="Column"` (donuts need one series). Readers get a data table and a CSV download. A table followed by `{.chart}` still works.
+````md
+::: chart type=line title="Users"
+```csv
+Quarter,Users
+Q1,120
+Q2,340
 ```
+:::
+````
 - Stepped code: ` ```python {steps: 1-2 | 3} ` highlights those lines, one group per step.
 - Stats: `::: stats` around `- **42%** faster first response`.
 - Callout: `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]`.
@@ -175,11 +177,12 @@ section: Results
 ---
 ## Latency fell by half
 
-| Percentile | Before (ms) | After (ms) |
+::: chart title="Latency (ms)"
+| Percentile | Before | After |
 |---|---|---|
 | p50 | 180 | 90 |
 | p99 | 1200 | 480 |
-{.chart}
+:::
 
 > [!TIP]
 > The cache moved to the edge; nothing else changed.

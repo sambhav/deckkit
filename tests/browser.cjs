@@ -93,7 +93,7 @@ async function verify(page, base) {
   });
   const download = page.waitForEvent('download');
   await first.locator('.w-csv-download').click();
-  check((await download).suggestedFilename() === 'chart-data.csv', 'CSV download must use a local file');
+  check(/^[a-z0-9-]+\.csv$/.test((await download).suggestedFilename()), 'CSV download must be a local file named from the chart title');
   await page.waitForFunction(() => window.__downloadCSV.includes('"A, B"'));
   check((await page.locator('.slide').first().locator('aside.notes').textContent()).includes('Only spoken.'), 'Explicit say notes must reach the presenter');
   check(!(await page.locator('.slide').first().locator('aside.notes').textContent()).includes('Only read.'), 'Read notes must stay out of presenter notes');

@@ -1,7 +1,7 @@
 const { buildSync } = require('esbuild');
 const fs = require('node:fs');
 const path = require('node:path');
-const notices = ['markdown-it', 'papaparse', 'mdurl', 'uc.micro', 'linkify-it', 'punycode.js', 'entities'].map(name => {
+const notices = ['markdown-it', 'papaparse', 'mdurl', 'uc.micro', 'punycode.js', 'entities'].map(name => {
   let dir = path.dirname(require.resolve(name));
   while (!fs.existsSync(path.join(dir, 'package.json')) || JSON.parse(fs.readFileSync(path.join(dir, 'package.json'))).name !== name) {
     const parent = path.dirname(dir); if (parent === dir) throw new Error('Cannot locate license for ' + name); dir = parent;
@@ -14,6 +14,8 @@ const notices = ['markdown-it', 'papaparse', 'mdurl', 'uc.micro', 'linkify-it', 
 // existing CDN and sambhav.dev links without changing script execution timing.
 buildSync({
   entryPoints: ['src/deck.js'], outfile: 'dist/deck.js', bundle: true,
+  // linkify is off, so markdown-it's linkify-it dependency is replaced by an empty stub (about 11KB).
+  alias: { 'linkify-it': './scripts/linkify-stub.js' },
   platform: 'browser', format: 'iife', target: 'es2022', minify: true,
   legalComments: 'inline', charset: 'utf8',
   banner: { js: '/* talkdown 0.2 — bundled runtime; edit src/deck.js, then npm run build. */\n' + notices },
