@@ -151,6 +151,73 @@ Use the quick start above for published decks that follow runtime updates. [`exa
 
 Always check desktop present view, phone-width read view, the chart's data table, and source copying before sharing. Optional fonts, diagrams, maths, icons, and recordings may require network access or self-hosted assets; a single authored HTML file does not automatically embed every resource.
 
+
+### Additional visual chart types (experimental)
+
+The same `::: chart` container now accepts `heatmap`, `scatter`, `bubble`, `waterfall`, `timeline`, `sankey`, `treemap`, and `range`. All use a Markdown table or fenced CSV as their single source of truth, with the existing Table/Both views and CSV export. These render as dependency-free SVG.
+
+```md
+::: chart type=heatmap title="Requests by hour"
+| Day | 09:00 | 10:00 | 11:00 |
+|---|---:|---:|---:|
+| Mon | 12 | 22 | 45 |
+| Tue | 16 | 31 | 58 |
+:::
+
+::: chart type=scatter x="Latency" y="Throughput" title="Latency vs throughput"
+| System | Latency | Throughput |
+|---|---:|---:|
+| A | 80 | 950 |
+| B | 110 | 820 |
+:::
+
+::: chart type=bubble x="Latency" y="Throughput" size="Users"
+| System | Latency | Throughput | Users |
+|---|---:|---:|---:|
+| A | 80 | 950 | 20 |
+| B | 110 | 820 | 50 |
+:::
+
+::: chart type=waterfall title="Latency improvements (ms)"
+| Stage | Value | Kind |
+|---|---:|---|
+| Initial | 500 | total |
+| Cache | -200 | change |
+| Final | 300 | total |
+:::
+
+::: chart type=timeline title="Release roadmap"
+| Task | Start | End |
+|---|---|---|
+| Design | 2026-10-01 | 2026-10-31 |
+| Release | 2026-11-05 | |
+:::
+
+::: chart type=sankey title="Request routing"
+| Source | Target | Value |
+|---|---|---:|
+| Requests | Tools | 600 |
+| Requests | RAG | 300 |
+:::
+
+::: chart type=treemap title="Infrastructure spend"
+| Path | Value |
+|---|---:|
+| Compute / GPU | 400 |
+| Compute / CPU | 200 |
+| Storage / Object | 150 |
+:::
+
+::: chart type=range title="Latency distribution (ms)"
+| System | Min | Max | Median |
+|---|---:|---:|---:|
+| A | 30 | 180 | 85 |
+| B | 70 | 310 | 140 |
+:::
+```
+
+The renderer rejects invalid numbers, malformed rows, reversed ranges, negative Sankey flows, cycles, and invalid dates instead of converting errors to zero. Sankey currently uses a simple layered layout; treemap uses alternating proportional slices. Both are deliberately lightweight rather than full layout-engine replacements.
+
 ## 🤖 For agents
 
 Give your agent one URL and it learns the whole format:
