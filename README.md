@@ -216,7 +216,19 @@ The same `::: chart` container now accepts `heatmap`, `scatter`, `bubble`, `wate
 :::
 ```
 
-The renderer rejects invalid numbers, malformed rows, reversed ranges, negative Sankey flows, cycles, and invalid dates instead of converting errors to zero. Sankey currently uses a simple layered layout; treemap uses alternating proportional slices. Both are deliberately lightweight rather than full layout-engine replacements.
+The renderer rejects invalid numbers, malformed rows, reversed ranges, negative Sankey flows, cycles, overlapping treemap paths, and invalid calendar dates. Visual charts accept up to 1,000 rows and 20,000 cells. Dense plots scroll within the figure on phones, with labels kept at their native size. The same scroll region is keyboard-focusable; Table/Both views and CSV export provide exact values without relying on hover.
+
+| Type | Data and options |
+|---|---|
+| Heatmap | First column is the row label; every remaining column is numeric. Includes a colour scale. |
+| Scatter / bubble | First column labels each point. `x` and `y` select exact header names (default: second and third columns). Bubble `size` defaults to the fourth column and controls circle **area**; it must be nonnegative. |
+| Waterfall | First two columns are label and value. Optional `Kind` is `change` (default), `total`, or `subtotal`. A change adds to the running total; a total/subtotal sets it to the supplied absolute value. Green means increase and red means decrease. |
+| Timeline chart | First column labels each row; `Start` is required, `End` is optional. Dates use valid `YYYY-MM-DD` calendar dates. Empty or absent End means a milestone. |
+| Sankey | Required `Source`, `Target`, `Value` columns. Acyclic flows use a shared proportional width scale and distinct node ports. Negative flows and all-zero datasets are rejected. |
+| Treemap | First column contains slash-separated paths; `Value` is required. Values are nonnegative with a positive total. Paths cannot be duplicated or overlap a parent and child. Uses alternating proportional slices. |
+| Range | First column labels each row; `Min` and `Max` are required. Optional `Median` must lie inside the range and appears as a dot. |
+
+Column names are case-sensitive. Unsupported options produce a diagnostic instead of being silently ignored. Sankey and treemap remain lightweight layouts rather than full layout-engine replacements.
 
 ## 🤖 For agents
 

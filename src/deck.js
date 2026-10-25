@@ -545,7 +545,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
       } else throw new Error('A chart needs a CSV code block or a table');
       if (!['bar', 'hbar', 'line', 'donut', ...visualTypes].includes(kind)) throw new Error('Unknown chart type: ' + kind);
       if (!['auto', 'chart', 'table', 'both'].includes(initial)) throw new Error('Unknown chart view: ' + initial);
-      const unknown = [...source.attributes].find(a => a.name.startsWith('data-') && !['data-type','data-chart','data-view','data-chart-view','data-title','data-series','data-x','data-y','data-size','data-group'].includes(a.name));
+      const unknown = [...source.attributes].find(a => a.name.startsWith('data-') && !['data-type','data-chart','data-view','data-chart-view','data-title', ...(visualTypes.includes(kind) ? [] : ['data-series']), ...(['scatter','bubble'].includes(kind) ? ['data-x','data-y'] : []), ...(kind === 'bubble' ? ['data-size'] : [])].includes(a.name));
       if (unknown) throw new Error('Unknown chart option: ' + unknown.name.slice(5));
       model = visualTypes.includes(kind) ? { visual: visualChart(headers, rows, kind, { ...source.dataset, title }) } : chartDataset(headers, rows, kind, source.dataset.series, old);
     } catch (e) { error = e.message; }
@@ -575,6 +575,10 @@ import { visualTypes, visualChart } from './visual-charts.js';
     });
     const w = document.createElement('div'); w.className = `w w-chart w-${kind}`; w.setAttribute('role', 'img'); w.setAttribute('aria-labelledby', `${id}-title`);
     if (model?.visual) {
+      w.classList.add('w-visual-chart');
+      w.setAttribute('role', 'region');
+      w.setAttribute('aria-label', title + ' chart, scroll to explore');
+      w.tabIndex = 0;
       w.innerHTML = model.visual;
       box.append(w);
     } else if (model) {

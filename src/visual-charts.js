@@ -1,77 +1,228 @@
-// Additional native visualisations. Input is the original table/CSV dataset.
-export const visualTypes = ['heatmap','scatter','bubble','waterfall','timeline','sankey','treemap','range'];
+// Native SVG charts share the original Markdown/CSV data with the table view.
+export const visualTypes = ['heatmap', 'scatter', 'bubble', 'waterfall', 'timeline', 'sankey', 'treemap', 'range'];
+
 export function visualChart(headers, rows, type, options = {}) {
+  if (!visualTypes.includes(type)) throw Error('Unknown chart type: ' + type);
   const names = headers.map(x => String(x).trim());
-  if (names.some(x => !x) || new Set(names).size !== names.length) throw Error('Column names must be unique and nonempty');
+  if (names.length < 2 || names.some(x => !x) || new Set(names).size !== names.length) throw Error('Column names must be unique and nonempty; at least two columns are required');
   if (!rows.length || rows.length > 1000 || rows.some(r => r.length !== names.length)) throw Error('Expected 1–1000 complete data rows');
-  const col = (name, fallback, required = true) => {
-    const index = name ? names.indexOf(name) : fallback;
-    if (index < 0 || index >= names.length) { if (required) throw Error('Missing column: ' + name); return -1; }
-    return index;
+  if (rows.length * names.length > 20000) throw Error('Visual charts support at most 20,000 cells');
+  const supported = type === 'scatter' ? ['x', 'y'] : type === 'bubble' ? ['x', 'y', 'size'] : [];
+  for (const key of ['x', 'y', 'size', 'group', 'series']) {
+    if (options[key] !== undefined && !supported.includes(key)) throw Error('Unsupported ' + type + ' option: ' + key);
+  }
+  const column = (name, fallback) => {
+    const i = name === undefined ? fallback : names.indexOf(name);
+    if (i < 0 || i >= names.length) throw Error('Missing column: ' + (name ?? (fallback + 1)));
+    return i;
   };
-  const val = (r, i) => {
-    const s = String(r[i] ?? '').trim();
+  // Optional semantic columns are selected by name, never an unrelated position.
+  const optional = name => names.indexOf(name);
+  const number = (row, i) => {
+    const s = String(row[i] ?? '').trim();
     if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(s) || !Number.isFinite(+s)) throw Error('Invalid number in column ' + names[i] + ': ' + s);
     return +s;
   };
-  const esc = x => String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  const label = (x,y,s,anchor='middle') => `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="currentColor" font-size="11">${esc(s)}</text>`;
-  const rect = (x,y,w,h,c,tip) => `<rect x="${x}" y="${y}" width="${Math.max(0,w)}" height="${Math.max(0,h)}" rx="3" fill="${c}"><title>${esc(tip)}</title></rect>`;
-  const palette = ['#438CBA','#37A783','#D99B4A','#9A79BF','#C96872','#7C93A5'];
+  const text = x => String(x ?? '').trim();
+  const esc = x => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const fmt = v => Number(v.toPrecision(4)).toString();
+  const label = (x, y, value, anchor = 'middle', max = 24) => {
+    const s = String(value), chars = Array.from(s);
+    const short = chars.length > max ? chars.slice(0, max - 1).join('') + '…' : s;
+    return `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="currentColor" font-size="14"><title>${esc(s)}</title>${esc(short)}</text>`;
+  };
+  const rect = (x, y, w, h, color, tip) => `<rect x="${x}" y="${y}" width="${Math.max(0, w)}" height="${Math.max(0, h)}" rx="2" fill="${color}"><title>${esc(tip)}</title></rect>`;
+  const line = (x1, y1, x2, y2, color = 'var(--line)') => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}"/>`;
+  const palette = ['var(--chart-1, var(--accent))', 'var(--chart-2, var(--blue))', 'var(--chart-3, var(--green))', 'var(--chart-4, var(--orange))', 'var(--chart-5, var(--red))', 'var(--chart-6, var(--muted))'];
+  const extent = values => values.reduce(([lo, hi], v) => [Math.min(lo, v), Math.max(hi, v)], [Infinity, -Infinity]);
+  const domain = (lo, hi) => {
+    if (lo === hi) { const pad = Math.abs(lo) * .1 || 1; lo -= pad; hi += pad; }
+    if (!Number.isFinite(hi - lo)) throw Error('Numeric range is too large to plot');
+    return [lo, hi];
+  };
+  const scale = (lo, hi, a, b) => v => a + (v - lo) / (hi - lo) * (b - a);
   let out = '', width = 680, height = 340;
+  const xAxis = (lo, hi, left, right, y, format = fmt) => {
+    const px = scale(lo, hi, left, right);
+    out += line(left, y, right, y, 'var(--muted)');
+    for (let i = 0; i <= 4; i++) {
+      const v = lo + (hi - lo) * i / 4, x = px(v);
+      out += line(x, y, x, y + 5) + label(x, y + 23, format(v), 'middle', 16);
+    }
+  };
+  const yAxis = (lo, hi, left, right, top, bottom) => {
+    const py = scale(lo, hi, bottom, top);
+    for (let i = 0; i <= 4; i++) {
+      const v = lo + (hi - lo) * i / 4, y = py(v);
+      out += line(left, y, right, y) + label(left - 10, y + 5, fmt(v), 'end', 12);
+    }
+  };
+
   if (type === 'heatmap') {
-    const numeric = names.slice(1).map((_,i)=>i+1), values=rows.flatMap(r=>numeric.map(i=>val(r,i)));
-    const lo=Math.min(...values), hi=Math.max(...values), cw=Math.min(90,560/numeric.length), ch=Math.min(35,260/rows.length);
-    width=110+numeric.length*cw; height=65+rows.length*ch;
-    numeric.forEach((i,j)=>out+=label(100+j*cw+cw/2,20,names[i]));
-    rows.forEach((r,i)=>{out+=label(92,47+i*ch,r[0],'end');numeric.forEach((j,k)=>{const v=val(r,j),t=(v-lo)/(hi-lo||1);out+=rect(100+k*cw,29+i*ch,cw-3,ch-3,`color-mix(in srgb, var(--accent) ${Math.round(15+80*t)}%, var(--surface))`,`${r[0]}, ${names[j]}: ${v}`);});});
+    const numeric = names.slice(1).map((_, i) => i + 1);
+    const values = rows.flatMap(r => numeric.map(i => number(r, i)));
+    const [lo, hi] = extent(values), ch = 34;
+    const left = Math.min(160, Math.max(50, ...rows.map(r => Array.from(String(r[0])).length * 8 + 14)));
+    const cw = Math.min(128, Math.max(64, ...numeric.map(i => names[i].length * 8 + 16)));
+    width = Math.max(340, left + numeric.length * cw + 10); height = 110 + rows.length * ch;
+    numeric.forEach((i, j) => { out += label(left + j * cw + cw / 2, 24, names[i], 'middle', Math.floor(cw / 8) - 1); });
+    rows.forEach((r, i) => {
+      out += label(left - 12, 54 + i * ch, r[0], 'end', Math.floor(left / 8) - 1);
+      numeric.forEach((j, k) => {
+        const v = number(r, j), t = hi === lo ? .5 : (v - lo) / (hi - lo);
+        const color = `color-mix(in srgb, var(--accent) ${Math.round(15 + 75 * t)}%, var(--surface))`;
+        out += rect(left + k * cw, 32 + i * ch, cw - 3, ch - 3, color, `${r[0]}, ${names[j]}: ${v}`);
+      });
+    });
+    const y = height - 42;
+    for (let i = 0; i < 5; i++) out += rect(left + i * 30, y, 30, 12, `color-mix(in srgb, var(--accent) ${15 + i * 75 / 4}%, var(--surface))`, fmt(lo + (hi - lo) * i / 4));
+    out += label(left, y + 32, fmt(lo), 'start') + label(left + 150, y + 32, fmt(hi), 'end');
   } else if (type === 'scatter' || type === 'bubble') {
-    const xi=col(options.x,1),yi=col(options.y,2),si=col(options.size,-1,false);
-    const points=rows.map(r=>({name:r[0],x:val(r,xi),y:val(r,yi),size:si<0?1:val(r,si)}));
-    if(points.some(p=>p.size<0))throw Error('Bubble sizes must be nonnegative');
-    const bounds=k=>[Math.min(...points.map(p=>p[k])),Math.max(...points.map(p=>p[k]))];
-    const [xmin,xmax]=bounds('x'),[ymin,ymax]=bounds('y'),[,smax]=bounds('size');
-    const px=v=>65+(v-xmin)/(xmax-xmin||1)*560,py=v=>285-(v-ymin)/(ymax-ymin||1)*235;
-    out+=`<path d="M65 40V285H635" stroke="currentColor" opacity=".5" fill="none"/>`;
-    points.forEach(p=>out+=`<circle cx="${px(p.x)}" cy="${py(p.y)}" r="${si<0?6:4+17*Math.sqrt(p.size/(smax||1))}" fill="var(--accent)" fill-opacity=".65"><title>${esc(p.name)}: ${p.x}, ${p.y}</title></circle>`);
-    out+=label(350,325,names[xi])+label(35,35,names[yi]);
+    const xi = column(options.x, 1), yi = column(options.y, 2);
+    const si = type === 'bubble' ? column(options.size, 3) : -1;
+    const points = rows.map(r => ({ name: r[0], x: number(r, xi), y: number(r, yi), size: si < 0 ? 1 : number(r, si) }));
+    if (points.some(p => p.size < 0)) throw Error('Bubble sizes must be nonnegative');
+    const [xmin, xmax] = domain(...extent(points.map(p => p.x))), [ymin, ymax] = domain(...extent(points.map(p => p.y)));
+    const smax = Math.max(...points.map(p => p.size)), px = scale(xmin, xmax, 100, 620), py = scale(ymin, ymax, 260, 55);
+    yAxis(ymin, ymax, 100, 620, 55, 260); xAxis(xmin, xmax, 100, 620, 260);
+    // Radius is sqrt(value): area, rather than radius, encodes the size column.
+    points.forEach(p => { out += `<circle cx="${px(p.x)}" cy="${py(p.y)}" r="${si < 0 ? 6 : smax ? 22 * Math.sqrt(p.size / smax) : 0}" fill="var(--accent)" fill-opacity=".65" stroke="var(--fg)" stroke-width=".5"><title>${esc(p.name)}: ${esc(names[xi])} ${p.x}, ${esc(names[yi])} ${p.y}${si < 0 ? '' : ', ' + esc(names[si]) + ' ' + p.size}</title></circle>`; });
+    out += label(360, 324, names[xi], 'middle', 55) + label(100, 24, names[yi], 'start', 30);
+    if (si >= 0) out += label(620, 24, `${names[si]}: area (max ${fmt(smax)})`, 'end', 30);
   } else if (type === 'waterfall') {
-    const vi=col(null,1),ki=col('Kind',2,false),values=rows.map(r=>val(r,vi));let running=0;
-    const bars=rows.map((r,i)=>{const kind=ki<0?'change':String(r[ki]).toLowerCase();if(!['change','total','subtotal'].includes(kind))throw Error('Invalid waterfall Kind: '+kind);const start=kind==='change'?running:0;const end=kind==='change'?running+values[i]:values[i];running=end;return {name:r[0],start,end,kind,value:values[i]};});
-    const low=Math.min(0,...bars.flatMap(b=>[b.start,b.end])),high=Math.max(0,...bars.flatMap(b=>[b.start,b.end])),py=v=>275-(v-low)/(high-low||1)*235,cw=570/bars.length;
-    bars.forEach((b,i)=>{const x=70+i*cw,y=Math.min(py(b.start),py(b.end));out+=rect(x,y,cw*.7,Math.max(2,Math.abs(py(b.start)-py(b.end))),b.kind==='change'?(b.value<0?'#37A783':'#C96872'):'#438CBA',b.name+': '+b.value);out+=label(x+cw*.35,302,b.name);});
-  } else if (type === 'range') {
-    const li=col('Min',1),ui=col('Max',2),mi=col('Median',3,false);
-    const data=rows.map(r=>({name:r[0],lo:val(r,li),hi:val(r,ui),mid:mi<0?null:val(r,mi)}));
-    if(data.some(d=>d.lo>d.hi||d.mid!==null&&(d.mid<d.lo||d.mid>d.hi)))throw Error('Range bounds must contain the central value');
-    const lo=Math.min(...data.map(d=>d.lo)),hi=Math.max(...data.map(d=>d.hi)),px=v=>135+(v-lo)/(hi-lo||1)*480;
-    height=50+rows.length*38;
-    data.forEach((d,i)=>{const y=30+i*38;out+=label(120,y+4,d.name,'end')+`<line x1="${px(d.lo)}" y1="${y}" x2="${px(d.hi)}" y2="${y}" stroke="#438CBA" stroke-width="7" stroke-linecap="round"><title>${esc(d.name)}: ${d.lo}–${d.hi}</title></line>`;if(d.mid!==null)out+=`<circle cx="${px(d.mid)}" cy="${y}" r="6" fill="#D99B4A"/>`;});
-  } else if (type === 'timeline') {
-    const start=col('Start',1),end=col('End',2,false);
-    const parse=s=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(s)||!Number.isFinite(Date.parse(s+'T00:00:00Z')))throw Error('Dates must be YYYY-MM-DD');return Date.parse(s+'T00:00:00Z');};
-    const data=rows.map(r=>({name:r[0],a:parse(r[start]),b:end<0||!r[end]?parse(r[start]):parse(r[end])}));
-    if(data.some(d=>d.b<d.a))throw Error('End date precedes start date');
-    const lo=Math.min(...data.map(d=>d.a)),hi=Math.max(...data.map(d=>d.b)),px=v=>155+(v-lo)/(hi-lo||1)*470;
-    height=55+rows.length*38;
-    data.forEach((d,i)=>{const y=22+i*38;out+=label(140,y+12,d.name,'end');out+=rect(px(d.a),y,Math.max(5,px(d.b)-px(d.a)),20,palette[i%6],d.name);});
+    const vi = column(undefined, 1), ki = optional('Kind');
+    let running = 0;
+    const bars = rows.map(r => {
+      const value = number(r, vi), kind = ki < 0 ? 'change' : text(r[ki]).toLowerCase();
+      if (!['change', 'total', 'subtotal'].includes(kind)) throw Error('Invalid waterfall Kind: ' + kind);
+      const start = kind === 'change' ? running : 0, end = kind === 'change' ? running + value : value;
+      running = end;
+      if (!Number.isFinite(end)) throw Error('Waterfall total is too large to plot');
+      return { name: r[0], start, end, kind, value };
+    });
+    width = Math.max(680, 140 + bars.length * 95);
+    const [low, high] = domain(...extent([0, ...bars.flatMap(b => [b.start, b.end])]));
+    const py = scale(low, high, 255, 35), cw = (width - 140) / bars.length;
+    yAxis(low, high, 95, width - 35, 35, 255);
+    out += line(95, py(0), width - 35, py(0), 'var(--muted)');
+    bars.forEach((b, i) => {
+      const x = 100 + i * cw, y = Math.min(py(b.start), py(b.end));
+      if (i < bars.length - 1) out += line(x + cw * .7, py(b.end), x + cw, py(b.end), 'var(--muted)');
+      out += rect(x, y, cw * .7, Math.max(1, Math.abs(py(b.start) - py(b.end))), b.kind === 'change' ? (b.value < 0 ? 'var(--red)' : 'var(--green)') : palette[0], `${b.name}: ${b.value}; cumulative ${b.end}`);
+      out += label(x + cw * .35, Math.max(20, y - 8), fmt(b.value), 'middle', 10) + label(x + cw * .35, 286, b.name, 'middle', 11);
+    });
+    out += label(width / 2, 324, names[vi], 'middle', 55);
+  } else if (type === 'range' || type === 'timeline') {
+    const timeline = type === 'timeline';
+    const li = column(timeline ? 'Start' : 'Min'), ui = timeline ? optional('End') : column('Max'), mi = timeline ? -1 : optional('Median');
+    const date = s => {
+      const value = text(s), time = Date.parse(value + 'T00:00:00Z');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(time) || new Date(time).toISOString().slice(0, 10) !== value) throw Error('Dates must be valid YYYY-MM-DD dates');
+      return time;
+    };
+    const data = rows.map(r => {
+      const lo = timeline ? date(r[li]) : number(r, li);
+      return { name: r[0], lo, hi: timeline ? (ui < 0 || !text(r[ui]) ? lo : date(r[ui])) : number(r, ui), mid: mi < 0 ? null : number(r, mi) };
+    });
+    if (data.some(d => d.lo > d.hi || d.mid !== null && (d.mid < d.lo || d.mid > d.hi))) throw Error(timeline ? 'End date precedes start date' : 'Range bounds must contain the central value');
+    let [lo, hi] = extent(data.flatMap(d => [d.lo, d.hi]));
+    if (timeline && lo === hi) { lo -= 86400000; hi += 86400000; } else [lo, hi] = domain(lo, hi);
+    const px = scale(lo, hi, 195, 620), format = timeline ? v => new Date(v).toISOString().slice(0, 10) : fmt;
+    height = 90 + rows.length * 38;
+    xAxis(lo, hi, 195, 620, height - 42, format);
+    data.forEach((d, i) => {
+      const y = 28 + i * 38;
+      out += label(180, y + 5, d.name, 'end', 22);
+      const tip = `${d.name}: ${format(d.lo)} – ${format(d.hi)}${d.mid === null ? '' : '; Median ' + d.mid}`;
+      if (timeline) out += rect(px(d.lo), y - 9, Math.max(5, px(d.hi) - px(d.lo)), 20, palette[i % 6], tip);
+      else {
+        out += `<g><title>${esc(tip)}</title><line x1="${px(d.lo)}" y1="${y}" x2="${px(d.hi)}" y2="${y}" stroke="${palette[0]}" stroke-width="6"/>${line(px(d.lo), y - 7, px(d.lo), y + 7, 'var(--fg)')}${line(px(d.hi), y - 7, px(d.hi), y + 7, 'var(--fg)')}${d.mid === null ? '' : `<circle cx="${px(d.mid)}" cy="${y}" r="6" fill="var(--fg)"/>`}</g>`;
+      }
+    });
+    if (!timeline && mi >= 0) out += label(620, height - 3, 'Dot: Median', 'end');
   } else if (type === 'sankey') {
-    const source=col('Source',0),target=col('Target',1),amount=col('Value',2);
-    const edges=rows.map(r=>({a:r[source],b:r[target],v:val(r,amount)}));if(edges.some(e=>e.v<0))throw Error('Sankey flows must be nonnegative');
-    const nodes=[...new Set(edges.flatMap(e=>[e.a,e.b]))],adj=new Map(nodes.map(n=>[n,[]]));
-    edges.forEach(e=>adj.get(e.a).push(e.b));
-    const depth=new Map(),visit=(n,stack=new Set())=>{if(stack.has(n))throw Error('Sankey cycles are unsupported');if(depth.has(n))return depth.get(n);stack.add(n);const d=adj.get(n).length?1+Math.max(...adj.get(n).map(x=>visit(x,stack))):0;stack.delete(n);depth.set(n,d);return d;};nodes.forEach(n=>visit(n));
-    const max=Math.max(...depth.values()),layers=new Map();nodes.forEach(n=>{const d=max-depth.get(n);if(!layers.has(d))layers.set(d,[]);layers.get(d).push(n);});
-    const pos=new Map();layers.forEach((ns,d)=>ns.forEach((n,i)=>pos.set(n,{x:55+d*570/(max||1),y:35+i*260/Math.max(1,ns.length)})));
-    edges.forEach((e,i)=>{const a=pos.get(e.a),b=pos.get(e.b);out+=`<path d="M${a.x+12} ${a.y+9} C${(a.x+b.x)/2} ${a.y+9},${(a.x+b.x)/2} ${b.y+9},${b.x} ${b.y+9}" fill="none" stroke="${palette[i%6]}" stroke-opacity=".5" stroke-width="${Math.max(2,Math.min(25,e.v/Math.max(...edges.map(x=>x.v),1)*25))}"><title>${esc(e.a)} → ${esc(e.b)}: ${e.v}</title></path>`;});
-    nodes.forEach(n=>{const p=pos.get(n);out+=rect(p.x,p.y,12,18,'var(--accent)',n)+label(p.x+6,p.y+31,n);});
+    const source = column('Source'), target = column('Target'), amount = column('Value');
+    const edges = rows.map(r => ({ a: text(r[source]), b: text(r[target]), v: number(r, amount) }));
+    if (edges.some(e => !e.a || !e.b || e.v < 0)) throw Error('Sankey nodes must be named and flows must be nonnegative');
+    if (!edges.some(e => e.v > 0)) throw Error('Sankey needs a positive flow');
+    const nodes = new Map();
+    edges.forEach(e => { for (const n of [e.a, e.b]) if (!nodes.has(n)) nodes.set(n, { name: n, incoming: [], outgoing: [], depth: 0 }); });
+    edges.forEach(e => { nodes.get(e.a).outgoing.push(e); nodes.get(e.b).incoming.push(e); });
+    const pending = new Map([...nodes].map(([n, d]) => [n, d.incoming.length]));
+    const queue = [...nodes.values()].filter(n => !n.incoming.length);
+    for (let i = 0; i < queue.length; i++) {
+      const n = queue[i];
+      for (const e of n.outgoing) {
+        const next = nodes.get(e.b); next.depth = Math.max(next.depth, n.depth + 1);
+        pending.set(e.b, pending.get(e.b) - 1);
+        if (!pending.get(e.b)) queue.push(next);
+      }
+    }
+    if (queue.length !== nodes.size) throw Error('Sankey cycles are unsupported');
+    const layers = new Map();
+    for (const n of nodes.values()) {
+      n.value = Math.max(n.incoming.reduce((s, e) => s + e.v, 0), n.outgoing.reduce((s, e) => s + e.v, 0));
+      if (!n.value) continue;
+      if (!layers.has(n.depth)) layers.set(n.depth, []);
+      layers.get(n.depth).push(n);
+    }
+    const depth = Math.max(...layers.keys()), largest = Math.max(...[...layers.values()].map(ns => ns.length));
+    width = Math.max(680, 150 + depth * 230); height = Math.max(340, 80 + largest * 60);
+    const available = height - 80;
+    const unit = Math.min(...[...layers.values()].map(ns => (available - (ns.length - 1) * 28) / ns.reduce((s, n) => s + n.value, 0)));
+    if (!(unit > 0) || !Number.isFinite(unit)) throw Error('Sankey flow total is too large to plot');
+    layers.forEach((ns, d) => {
+      let y = 25;
+      ns.forEach(n => { n.x = 80 + d * (width - 160) / (depth || 1); n.y = y; n.h = n.value * unit; n.inAt = n.outAt = 0; y += n.h + 28; });
+    });
+    edges.forEach((e, i) => {
+      if (!e.v) return;
+      const a = nodes.get(e.a), b = nodes.get(e.b), h = e.v * unit;
+      const ay = a.y + a.outAt + h / 2, by = b.y + b.inAt + h / 2, mid = (a.x + 16 + b.x) / 2;
+      a.outAt += h; b.inAt += h;
+      out += `<path d="M${a.x + 16} ${ay} C${mid} ${ay},${mid} ${by},${b.x} ${by}" fill="none" stroke="${palette[i % 6]}" stroke-opacity=".45" stroke-width="${h}"><title>${esc(e.a)} → ${esc(e.b)}: ${e.v}</title></path>`;
+    });
+    for (const n of nodes.values()) if (n.value) out += rect(n.x, n.y, 16, n.h, palette[0], `${n.name}: ${n.value}`) + label(n.x + 8, n.y + n.h + 18, n.name, 'middle', 18);
   } else if (type === 'treemap') {
-    const vi=col('Value',1),items=rows.map(r=>({path:String(r[0]),value:val(r,vi)}));if(items.some(x=>x.value<0)||!items.some(x=>x.value>0))throw Error('Treemap values must be nonnegative with positive total');
-    const root={children:new Map(),value:0};
-    items.forEach(item=>{let node=root;const parts=item.path.split(/\s*\/\s*/);if(parts.some(p=>!p))throw Error('Invalid treemap path');for(const part of parts){if(!node.children.has(part))node.children.set(part,{name:part,children:new Map(),value:0});node=node.children.get(part);}if(node.children.size||node.value)throw Error('Duplicate or overlapping treemap path: '+item.path);node.value=item.value;});
-    const sum=node=>node.children.size?[...node.children.values()].reduce((s,n)=>s+sum(n),0):node.value;sum(root);
-    const draw=(node,x,y,w,h,vertical=true,level=0)=>{const children=[...node.children.values()];if(!children.length){out+=rect(x+1,y+1,w-2,h-2,palette[level%6],node.name+': '+node.value);if(w>55&&h>23)out+=label(x+8,y+18,node.name,'start');return;}const total=children.reduce((s,n)=>s+sum(n),0);let at=0;children.forEach((n,i)=>{const frac=sum(n)/(total||1),size=(vertical?w:h)*frac;draw(n,vertical?x+at:x,vertical?y:y+at,vertical?size:w,vertical?h:size,!vertical,level+1+i);at+=size;});};
-    draw(root,30,20,620,285);
+    const vi = column('Value'), root = { children: new Map(), value: 0 };
+    rows.forEach(r => {
+      const path = text(r[0]), value = number(r, vi), parts = path.split('/').map(text);
+      if (value < 0) throw Error('Treemap values must be nonnegative');
+      if (parts.some(p => !p) || parts.length > 32) throw Error('Invalid treemap path (maximum depth 32)');
+      let node = root;
+      for (const part of parts) {
+        if (node.leaf) throw Error('Overlapping treemap path: ' + path);
+        if (!node.children.has(part)) node.children.set(part, { name: part, children: new Map(), value: 0 });
+        node = node.children.get(part);
+      }
+      if (node.leaf || node.children.size) throw Error('Duplicate or overlapping treemap path: ' + path);
+      node.leaf = true; node.value = value; node.path = path;
+    });
+    const sum = n => n.value = n.leaf ? n.value : [...n.children.values()].reduce((s, child) => s + sum(child), 0);
+    if (!(sum(root) > 0) || !Number.isFinite(root.value)) throw Error('Treemap needs a finite positive total');
+    const draw = (node, x, y, w, h, vertical = true, color = 0) => {
+      if (node.leaf) {
+        if (!node.value) return;
+        out += rect(x + 1, y + 1, w - 2, h - 2, palette[color % 6], `${node.path}: ${node.value}`);
+        // A theme-neutral surface behind labels keeps them legible on every fill.
+        if (w > 65 && h > 38) {
+          const max = Math.max(2, Math.floor((w - 20) / 8));
+          out += rect(x + 4, y + 4, w - 8, Math.min(h - 8, 42), 'var(--surface)', node.path);
+          out += label(x + 10, y + 21, node.name, 'start', max);
+          if (h > 50) out += label(x + 10, y + 39, fmt(node.value), 'start', max);
+        }
+        return;
+      }
+      let at = 0;
+      [...node.children.values()].forEach((n, i) => {
+        const size = (vertical ? w : h) * n.value / node.value;
+        if (n.value) draw(n, vertical ? x + at : x, vertical ? y : y + at, vertical ? size : w, vertical ? h : size, !vertical, node === root ? i : color);
+        at += size;
+      });
+    };
+    draw(root, 10, 10, 660, 310);
   }
-  return `<svg class="w-visual-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(options.title||type+' chart')}" style="width:100%;height:auto;max-height:480px;overflow:visible">${out}</svg>`;
+  // Reject arithmetic overflow rather than emitting an invalid, misleading SVG.
+  if (/(?:="|[ ,])(?:NaN|[+-]?Infinity)(?:[ ,"<])/.test(out)) throw Error('Numeric range is too large to plot');
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="w-visual-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(options.title || type + ' chart')}" style="--visual-width:${width}px;--visual-max-width:${Math.max(width, Math.min(800, width * 400 / height))}px"><title>${esc(options.title || type + ' chart')}</title><desc>Scroll to explore dense charts. Use the View control for the data table or download CSV for exact values.</desc>${out}</svg>`;
 }

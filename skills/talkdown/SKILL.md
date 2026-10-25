@@ -239,3 +239,17 @@ layout: center
 ## Questions?
 ```
 
+
+### Native SVG charts
+
+Use `::: chart type=heatmap|scatter|bubble|waterfall|timeline|sankey|treemap|range` around one Markdown table or fenced CSV block. Keep units in headers/titles and numeric cells plain. These share `view=auto|chart|table|both`, `title`, and CSV export with the other charts. Dense plots scroll on phones; keep examples small and verify both views.
+
+- Heatmap: first column labels rows, all others are numeric.
+- Scatter/bubble: first column labels points; `x="Header" y="Header"` default to the second/third columns. Bubble requires `size="Header"` (defaults to fourth column); circle area encodes nonnegative size. No `group` option.
+- Waterfall: label, value, optional `Kind` column (`change`, `total`, `subtotal`). Changes accumulate; total/subtotal sets the running total to the supplied absolute value.
+- Timeline chart: label, required `Start`, optional `End`; valid `YYYY-MM-DD` dates. Missing End is a milestone. This differs from the heading-based `::: timeline` widget.
+- Sankey: required `Source`, `Target`, `Value`; nonnegative acyclic flows, at least one positive value.
+- Treemap: slash-separated paths in the first column, required `Value`; nonnegative with positive total. Never mix parent totals with child entries or repeat paths.
+- Range: label, required `Min`, `Max`, optional `Median` inside the range.
+
+Header names are case-sensitive. Limits: 1,000 rows, 20,000 cells; treemap path depth 32. Unsupported options and invalid data show an error. See the widget gallery for complete examples.
