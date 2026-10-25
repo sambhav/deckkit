@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="clean">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -17,9 +17,9 @@ One sentence on what this talk is about.
 
 Your name · Date {.meta}
 
-<!--
-Speaker notes go in comments. In read view they become the prose under each slide, so write them the way you'd say them.
--->
+::: notes
+Write the explanation as full sentences here. These notes appear in the presenter view and become the prose beneath the slide in read view.
+:::
 
 ---
 section: The problem
@@ -30,9 +30,13 @@ section: The problem
 - Let the notes carry the detail
 - Press ↓ to step, → to move on
 
-<!--
+::: notes
 This is where you explain the problem in full sentences.
--->
+:::
+
+::: say
+Pause here for questions before comparing the options.
+:::
 
 ---
 kicker: Options
@@ -44,6 +48,22 @@ kicker: Options
 What it is, and when it fits.
 ### Option B
 What it is, and when it fits.
+:::
+
+---
+kicker: Results
+---
+## Compare categories with a bar chart
+
+::: chart type=bar title="Latency (ms)"
+| Percentile | Before | After |
+|---|---|---|
+| p50 | 180 | 90 |
+| p99 | 1200 | 480 |
+:::
+
+::: read
+Both percentiles improved. The widget exposes the exact values and a CSV download from this one dataset. The default view shows the plot while presenting and the plot plus table in the article.
 :::
 
 ---

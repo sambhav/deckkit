@@ -4,13 +4,13 @@
 
 # talkdown
 
-**An agent-first slide format. Your agent writes a short Markdown file; you present it as slides, and everyone else reads it as an article.**
+**An agent-first slide format. Your agent writes a short Markdown deck; you present it as slides, and everyone else reads it as an article.**
 
-One file · Instant preview · No build · Host on GitHub Pages
+One HTML file · Instant preview · No author build · Host on GitHub Pages
 
 [**Live demo**](https://sambhav.dev/talkdown/) &nbsp;·&nbsp; [Quick start](#-quick-start) &nbsp;·&nbsp; [For agents](#-for-agents) &nbsp;·&nbsp; [Syntax](#-writing-slides) &nbsp;·&nbsp; [Widgets](#-widgets) &nbsp;·&nbsp; [Themes](#-themes) &nbsp;·&nbsp; [API](#-api)
 
-![version](https://img.shields.io/badge/version-0.1.0-F1B000?style=flat-square) ![status](https://img.shields.io/badge/status-pre--release-555?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-3C9A5F?style=flat-square) ![build](https://img.shields.io/badge/build_step-none-2B63F5?style=flat-square) ![size](https://img.shields.io/badge/files-2-E8428E?style=flat-square)
+![version](https://img.shields.io/badge/version-0.2.0-F1B000?style=flat-square) ![status](https://img.shields.io/badge/status-pre--release-555?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-3C9A5F?style=flat-square) ![build](https://img.shields.io/badge/build_step-none-2B63F5?style=flat-square) ![size](https://img.shields.io/badge/files-2-E8428E?style=flat-square)
 
 <br>
 
@@ -29,13 +29,13 @@ talkdown is a small Markdown format. An agent writes a deck in a fraction of the
 | | Presenting | Not there |
 |---|---|---|
 | **They get** | A 16:9 stage, driven from the keyboard | A scrolling article, with your speaker notes as the prose |
-| **You control** | `<!-- say: … -->`, `::: present-only` | `<!-- read: … -->`, `::: read-only` |
+| **You control** | `::: say`, `::: present-only` | `::: read`, `::: read-only` |
 
 It also stays out of your way: no install, no bundler, no framework. Write one file, open it, refresh to preview, and push it to GitHub Pages.
 
 ## ✨ Features
 
-- **Markdown first.** `---` between slides, `<!-- comments -->` for speaker notes, `|||` for columns.
+- **Markdown first.** `---` between slides, `::: notes` for speaker notes, `|||` for columns.
 - **Steps built into navigation.** ← → change slides; ↑ ↓ walk the steps on a slide and then carry on, so a presenter can just keep pressing ↓.
 - **Two formats from one file.** Present as slides; the same link reads as an article, and you control each format separately.
 - **Read view.** Phones open the deck as an article: slides reflow, builds show finished, notes become paragraphs.
@@ -69,7 +69,9 @@ What happens when the tool you need arrives halfway through.
 
 September 2026 · 15 minutes {.meta}
 
-<!-- Notes go in comments. In read view they become the text under the slide. -->
+::: notes
+These notes become the prose beneath this slide in read view.
+:::
 
 ---
 ## One idea per slide
@@ -92,6 +94,25 @@ Open it in a browser and press →. That's it.
 Copy [`deck.css`](deck.css) and [`deck.js`](deck.js) next to your HTML and link them directly. [`examples/starter.html`](examples/starter.html) is a ready-made starting point. To publish, put the folder anywhere that serves static files: GitHub Pages, a bucket, an intranet share.
 
 </details>
+
+## Recommended choices for new decks
+
+Start from [`examples/starter.html`](examples/starter.html). It demonstrates note blocks, tabs, and a chart backed by one Markdown table.
+
+| Decision | Recommendation |
+|---|---|
+| A deck to share as one authored file | Embed Markdown and CSV in the HTML. No author build or HTTP server is needed with local runtime assets. |
+| A code-heavy deck or content edited separately | Reference Markdown with `data-src` and serve over HTTP. This avoids closing-script-tag escaping in the source file. Keep media paths relative to the HTML wrapper. |
+| Content that belongs in the talk and the article | Write full sentences in `::: notes`. Use `::: say` for delivery cues and `::: read` for article-only context. |
+| A small hand-maintained dataset | Put a Markdown table inside `::: chart`. Keep the source once; the widget generates the plot, table, and CSV download. |
+| Data copied from a spreadsheet or containing commas/newlines | Use a fenced `csv` block inside `::: chart`. Quote CSV cells normally; do not maintain a second table by hand. |
+| Normal chart display | Omit `view` or use `view=auto`: plot first on stage, plot and table in the article. Use `view=both` when the audience needs the exact values during the talk. |
+| Chart type | Use `bar`/`hbar` for categories, `line` for ordered trends, and `donut` for shares of one nonnegative series. Set `series="Column name"` explicitly for multi-column donut data. |
+| Numbers and units | Use plain numeric cells, with units in the title/header. A percentage is `42` with `title="Share (%)"`, not a `42%` cell. Invalid or missing values need correction, not silent conversion to zero. |
+| Layout and interaction | Choose a theme and built-in widgets first. Use `|||` sparingly, reveal steps only when they help the explanation, and reserve custom HTML/JS for a visual that needs it. |
+| A published deck that must stay reproducible | Pin both CDN asset URLs to the same release tag or commit SHA. The quick start uses `@main` for convenience; it tracks ongoing changes. |
+
+Always check desktop present view, phone-width read view, the chart's data table, and source copying before sharing. Optional fonts, diagrams, maths, icons, and recordings may require network access or self-hosted assets; a single authored HTML file does not automatically embed every resource.
 
 ## 🤖 For agents
 
@@ -142,14 +163,17 @@ build: true
 **What changed:** the cache moved to the edge.
 :::
 
-<!-- Walk through p50 first, then reveal p99. -->
+::: say
+Walk through p50 first, then reveal p99.
+:::
 ```
 
 | Syntax | Effect |
 |---|---|
 | `---` | Starts a new slide |
 | `key: value` lines between two `---` | Frontmatter for the next slide |
-| `<!-- … -->` | Notes: spoken when presenting, and the prose in the article. `<!-- say: … -->` is speaker-only, `<!-- read: … -->` article-only |
+| `::: notes` … `:::` | Markdown shared between speaker notes and article prose |
+| `::: say` … `:::` · `::: read` … `:::` | Speaker-only notes · article-only prose |
 | `\|\|\|` | Starts a column. Text before the first one spans the slide |
 | `::: name` … `:::` | Wraps blocks in `<div class="name">`. Containers nest. `::: grid` makes balanced rows |
 | `{.step}` | Reveals that block on ↓ |
@@ -158,7 +182,28 @@ build: true
 | `[text](#id)` | Links to the slide with that `id` |
 | `::: present-only` · `::: read-only` | Content for one format only. See [One deck, two formats](#one-deck-two-formats) |
 
-Everything else is ordinary Markdown, and inline HTML passes through. Inside a Markdown script, write `<\/script>` for a literal closing script tag.
+Markdown is tokenized by bundled markdown-it, with talkdown extensions for slides, containers, notes, and widgets. `---` is reserved for slide boundaries, so use `#` headings rather than Setext underlines. Inline HTML passes through; decks should contain trusted author content.
+
+### One HTML file, no author build
+
+For a new single-file deck, put your content in `index.html`, link `deck.js` and `deck.css`, and open it. No install, build, or separate Markdown file is required. CDN assets require a connection; local copies of the two runtime files keep the core deck available offline. Local copies of the script and stylesheet also work from `file://`.
+
+Inside an embedded Markdown script, write `<\/script>` instead of a literal closing script tag inside the Markdown script. **S → Copy** preserves that escape so the result can be pasted back into the HTML safely.
+
+Markdown, CSV data, HTML slides and custom JavaScript can all stay in that one HTML file. The tokenizer and CSV decoder are already bundled into `deck.js`; no additional script tags or per-deck generated files are needed.
+
+To reference a Markdown file instead of embedding it, use:
+
+```html
+<script type="text/markdown" data-src="talk.md"></script>
+```
+
+Serve referenced decks over HTTP; direct `file://` use remains supported for inline decks. You can mix references, inline Markdown, and hand-written HTML slides in document order. Relative image and recording URLs resolve against the HTML wrapper. A failed reference displays an error without preventing the other slides from loading.
+
+- Escape punctuation in prose with a backslash: `\*literal asterisks\*`.
+- Use two backticks around inline code that contains one backtick, and a longer matching fence around fenced code examples.
+- Pipes inside code spans stay within one table cell; use `\|` for a literal pipe elsewhere in a table.
+- Fenced code preserves comments, footnote definitions, slide separators, and widget delimiters as literal examples.
 
 <details>
 <summary><b>Frontmatter keys</b></summary>
@@ -185,7 +230,7 @@ Everything else is ordinary Markdown, and inline HTML passes through. Inside a M
 
 <img src="docs/widgets.png" alt="Tabs, a chart, stepped code and a Mermaid diagram" width="900">
 
-Each widget is a few lines of Markdown. Each one takes part in ↑ ↓ navigation, and in read view each shows all of its content.
+Widgets use a few lines of Markdown. Stateful widgets take part in ↑ ↓ navigation and expand in read view; charts follow their `view` setting.
 
 | Widget | Write |
 |---|---|
@@ -199,7 +244,7 @@ Each widget is a few lines of Markdown. Each one takes part in ↑ ↓ navigatio
 | **Stats** | `::: stats` around a list like `- **42%** faster first response` |
 | **Callouts** | `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]` |
 | **Diagrams** | ` ```mermaid `: flowcharts, networks, sequence, architecture, state, charts and more. Add `{source}` to show the text beside it |
-| **Charts** | `{.chart}` after a table: column one is the labels, each other column a series. Add `.hbar`, `.line` or `.donut` for the other kinds. Several series build up on ↓ |
+| **Charts** | `::: chart type=line` around a table or fenced CSV. Plot, table and download share one dataset. Legacy `{.chart}` table attributes still work |
 | **Pull quotes** | A `>` quote whose last line starts with `—` becomes a large quote with that attribution |
 | **Checklists** | `- [x] done` and `- [ ] to do` |
 | **Footnotes** | `text[^1]` and a `[^1]: source` line anywhere on the slide; set small at its foot |
@@ -237,6 +282,44 @@ Fenced code is highlighted by [highlight.js](https://highlightjs.org/), [Mermaid
 With diagrams off, or offline, the Mermaid source is shown instead.
 
 </details>
+
+### Charts, data tables and CSV
+
+````md
+::: chart type=line title="Median latency (ms)"
+```csv
+Quarter,Before,After
+Q1,180,90
+Q2,160,80
+Q3,140,70
+```
+:::
+````
+
+You can put a Markdown table inside the container instead of CSV. The first column contains labels; remaining columns contain numeric series. CSV supports quoted commas, doubled quotes, multiline cells, BOM, LF and CRLF. Numeric cells accept decimals and scientific notation; missing values, currency symbols and percentages produce visible row/column errors instead of silently becoming zero. Keep units in the title. Bar, horizontal bar and line charts support signed values. Donuts require nonnegative values with a positive total; choose `series="After"` when the input has multiple numeric columns.
+
+| Option | Values |
+|---|---|
+| `type` | `bar` (default), `hbar`, `line`, `donut` |
+| `view` | `chart`, `table`, `both`, `auto` (default: chart when presenting, both in the article) |
+| `title` | A quoted caption, such as `title="Median latency (ms)"` |
+| `series` | Plot one named numeric column |
+
+Every chart has a keyboard-accessible view selector and a **Download CSV** button. Explicit `view=both` puts the chart and table side by side on desktop slides and stacks them on phones. Data tables scroll within the widget; the first 200 rows are displayed and the download includes every row. Charts accept up to 1,000 rows and 50 numeric columns, with up to six plotted series. Invalid data remains inspectable. Formula-like text is escaped in CSV downloads for spreadsheet safety.
+
+Native HTML uses the same component:
+
+```html
+<figure data-chart="line" data-chart-view="both">
+  <figcaption>Median latency (ms)</figcaption>
+  <table>
+    <thead><tr><th>Quarter</th><th>Before</th><th>After</th></tr></thead>
+    <tbody><tr><th>Q1</th><td>180</td><td>90</td></tr></tbody>
+  </table>
+</figure>
+```
+
+Place it inside a slide's `.content`. The native table remains useful before enhancement; `Deck.chart(element)` can enhance a chart added later by custom JavaScript.
 
 ## 🎨 Themes
 
@@ -329,9 +412,9 @@ Presenting and reading want different things, so you control each separately:
 
 | Write | Presenting | Article |
 |---|---|---|
-| `<!-- notes -->` | Speaker notes | Prose under the slide |
-| `<!-- say: … -->` | Speaker notes | Left out |
-| `<!-- read: … -->` | Left out | Prose under the slide |
+| `::: notes` … `:::` | Speaker notes | Prose under the slide |
+| `::: say` … `:::` | Speaker notes | Left out |
+| `::: read` … `:::` | Left out | Prose under the slide |
 | `::: present-only` … `:::` | Shown | Left out |
 | `::: read-only` … `:::` | Left out | Shown |
 | `read: hide` in frontmatter | Shown | The slide is left out |
@@ -348,8 +431,13 @@ read: text
 
 ![chart](hit-rate.png)
 
-<!-- say: Pause here and ask who has seen this graph. -->
-<!-- read: The hit rate rose from 61% to 94% once the cache moved to the edge. -->
+::: say
+Pause here and ask who has seen this graph.
+:::
+
+::: read
+The hit rate rose from 61% to 94% once the cache moved to the edge.
+:::
 ```
 
 Present view works on phones too. Held upright, slides go vertical and reflow at the phone's width, and speaker notes hide until you tap the notes button. Force a view with `?view=read` or `?view=present`.
@@ -390,7 +478,21 @@ Add the class `flow` if the slide can reflow in read view; otherwise it is shown
 | `Deck.key('d', e => …)` | Bind a key |
 | `Deck.setView('read' \| 'present')` | Switch views |
 | `Deck.markdown(text)` | Render Markdown to HTML |
+| `Deck.chart(element)` | Enhance a chart container added by custom JavaScript |
 | `Deck.store.get(k, fallback)` · `.set(k, v)` | localStorage, namespaced `talkdown:` |
+
+## Compatibility with existing decks
+
+Existing public `deck.js` and `deck.css` URLs on jsDelivr and sambhav.dev remain supported. Keep using the same two root asset paths; there is no required `dist/` path or additional parser script.
+
+| Existing syntax | Supported behavior | Prefer for new content |
+|---|---|---|
+| `<!-- … -->`, `<!-- say: … -->`, `<!-- read: … -->` | Comment-based shared/speaker/article notes | `::: notes`, `::: say`, `::: read` blocks |
+| A table followed by `{.chart .line}` (or `.hbar`, `.donut`) | Legacy chart conversion | `::: chart type=line` around the dataset |
+| Formatted values in legacy `{.chart}` tables, such as `42%` or `$1,200` | Lenient numeric conversion for old decks | Plain numeric cells and units in captions for new chart containers |
+| A multi-series legacy donut | Plots its first numeric column | Select the intended column with `series="Column name"` |
+
+Ordinary attributes such as `{.step}`, `{.explain}`, and `{.class #id}` remain current syntax; only the old chart shorthand is discouraged for new charts.
 
 ## 🌐 Browser support
 
@@ -398,9 +500,12 @@ Current Chrome, Edge, Firefox and Safari, on desktop and mobile. Print from the 
 
 ## 🤝 Contributing
 
-Issues and pull requests are welcome. There's no toolchain: edit `deck.js` or `deck.css`, then open [`index.html`](index.html), which is the demo deck and the best test page. Before sending a change, check present view, read view (**R**), dark mode (**T**) and a phone-sized window.
+Deck authors never build anything: link the committed `deck.js` and `deck.css`. Maintainers edit `deck.css` directly and the JavaScript in `src/`, then run `npm ci`, `npm run build` and `npm test`, and commit the rebuilt `deck.js`. CI checks that the committed bundle matches a fresh build.
 
-talkdown is pre-release (0.1.0), so the syntax may still change before 1.0.
+For browser checks, run `npx playwright install chromium`, then `npm run test:single-file` and `node tests/run-browser.cjs`. The browser suite covers the full demo, phone layouts, CSV and Markdown table equivalence, view switching, downloads, invalid data, native HTML charts, notes and keyboard controls.
+
+talkdown is pre-release (0.2.0), so the syntax may still change before 1.0.
+
 
 ## License
 

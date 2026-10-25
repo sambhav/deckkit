@@ -1,6 +1,8 @@
 # talkdown
 
-> talkdown is a small, dependency-free slide engine and Markdown format built for agents. A deck is one HTML file with Markdown in a `<script type="text/markdown">` block, loaded with deck.css and deck.js from a CDN. It presents as 16:9 slides and, on a phone or in read view, reads as an article where the speaker notes become the prose. Agents write it quickly and cheaply, and humans can edit it by hand.
+> talkdown is a small, no-install slide engine and Markdown format built for agents. A deck is one HTML file with Markdown in a `<script type="text/markdown">` block, loaded with deck.css and deck.js from a CDN. It presents as 16:9 slides and, on a phone or in read view, reads as an article where the speaker notes become the prose. Agents write it quickly and cheaply, and humans can edit it by hand.
+
+For new decks, prefer `::: notes` / `::: say` / `::: read` and explicit `::: chart` containers. Use one HTML file by default; referenced Markdown is optional over HTTP. The public root `deck.js` and `deck.css` URLs remain the supported runtime links.
 
 ## Agent instructions
 
