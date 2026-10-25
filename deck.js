@@ -117,6 +117,57 @@
   const dedent = L => { const n = Math.min(...L.filter(l => l.trim()).map(indent)); return isFinite(n) ? L.map(l => l.slice(n)) : L; };
   const LI = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/;
   const FENCE = /^(`{3,}|~{3,})/;
+  const closesFence = (line, fence) => new RegExp('^' + fence[0] + '{' + fence.length + ',}\\s*$').test(line);
+  // One scanner for code spans: delimiters must have exactly the same length.
+  // Reuse it before extracting notes or splitting table cells.
+  function codeSpans(s, plain, code, comments = false) {
+    let out = '', start = 0;
+    const runs = [...s.matchAll(comments ? /<!--[\s\S]*?-->|`+/g : /`+/g)];
+    for (let i = 0; i < runs.length; i++) {
+      const a = runs[i];
+      if (a[0].startsWith('<!--')) {
+        out += plain(s.slice(start, a.index)) + plain(a[0]); start = a.index + a[0].length; continue;
+      }
+      const slashes = s.slice(0, a.index).match(/\\+$/)?.[0].length || 0;
+      if (slashes % 2) continue;
+      const j = runs.findIndex((b, k) => k > i && b[0][0] === '`' && b[0].length === a[0].length);
+      if (j < 0) continue;
+      const b = runs[j];
+      out += plain(s.slice(start, a.index)) + code(s.slice(a.index + a[0].length, b.index), s.slice(a.index, b.index + b[0].length));
+      start = b.index + b[0].length; i = j;
+    }
+    return out + plain(s.slice(start));
+  }
+  function outsideCode(src, transform, spans = true) {
+    const chunks = []; let prose = [], fence = null;
+    const flush = () => { const text = prose.join('\n'); chunks.push(spans ? codeSpans(text, transform, (_, raw) => raw, true) : transform(text)); prose = []; };
+    for (const line of src.split('\n')) {
+      if (fence) { chunks.push(line); if (closesFence(line, fence)) fence = null; }
+      else if (FENCE.test(line)) { flush(); fence = line.match(FENCE)[1]; chunks.push(line); }
+      else prose.push(line);
+    }
+    flush(); return chunks.join('\n');
+  }
+  // Link destinations may contain balanced parentheses (common in API docs).
+  function links(s, hold) {
+    let out = '', cursor = 0;
+    for (const m of s.matchAll(/(!?)\[([^\]\n]*)\]\(/g)) {
+      if (m.index < cursor) continue;
+      let end = m.index + m[0].length, depth = 1;
+      const start = end;
+      for (; end < s.length && depth && !/\s/.test(s[end]); end++) {
+        if (s[end] === '(') depth++;
+        if (s[end] === ')') depth--;
+      }
+      if (depth) continue;
+      const u = s.slice(start, end - 1), label = m[2];
+      const html = m[1] ? `<img src="${qesc(u)}" alt="${qesc(label)}">`
+        : `<a href="${qesc(u)}"${/^https?:/.test(u) ? ' target="_blank" rel="noopener"' : ''}>`;
+      out += s.slice(cursor, m.index) + hold(html) + (m[1] ? '' : label + hold('</a>'));
+      cursor = end;
+    }
+    return out + s.slice(cursor);
+  }
   const pad2 = n => String(n).padStart(2, '0');
   const isStart = l => /^(#{1,6}\s|`{3}|~{3}|:::|\$\$|>|([-*+]|\d+[.)])\s|<[a-zA-Z!/]|!\[)/.test(l.trimStart());
 
@@ -130,14 +181,16 @@
 
   function inline(s) {
     const keep = [], hold = h => `\u0001${keep.push(h) - 1}\u0002`;
-    s = s.replace(/`([^`]+)`/g, (_, c) => hold(`<code>${esc(c)}</code>`))
+    s = codeSpans(s, t => t.replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g, (_, c) => hold(esc(c))), c => {
+      c = c.replace(/\n/g, ' ');
+      if (/^ .* $/.test(c) && /[^ ]/.test(c)) c = c.slice(1, -1);
+      return hold(`<code>${esc(c)}</code>`);
+    })
          .replace(/(^|[^\\\w$])\$(?=[^\s$])([^$\n]+?)(?<=\S)\$(?![\w$])/g, (_, pre, t) => pre + hold(`<span class="math">${esc(t)}</span>`))
          .replace(/<\/?[a-zA-Z][^>]*>|&(?:[a-zA-Z]+|#\d+);/g, hold);         // inline HTML and entities pass through
-    s = esc(s)
+    s = links(esc(s), hold)
          .replace(/\[\^([\w-]+)\]/g, (_, k) => hold(`<sup class="fn">${k}</sup>`))
          .replace(/(^|[\s(])\:([a-z][a-z0-9]*(?:-[a-z0-9]+)*):(?=[\s).,;!?]|$)/g, (_, pre, n) => pre + hold(`<i class="ico" data-icon="${n}" aria-hidden="true"></i>`))
-         .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, a, u) => hold(`<img src="${u}" alt="${qesc(a)}">`))
-         .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, t, u) => hold(`<a href="${u}"${/^https?:/.test(u) ? ' target="_blank" rel="noopener"' : ''}>`) + t + hold('</a>'))
          .replace(/\*\*(?=\S)(.+?)\*\*/g, '<strong>$1</strong>')
          .replace(/==(?=\S)(.+?)==/g, '<mark>$1</mark>')
          .replace(/~~(?=\S)(.+?)~~/g, '<del>$1</del>')
@@ -181,7 +234,7 @@
       if (!l.trim()) { i++; continue; }
       if ((m = l.match(/^(`{3,}|~{3,})\s*([\w+-]*)\s*(?:\{\s*steps:\s*([^}]*)\})?\s*(\{\s*source\s*\})?/))) {
         const body = []; i++;
-        while (i < L.length && !L[i].startsWith(m[1])) body.push(L[i++]);
+        while (i < L.length && !closesFence(L[i], m[1])) body.push(L[i++]);
         i++;
         const src = esc(body.join('\n')), diagram = `<div class="w-diagram"><pre class="code w-diagram-src">${src}</pre></div>`;
         out += /^(cast|asciicast)$/.test(m[2]) ? `<div class="w-term w-cast" data-inline="${qesc(esc(body.join('\n')))}"></div>`
@@ -195,8 +248,15 @@
         const tex = body.join('\n').replace(/\$\$\s*$/, '').trim();
         out += `<div class="math math-block">${esc(tex)}</div>`;
       } else if ((m = l.match(/^:::\s*(.+)$/))) {
-        const body = []; let depth = 1; i++;
-        for (; i < L.length; i++) { if (/^:::\s*\S/.test(L[i])) depth++; else if (/^:::\s*$/.test(L[i]) && !--depth) break; body.push(L[i]); }
+        const body = []; let depth = 1, fence = null; i++;
+        for (; i < L.length; i++) {
+          const line = L[i];
+          if (fence) { if (closesFence(line, fence)) fence = null; }
+          else if (FENCE.test(line)) fence = line.match(FENCE)[1];
+          else if (/^:::\s*\S/.test(line)) depth++;
+          else if (/^:::\s*$/.test(line) && !--depth) break;
+          body.push(line);
+        }
         i++;
         out += `<div class="${qesc(m[1].trim())}">${blocks(body)}</div>`;
       } else if ((m = l.match(/^(#{1,6})\s+(.*)$/))) {
@@ -207,15 +267,19 @@
       } else if (LI.test(l)) {
         let html; [i, html] = list(L, i); out += html;
       } else if (/^\s*\|.*\|\s*$/.test(l) && /^\s*\|?\s*:?-{2,}/.test(L[i + 1] || '')) {
-        const cells = r => r.trim().replace(/^\||(?<!\\)\|$/g, '').split(/(?<!\\)\|/).map(c => c.trim().replace(/\\\|/g, '|'));
+        const cells = r => {
+          const saved = [];
+          const text = codeSpans(r.trim().replace(/^\||(?<!\\)\|$/g, ''), t => t, (_, raw) => `\u0001${saved.push(raw) - 1}\u0002`);
+          return text.split(/(?<!\\)\|/).map(c => c.trim().replace(/\\\|/g, '|').replace(/\u0001(\d+)\u0002/g, (_, i) => saved[i]));
+        };
         const head = cells(l), al = cells(L[i + 1]).map(c => /^:-+:$/.test(c) ? 'center' : /-:$/.test(c) ? 'right' : '');
         const td = (tg, c, j) => `<${tg}${al[j] ? ` style="text-align:${al[j]}"` : ''}>${inline(c)}</${tg}>`;
         const rows = []; i += 2; while (i < L.length && /^\s*\|/.test(L[i])) rows.push(cells(L[i++]));
         out += `<table><thead><tr>${head.map((c, j) => td('th', c, j)).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map((c, j) => td('td', c, j)).join('')}</tr>`).join('')}</tbody></table>`;
       } else if ((m = l.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)\s*(\{[^}]*\})?\s*$/))) {
         const [, a] = attrs(l), media = embed(m[2], m[1]);
-        if (media) { out += `<figure${a} class="w-media">${media}${m[3] ? `<figcaption>${inline(m[3])}</figcaption>` : ''}</figure>`; i++; continue; }
-        out += `<figure${a}><img src="${m[2]}" alt="${qesc(m[1])}">${m[3] ? `<figcaption>${inline(m[3])}</figcaption>` : ''}</figure>`; i++;
+        if (media) { const mediaAttrs = a.includes(' class="') ? a.replace(' class="', ' class="w-media ') : a + ' class="w-media"'; out += `<figure${mediaAttrs}>${media}${m[3] ? `<figcaption>${inline(m[3])}</figcaption>` : ''}</figure>`; i++; continue; }
+        out += `<figure${a}><img src="${qesc(esc(m[2]))}" alt="${qesc(esc(m[1]))}">${m[3] ? `<figcaption>${inline(m[3])}</figcaption>` : ''}</figure>`; i++;
       } else if (/^<[a-zA-Z!/]/.test(l)) {
         const body = []; while (i < L.length && L[i].trim()) body.push(L[i++]);
         out += body.join('\n');
@@ -233,8 +297,8 @@
     let m;
     if ((m = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/))) u = `https://www.youtube-nocookie.com/embed/${m[1]}`;
     else if ((m = u.match(/vimeo\.com\/(?:video\/)?(\d+)/))) u = `https://player.vimeo.com/video/${m[1]}`;
-    else if (/\.(mp4|webm|mov)(\?|#|$)/i.test(u)) return `<video src="${u}" controls playsinline preload="metadata" aria-label="${qesc(esc(alt))}"></video>`;
-    else if (/\.cast(\?|#|$)/i.test(u)) return `<div class="w-term w-cast" data-src="${u}" data-title="${qesc(esc(alt))}"></div>`;
+    else if (/\.(mp4|webm|mov)(\?|#|$)/i.test(u)) return `<video src="${qesc(esc(u))}" controls playsinline preload="metadata" aria-label="${qesc(esc(alt))}"></video>`;
+    else if (/\.cast(\?|#|$)/i.test(u)) return `<div class="w-term w-cast" data-src="${qesc(esc(u))}" data-title="${qesc(esc(alt))}"></div>`;
     else return '';
     return `<div class="w-frame"><iframe src="${u}" title="${qesc(esc(alt || 'Video'))}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen></iframe></div>`;
   }
@@ -243,11 +307,16 @@
   const META = /^(section|name|layout|kicker|build|class|takeaway|id|image|read|present):\s*(.*)$/;
   // split lines on a separator line, ignoring separators inside fenced code
   function split(L, sep) {
-    const out = [[]]; let fence = null;
+    const out = [[]]; let fence = null, comment = false;
     for (const l of L) {
+      const protectedLine = fence || comment;
       const f = l.match(FENCE);
-      if (f) fence = fence ? (l.startsWith(fence) ? null : fence) : f[1];
-      !fence && sep.test(l) ? out.push([]) : out.at(-1).push(l);
+      if (!comment && f) fence = fence ? (closesFence(l, fence) ? null : fence) : f[1];
+      if (!fence && !f) codeSpans(l, text => {
+        for (const m of text.matchAll(/<!--|-->/g)) comment = m[0] === '<!--';
+        return text;
+      }, () => '');
+      !protectedLine && !fence && !comment && sep.test(l) ? out.push([]) : out.at(-1).push(l);
     }
     return out;
   }
@@ -271,17 +340,16 @@
     // HTML comments outside fenced code are the words around the slide: <!-- … --> is both what you say and what the
     // article reads; <!-- say: … --> is only for the speaker, <!-- read: … --> only for the article
     const article = [];
-    L = L.join('\n').split(/(^(?:`{3,}|~{3,})[^\n]*\n[\s\S]*?^(?:`{3,}|~{3,})\s*$|`[^`\n]+`)/m)
-      .map((part, j) => j % 2 ? part : part.replace(/<!--([\s\S]*?)-->/g, (_, n) => {
+    L = outsideCode(L.join('\n'), part => part.replace(/<!--([\s\S]*?)-->/g, (_, n) => {
         const m = n.trim().match(/^(say|read):\s*([\s\S]*)$/i), t = m ? m[2].trim() : n.trim();
         if (!m || m[1].toLowerCase() === 'say') notes.push(t);
         if (!m || m[1].toLowerCase() === 'read') article.push(t);
         return '';
-      })).join('').split('\n');
+      })).split('\n');
     const layout = meta.layout || 'default';
     // [^key]: text lines are footnotes, set at the foot of the slide
     const feet = [];
-    L = L.filter(l => { const f = l.match(/^\[\^([\w-]+)\]:\s*(.*)$/); if (f) feet.push(`<p><sup>${f[1]}</sup> ${inline(f[2])}</p>`); return !f; });
+    L = outsideCode(L.join('\n'), text => text.split('\n').filter(l => { const f = l.match(/^\[\^([\w-]+)\]:\s*(.*)$/); if (f) feet.push(`<p><sup>${f[1]}</sup> ${inline(f[2])}</p>`); return !f; }).join('\n'), false).split('\n');
     const cols = split(L, /^\|\|\|\s*$/);
     // text before the first ||| spans the slide; each ||| starts a column
     const body = blocks(cols[0]) + (cols.length > 1 ? `<div class="cols">${cols.slice(1).map(c => `<div>${blocks(c)}</div>`).join('')}</div>` : '');
@@ -316,8 +384,9 @@
   // Each one is a stepper (↑ ↓ walk it), and each degrades to plain, readable content in read view.
   function widgets(c) {
     // a line holding only {.class} applies to the block above it, e.g. a table
-    c.querySelectorAll('p').forEach(p => { if (!p.textContent.trim() && !p.children.length && p.className && p.previousElementSibling) { p.previousElementSibling.classList.add(...p.classList); p.remove(); } });
-    c.querySelectorAll('.tabs, .toggle, .steps').forEach(panes);
+    c.querySelectorAll('p').forEach(p => { if (!p.textContent.trim() && !p.children.length && (p.className || p.id) && p.previousElementSibling) { p.previousElementSibling.classList.add(...p.classList); if (p.id) p.previousElementSibling.id = p.id; p.remove(); } });
+    // Inner widgets must be transformed before an outer pane moves their nodes.
+    [...c.querySelectorAll('.tabs, .toggle, .steps')].reverse().forEach(panes);
     c.querySelectorAll('.timeline').forEach(timeline);
     c.querySelectorAll('.stats').forEach(stats);
     c.querySelectorAll('blockquote').forEach(callout);
@@ -343,6 +412,7 @@
   }
 
   // ::: tabs / ::: toggle / ::: steps — each ### heading starts a pane
+  let widgetId = 0;
   function panes(box) {
     const kind = ['tabs', 'toggle', 'steps'].find(k => box.classList.contains(k));
     const groups = byHeading(box);
@@ -355,13 +425,24 @@
     const holder = w.lastChild;
     for (const g of groups) { const p = document.createElement('section'); p.className = 'w-pane'; p.append(...g); holder.append(p); }
     box.replaceWith(w);
-    const pick = [...w.querySelectorAll('[role=tab], .w-dots button')], ps = [...holder.children];
+    const pick = [...w.firstChild.querySelectorAll('[role=tab], .w-dots button')], ps = [...holder.children];
+    const id = `td-tabs-${++widgetId}`;
+    if (kind !== 'steps') pick.forEach((b, j) => {
+      b.id = `${id}-tab-${j}`; b.setAttribute('aria-controls', `${id}-panel-${j}`);
+      ps[j].id = `${id}-panel-${j}`; ps[j].setAttribute('role', 'tabpanel'); ps[j].setAttribute('aria-labelledby', b.id);
+    });
     const st = steps(w, ps.length, i => {
       ps.forEach((p, j) => p.classList.toggle('on', j === i));
-      pick.forEach((b, j) => { b.classList.toggle('on', j === i); b.classList.toggle('done', j < i); b.setAttribute('aria-selected', j === i); });
-      if (kind === 'steps') w.querySelector('.w-count').textContent = `Step ${i + 1} of ${ps.length}`;
+      pick.forEach((b, j) => { b.classList.toggle('on', j === i); b.classList.toggle('done', j < i); if (kind !== 'steps') { b.setAttribute('aria-selected', j === i); b.tabIndex = j === i ? 0 : -1; } });
+      if (kind === 'steps') w.firstChild.querySelector('.w-count').textContent = `Step ${i + 1} of ${ps.length}`;
     });
     pick.forEach((b, j) => b.addEventListener('click', () => st.go(j)));
+    if (kind !== 'steps') w.firstChild.addEventListener('keydown', e => {
+      const j = pick.indexOf(e.target); if (j < 0) return;
+      const i = { ArrowRight: (j + 1) % pick.length, ArrowLeft: (j + pick.length - 1) % pick.length, Home: 0, End: pick.length - 1 }[e.key];
+      if (i == null) return;
+      e.preventDefault(); e.stopPropagation(); st.go(i); pick[i].focus();
+    });
   }
 
   // a table followed by {.explain}: its last column becomes the detail for the selected row
@@ -403,9 +484,15 @@
     const code = pre.firstChild;
     sources.set(pre, code.textContent);
     code.innerHTML = code.innerHTML.split('\n').map(l => `<span class="ln">${l}</span>`).join('');
-    const groups = pre.dataset.steps.split('|').map(g => new Set(g.split(',').flatMap(r => { const [a, b = a] = r.trim().split('-').map(Number); return Array.from({ length: b - a + 1 }, (_, k) => a + k); })));
+    const lineCount = code.children.length;
+    const groups = pre.dataset.steps.split('|').map(g => new Set(g.split(',').flatMap(r => {
+      const m = r.trim().match(/^(\d+)(?:-(\d+))?$/);
+      if (!m) return [];
+      const a = Math.max(1, +m[1]), b = Math.min(lineCount, +(m[2] || m[1]));
+      return Array.from({ length: Math.max(0, b - a + 1) }, (_, k) => a + k);
+    })));
     pre.stepper = steps(pre, groups.length + 1, i => {
-      pre.classList.toggle('stepping', i > 0);
+      pre.classList.toggle('stepping', i > 0 && !reading());
       [...code.children].forEach((l, j) => l.classList.toggle('on', i > 0 && groups[i - 1].has(j + 1)));
     });
   }
@@ -631,6 +718,7 @@
     for (const l of lines) { if (/^\$ /.test(l) || !cmds.length) cmds.push({ cmd: /^\$ /.test(l) ? l.slice(2) : null, out: [] }); if (!/^\$ /.test(l)) cmds.at(-1).out.push(l); }
     w.className = 'w w-term';
     w.innerHTML = termShell('', '');
+    if (!cmds.length) return;
     const out = w.lastChild, row = c => (c.cmd != null ? `<span class="t-p">$</span> <span class="t-c">${esc(c.cmd)}</span>\n` : '') + c.out.map(o => `<span class="t-o">${esc(o)}</span>\n`).join('');
     let timer;
     steps(w, cmds.length, i => {
@@ -707,8 +795,9 @@
     if (front) w.firstChild.append(front);
     w.lastChild.append(...box.childNodes);
     box.replaceWith(w);
-    const st = steps(w, 2, i => w.classList.toggle('on', i === 1));
+    const st = steps(w, 2, i => { w.classList.toggle('on', i === 1); w.setAttribute('aria-pressed', i === 1); });
     w.addEventListener('click', () => st.go(st.i ? 0 : 1));
+    w.addEventListener('keydown', e => { if (e.target === w && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); e.stopPropagation(); w.click(); } });
   }
 
   /* ================= steppers ================= */
@@ -1041,7 +1130,7 @@
   function toggleSource() { $('src').classList.toggle('on'); if ($('src').classList.contains('on')) fillSource(); }
   function copySource() {
     const b = $('srcCopy');
-    navigator.clipboard?.writeText(sourceOf.get(slide())).then(() => { b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy', 1400); }, () => {});
+    navigator.clipboard?.writeText($('src').querySelector('code').textContent).then(() => { b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy', 1400); }, () => {});
   }
   function toggleOverview() { const ov = $('overview'); ov.classList.toggle('on'); if (ov.classList.contains('on')) ov.querySelector('.cur')?.focus(); }
 
@@ -1202,7 +1291,24 @@
   }
   const openPresenter = () => { const u = new URL(location.href); u.searchParams.set('presenter', ''); u.searchParams.set('view', 'present'); window.open(u, 'talkdown-presenter', 'width=1280,height=800'); };
 
-  function start() {
+  async function start() {
+    // External Markdown avoids the HTML raw-text script delimiter entirely.
+    // Existing inline decks still start synchronously and work from file://.
+    const external = [...document.querySelectorAll('script[type="text/markdown"][data-src]')];
+    if (external.length) {
+      try {
+        await Promise.all(external.map(async el => {
+          const response = await fetch(el.dataset.src);
+          if (!response.ok) throw new Error(`${el.dataset.src}: HTTP ${response.status}`);
+          el.textContent = await response.text();
+        }));
+      } catch (error) {
+        const message = document.createElement('p'); message.setAttribute('role', 'alert');
+        message.style.cssText = 'padding:2rem;white-space:pre-wrap';
+        message.textContent = `Could not load Markdown. Serve external decks over HTTP.\n${error.message}`;
+        document.body.append(message); return;
+      }
+    }
     assemble();
     agendas();
     qrs();

@@ -158,7 +158,24 @@ build: true
 | `[text](#id)` | Links to the slide with that `id` |
 | `::: present-only` · `::: read-only` | Content for one format only. See [One deck, two formats](#one-deck-two-formats) |
 
-Everything else is ordinary Markdown, and inline HTML passes through. Inside a Markdown script, write `<\/script>` for a literal closing script tag.
+The parser supports the Markdown patterns shown here; it is not a complete CommonMark implementation. Inline HTML passes through, so decks should contain trusted author content.
+
+### Easier escaping and separate Markdown files
+
+For a single self-contained HTML file, write `<\/script>` instead of a literal closing script tag inside the Markdown script. **S → Copy** preserves that escape so the result can be pasted back into the HTML safely.
+
+For decks with lots of HTML or code examples, keep the content in a plain `.md` file:
+
+```html
+<script type="text/markdown" data-src="talk.md"></script>
+```
+
+Keep the normal `deck.js` and `deck.css` links in the wrapper. Serve the files over HTTP; external Markdown cannot reliably load from `file://`. Paths to images and recordings remain relative to the HTML page. See [`examples/external.html`](examples/external.html) and [`examples/external.md`](examples/external.md).
+
+- Escape punctuation in prose with a backslash: `\*literal asterisks\*`.
+- Use two backticks around inline code that contains one backtick, and a longer matching fence around fenced code examples.
+- Pipes inside code spans stay within one table cell; use `\|` for a literal pipe elsewhere in a table.
+- Fenced code preserves comments, footnote definitions, slide separators, and widget delimiters as literal examples.
 
 <details>
 <summary><b>Frontmatter keys</b></summary>
@@ -398,7 +415,7 @@ Current Chrome, Edge, Firefox and Safari, on desktop and mobile. Print from the 
 
 ## 🤝 Contributing
 
-Issues and pull requests are welcome. There's no toolchain: edit `deck.js` or `deck.css`, then open [`index.html`](index.html), which is the demo deck and the best test page. Before sending a change, check present view, read view (**R**), dark mode (**T**) and a phone-sized window.
+Issues and pull requests are welcome. There's no build step: edit `deck.js` or `deck.css`, then open [`index.html`](index.html), which is the demo deck and the best test page. Run the parser regression checks with `node --test tests/parser.test.cjs`. Before sending a change, check present view, read view (**R**), dark mode (**T**) and a phone-sized window. Check dense phone slides can scroll, and verify external Markdown using an HTTP server.
 
 talkdown is pre-release (0.1.0), so the syntax may still change before 1.0.
 

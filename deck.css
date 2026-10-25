@@ -260,6 +260,8 @@ aside.notes { display: none; }
   /* vertical slides: Markdown reflows at the phone's width (fluid); hand-built slides get a scaled 540px canvas */
   [data-view=present][data-tall] .slide .content { top: 0; padding: 32px 30px 36px; }
   [data-view=present][data-tall=fluid] .slide .content { padding: 26px 22px 30px; }
+  /* Dense phone slides remain readable; scroll the slide instead of clipping it. */
+  [data-view=present][data-tall=fluid] .slide .content { overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y pinch-zoom; }
 }
 
 /* ================= type + components ================= */
@@ -297,6 +299,8 @@ p, li { font-size: 16px; line-height: 1.5; }
   --t-leading: 1.45; --t-gap: 22px; --t-list-gap: 14px; --t-bullet: 34px; --t-ui: 18px; --t-stat: 76px;
 }
 .md .content { display: flex; flex-direction: column; padding: 60px 88px 72px; }
+.md .content :is(p, li, h1, h2, h3, a) { overflow-wrap: anywhere; }
+.md .content > *, .md .card > *, .w-pane > * { min-width: 0; }
 .md .content > * + *, .md .cols > div > * + *, .md .card > * + * { margin-top: var(--t-gap); }
 .md .content > .kicker + * { margin-top: 0; }
 .md .kicker { font-size: var(--t-kicker); }
@@ -466,6 +470,7 @@ td.mk-only, th.mk-only { text-align: center; }
   --t-meta: 13px; --t-small: 15px; --t-kicker: 12px; --t-num: 13px; --t-leading: 1.65; --t-gap: 18px; --t-list-gap: 6px; --t-bullet: 26px; --t-ui: 14px; --t-stat: clamp(34px, 7vw, 48px);
 }
 @media (max-width: 760px) {
+  [data-view=read] #bar .ib { width: 44px; height: 44px; }
   :is([data-view=read], [data-tall=fluid]) { --t-body: 17.5px; --t-lede: 20px; --t-h3: 20px; --t-section-sub: 20px; --t-statement-sub: 20px; --t-card: 14px; --t-small: 14px; --t-leading: 1.6; }
 }
 :is([data-view=read], [data-tall=fluid]) .md .cols { grid-auto-flow: row; gap: 16px; }
@@ -525,6 +530,8 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 .w-chart .s0 { --c: var(--chart-1, var(--accent)); } .w-chart .s1 { --c: var(--chart-2, var(--c-fn)); } .w-chart .s2 { --c: var(--chart-3, var(--green)); }
 .w-chart .s3 { --c: var(--chart-4, var(--orange)); } .w-chart .s4 { --c: var(--chart-5, var(--blue)); } .w-chart .s5 { --c: var(--chart-6, var(--muted)); }
 .w-chart-data { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+/* The responsive table rule must not unhide the accessible chart data. */
+.md table.w-chart-data { display: block; top: 0; left: 0; width: 1px; height: 1px; max-width: 1px; overflow: hidden; white-space: nowrap; }
 .w-legend { display: flex; flex-wrap: wrap; gap: .4em 1.4em; margin-bottom: 1.4em; color: var(--muted); }
 .w-legend span { display: inline-flex; align-items: center; gap: .5em; transition: opacity .3s; }
 .w-legend i { width: .8em; height: .8em; border-radius: 3px; background: var(--c); flex: none; }
@@ -778,7 +785,7 @@ aside.article { display: none; }
 [data-view=read] .w-face { grid-area: auto; transform: none !important; border: 0; border-radius: 0; }
 [data-view=read] .w-back { background: var(--surface-2); color: var(--fg); }
 [data-view=read] .w-back p, [data-view=read] .w-back li { color: var(--fg); }
-[data-view=read] .md pre.code .ln { opacity: 1; background: none; border-left-color: transparent; }
+[data-view=read] .md pre.code .ln, [data-view=read] .md pre.code.stepping .ln.on { opacity: 1; background: none; border-left-color: transparent; }
 :is([data-view=read], [data-tall]) .w-timeline { grid-template-columns: 1fr; gap: 18px; padding: 0 0 0 30px; }
 :is([data-view=read], [data-tall]) .w-timeline::before { left: 7px; right: auto; top: 6px; bottom: 6px; width: 2px; height: auto; }
 :is([data-view=read], [data-tall]) .md .w-timeline > li::before { left: -30px; top: 4px; }
