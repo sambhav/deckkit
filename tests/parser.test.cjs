@@ -16,6 +16,17 @@ const md = s => context.window.Deck.markdown(s).trim().replace(/>\n</g, '><');
 test('legacy asset URLs are byte-identical to the published dist assets', () => {
   for (const name of ['deck.js', 'deck.css']) assert.deepEqual(fs.readFileSync(require.resolve('../' + name)), fs.readFileSync(require.resolve('../dist/' + name)));
 });
+test('browser test server returns missing-file errors without crashing', async () => {
+  const server = require('./run-browser.cjs')();
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const base = 'http://127.0.0.1:' + server.address().port;
+  try {
+    assert.equal((await fetch(base + '/missing-file.md')).status, 404);
+    const response = await fetch(base + '/dist/deck.js');
+    assert.equal(response.status, 200);
+    assert.match(await response.text(), /talkdown 0.2/);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
 
 test('literal punctuation escapes do not become formatting', () => {
   assert.equal(md('\\*literal\\* \\_name\\_ \\[link\\]'), '<p>*literal* _name_ [link]</p>');
