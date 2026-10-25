@@ -6,8 +6,8 @@
 <title>talkdown</title>
 <meta name="description" content="Slides you write in Markdown, present on a 16:9 stage, and send to a phone as an essay. Write one file, preview it instantly, host it on GitHub Pages.">
 <link rel="icon" href="docs/logo.svg">
-<link rel="stylesheet" href="deck.css?v=0.1.0-5">
-<script src="deck.js?v=0.1.0-5"></script>
+<link rel="stylesheet" href="deck.css?v=0.1.0-9">
+<script src="deck.js?v=0.1.0-9"></script>
 <style>
   /* quick start: what the Markdown on the left turns into */
   .mini { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--surface); box-shadow: 0 24px 60px -28px color-mix(in srgb, var(--fg) 45%, transparent); }
@@ -71,6 +71,18 @@ talkdown keeps your speaker notes in the deck, so anyone who opens the link late
 
 <!--
 Slides are written to be talked over. Send them to someone who missed the talk and they get the bullet points without the reasoning behind them. In talkdown the speaker notes are part of the deck, so the same file works on a stage, in a review, and on a phone the next morning.
+-->
+
+---
+kicker: Contents
+---
+## What's inside
+
+::: agenda
+:::
+
+<!--
+This contents slide writes itself: an agenda block lists every section slide in the deck, each linking to it.
 -->
 
 ---
@@ -287,6 +299,73 @@ Fenced code takes a list of line groups. Each press of down highlights the next 
 ---
 kicker: Widgets
 ---
+## Type commands live
+
+|||
+
+````md
+```terminal
+$ npm create vite@latest demo
+Scaffolding project in ./demo…
+Done.
+$ cd demo && npm install
+added 18 packages in 2s
+$ npm run dev
+  ➜  Local: http://localhost:5173/
+```
+````
+
+|||
+
+```terminal
+$ npm create vite@latest demo
+Scaffolding project in ./demo…
+Done.
+$ cd demo && npm install
+added 18 packages in 2s
+$ npm run dev
+  ➜  Local: http://localhost:5173/
+```
+
+<!--
+A terminal block types each command as you press down, then prints its output. You set the pace, so a live demo can't go wrong on stage. In read view the whole session is shown.
+-->
+
+---
+kicker: Widgets
+---
+## Or play a recording
+
+```cast
+{"version": 2, "width": 72, "height": 14, "timestamp": 1761350400, "idle_time_limit": 1, "env": {"SHELL": "/bin/zsh", "TERM": "xterm-256color"}}
+[0.4, "o", "\u001b[32m~/talk\u001b[0m $ "]
+[0.9, "o", "c"]
+[0.98, "o", "u"]
+[1.05, "o", "r"]
+[1.12, "o", "l"]
+[1.2, "o", " -sO talkdown/deck.{js,css}"]
+[1.9, "o", "\r\n"]
+[2.5, "o", "\u001b[32m~/talk\u001b[0m $ "]
+[3.0, "o", "ls"]
+[3.4, "o", "\r\n"]
+[3.5, "o", "deck.css  deck.js  \u001b[1;34mimg\u001b[0m  talk.html\r\n"]
+[4.2, "o", "\u001b[32m~/talk\u001b[0m $ "]
+[4.7, "o", "open talk.html"]
+[5.3, "o", "\r\n"]
+[5.6, "o", "\u001b[2mOpening talk.html in your browser…\u001b[0m\r\n"]
+[6.2, "o", "\u001b[32m✓\u001b[0m 31 slides · press \u001b[1m→\u001b[0m to start\r\n"]
+[6.8, "o", "\u001b[32m~/talk\u001b[0m $ "]
+```
+
+Record with `asciinema rec demo.cast`, then write `![title](demo.cast)`, or paste the recording into a code block marked `cast`. It plays when the slide opens; click to replay. {.muted}
+
+<!--
+For anything longer, record a real session with asciinema and drop the file in. talkdown plays it in the same themed window and squashes long pauses, without needing the asciinema player.
+-->
+
+---
+kicker: Widgets
+---
 ## Flip a card to answer it
 
 ::: grid
@@ -306,6 +385,64 @@ Yes, apart from web fonts, which fall back to system fonts.
 
 <!--
 A flip block puts its heading on the front and the rest on the back. Click to flip, or press down to flip the cards one by one. In read view each card shows both sides.
+-->
+
+---
+kicker: Widgets
+---
+## Answers that unfold
+
+::: accordion
+### Does it need a build step?
+No. Write one file and open it; refresh to see changes.
+### Can I still write HTML?
+Yes. Any slide can be hand-built, next to the Markdown, and joins the same navigation.
+### Does it work offline?
+Yes. Web fonts fall back to system fonts, and code, diagrams and maths fall back to their source.
+### How do I share it?
+Push the folder to GitHub Pages, or anywhere that serves static files, and send the link.
+:::
+
+<!--
+An accordion opens one answer at a time as you press down. In read view every answer is open.
+-->
+
+---
+kicker: Widgets
+---
+## Features at a glance
+
+::: features
+### :pen-line: Markdown first
+Slides, notes and widgets in one plain-text file.
+### :smartphone: Reads on a phone
+The notes become the prose of an article.
+### :palette: 23 themes
+Each a light and dark pair, with its own fonts.
+### :keyboard: Keyboard driven
+Arrows for slides and steps, keys for everything else.
+### :blocks: Widgets
+Charts, terminals, diagrams, tabs and more.
+### :rocket: No build step
+Refresh to preview, push to publish.
+:::
+
+<!--
+A features block lays its items out as cards. An icon at the start of a heading, like :rocket:, becomes the card's icon.
+-->
+
+---
+kicker: Widgets
+---
+## Icons in the theme's colours
+
+- :rocket: Launch on Friday
+- :git-branch: One branch per talk
+- :shield-check: Reviewed before it ships
+- :sparkles: Any of the 1,500 icons at lucide.dev
+
+<!--
+Write a name between colons, like :rocket:, for any of the Lucide icons. They're drawn in the theme's colours, so they suit every theme, and a feature card takes the first one in its heading as its icon.
 -->
 
 ---
@@ -550,6 +687,17 @@ An image layout fills the slide with a picture and sets the text over it on a da
 -->
 
 ---
+kicker: Widgets
+---
+## Video, embedded
+
+![Big Buck Bunny, Blender Foundation (CC BY 3.0)](https://www.youtube.com/watch?v=aqz-KE-bpKQ)
+
+<!--
+Put a YouTube, Vimeo or video-file link in image syntax and it becomes a player, on the stage and in read view.
+-->
+
+---
 layout: section
 ---
 # Presenting and reading
@@ -568,9 +716,10 @@ kicker: Presenting
 | `1`–`9` | Jump to a step on this slide |
 | `R` · `T` · `O` · `N` | Read view · light and dark · overview · speaker notes |
 | `F` · `?` | Fullscreen · all the keys |
+| `P` · `L` · `D` | Presenter view · laser pointer · draw on the slide |
 
 <!--
-Presenting needs nothing but the keyboard. On a touch screen a dock appears instead, with large buttons for back, next, notes and read view, and you can swipe between slides and steps.
+Presenting needs nothing but the keyboard. P opens a presenter view in a second window, with the next slide, your notes and a timer, and the two windows stay in step. L turns the mouse into a laser pointer, and D lets you draw on the slide. On a touch screen a dock appears instead, with large buttons for back, next, notes and read view, and you can swipe between slides and steps.
 -->
 
 ---
@@ -659,8 +808,8 @@ id: themes
 
 ::: tabs
 ### Everyday
-- [Paper](?theme=paper#themes) ☀︎: cream and gold, the default
-- [Clean](?theme=clean#themes) ☀︎: product and engineering reviews
+- [Clean](?theme=clean#themes) ☀︎: product and engineering reviews, the default
+- [Paper](?theme=paper#themes) ☀︎: cream and gold
 - [Slate](?theme=slate#themes) ☀︎: strategy and business
 - [Ledger](?theme=ledger#themes) ☀︎: finance and board updates
 - [Noir](?theme=noir#themes) ☾: high-contrast editorial
@@ -722,6 +871,10 @@ section: Start
 ## Write it once. Present it. Send the link.
 
 [Get started](#start) · [Source on GitHub](https://github.com/sambhav/talkdown) · MIT licensed
+
+::: qr
+https://sambhav.dev/talkdown/
+:::
 
 <!--
 That's talkdown. View the source of this page: it's the deck you just read. The code and the documentation are on GitHub.

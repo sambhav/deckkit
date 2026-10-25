@@ -186,12 +186,13 @@ Each widget is a few lines of Markdown. Each one takes part in ↑ ↓ navigatio
 | **Maths** | `$x^2$` inline or a `$$ … $$` block, typeset by [KaTeX](https://katex.org/) |
 | **Image slides** | `layout: image` and `image: path.jpg` in the frontmatter: a full-bleed picture with the text over it |
 | **Terminal** | A ` ```terminal ` block: each `$ command` line types out on ↓, and the lines after it are its output |
-| **Recordings** | `![title](demo.cast)` plays an [asciinema](https://asciinema.org/) recording in the same window, without the asciinema player |
+| **Recordings** | `![title](demo.cast)` plays an [asciinema](https://asciinema.org/) recording in the same window, without the asciinema player. A file needs the page served over http; paste the recording into a ` ```cast ` block to play it anywhere |
 | **Video** | `![title](youtube, vimeo or .mp4 link)` embeds a player |
 | **Accordion** | `::: accordion`, then a `###` heading per item; ↓ opens them in turn |
-| **Feature cards** | `::: features`, then a `###` heading per card. An emoji at the start of the heading becomes its icon |
+| **Feature cards** | `::: features`, then a `###` heading per card. An `:icon:` or image at the start of the heading becomes its icon |
 | **Agenda** | An empty `::: agenda` lists every section slide, each linking to it |
 | **QR code** | `::: qr` draws a QR code of the deck's link, or of a URL written inside it |
+| **Icons** | `:rocket:` anywhere: any of the [Lucide](https://lucide.dev/icons) icons, drawn in the theme's colours. A feature card's heading can also start with `![](icon.svg)` |
 
 ```md
 ::: tabs
@@ -207,7 +208,7 @@ One column. Notes become the prose.
 
 <br>
 
-Fenced code is highlighted by [highlight.js](https://highlightjs.org/), [Mermaid](https://mermaid.js.org/) draws diagrams, and [KaTeX](https://katex.org/) typesets maths. Both use the theme's colours and fonts, and redraw when the theme or mode changes. Each library, and the QR code generator, is fetched from jsDelivr only if the deck needs it. To self-host one or turn it off:
+Fenced code is highlighted by [highlight.js](https://highlightjs.org/), [Mermaid](https://mermaid.js.org/) draws diagrams, and [KaTeX](https://katex.org/) typesets maths. Both use the theme's colours and fonts, and redraw when the theme or mode changes. Each library, and the QR code generator, and icons, is fetched from jsDelivr only if the deck needs it. To self-host one or turn it off:
 
 ```html
 <html data-highlight="/vendor/highlight.min.js" data-diagrams="off" data-math="off">
@@ -229,14 +230,14 @@ One attribute picks the look:
 
 | | |
 |---|---|
-| **Everyday** | `paper` (default) · `clean` · `slate` · `ledger` · `noir` ☾ |
+| **Everyday** | `clean` (default) · `paper` · `slate` · `ledger` · `noir` ☾ |
 | **Editorial & craft** | `editorial` · `swiss` · `atelier` · `mocha` |
 | **Warm & friendly** | `rose` · `sunset` · `chalk` ☾ · `clinic` |
 | **Nature & calm** | `forest` · `ocean` · `nord` ☾ |
 | **Tech** | `solar` ☾ · `terminal` ☾ · `ai` ☾ · `blueprint` ☾ |
 | **Loud** | `punk` · `volt` ☾ · `synth` ☾ |
 
-Every theme is a light and dark pair; ☾ marks the ones designed dark first, and the picker shows the same mark. The mode follows the system until someone presses **T**, and the choice is remembered.
+Every theme is a light and dark pair; ☾ marks the ones designed dark first, and the picker shows the same mark. Decks open in dark mode; `<html data-mode="light">` makes light the default. Viewers switch with **T**, and their choice is remembered.
 
 - `?theme=rose` and `?mode=dark` in the URL override both. Handy for sharing.
 - `<html data-theme-picker>` adds a picker to the top bar so viewers can choose.

@@ -37,8 +37,9 @@
  *   $x^2$ and $$ … $$                   maths (KaTeX, fetched only if the deck has some; <html data-math="off"> to skip)
  *   layout: image + image: url          a full-bleed picture with the text over it
  *   ```terminal                         "$ command" lines type out one per ↓, the rest is their output
- *   ![title](demo.cast)                 plays an asciinema recording; ![](youtube / vimeo / .mp4 link) embeds a video
- *   ::: accordion / ::: features        ### items that open one per ↓ / a grid of cards (a leading emoji is the icon)
+ *   ![title](demo.cast) or ```cast     plays an asciinema recording (a file needs the page served over http; a ```cast block plays anywhere); ![](youtube / vimeo / .mp4 link) embeds a video
+ *   ::: accordion / ::: features        ### items that open one per ↓ / a grid of cards (a leading :icon: or image is the card's icon)
+ *   :rocket:                            a Lucide icon in the theme's colours (any name from lucide.dev/icons)
  *   ::: agenda / ::: qr                 a contents slide linking every section / a QR code of the deck's link (or the URL inside)
  * Presenting: P presenter view (next slide, notes, timer, in a second window) · L laser pointer · D draw on the slide
  *   ::: present-only / ::: read-only   content for one view only (or {.present-only} / {.read-only} on a block)
@@ -60,11 +61,11 @@
   // ?theme=light|dark is still read as a mode, for old links.
   const lookOf = p => { const t = p.get('theme'), m = /^(light|dark)$/.test(t); return { mode: p.get('mode') || (m ? t : null), look: t && !m ? t : null }; };
   const qLook = lookOf(q);
-  root.dataset.mode = qLook.mode || store.get('mode', store.get('theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+  root.dataset.mode = qLook.mode || store.get('mode', store.get('theme', root.dataset.mode || 'dark'));   // dark unless the author says <html data-mode="light">
   const picker = root.hasAttribute('data-theme-picker');
   if (q.has('presenter')) root.dataset.presenter = '';
   const chosen = qLook.look || (picker && store.get('look', null));
-  root.dataset.theme = chosen || root.dataset.theme || 'paper';
+  root.dataset.theme = chosen || root.dataset.theme || 'clean';
 
   // each theme's typefaces, fetched from Google Fonts for the active theme only (<html data-fonts="off"> skips this)
   const GF = 'https://fonts.googleapis.com/css2?display=swap&family=';
@@ -132,6 +133,7 @@
          .replace(/<\/?[a-zA-Z][^>]*>|&(?:[a-zA-Z]+|#\d+);/g, hold);         // inline HTML and entities pass through
     s = esc(s)
          .replace(/\[\^([\w-]+)\]/g, (_, k) => hold(`<sup class="fn">${k}</sup>`))
+         .replace(/(^|[\s(])\:([a-z][a-z0-9]*(?:-[a-z0-9]+)*):(?=[\s).,;!?]|$)/g, (_, pre, n) => pre + hold(`<i class="ico" data-icon="${n}" aria-hidden="true"></i>`))
          .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, a, u) => hold(`<img src="${u}" alt="${qesc(a)}">`))
          .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, t, u) => hold(`<a href="${u}"${/^https?:/.test(u) ? ' target="_blank" rel="noopener"' : ''}>`) + t + hold('</a>'))
          .replace(/\*\*(?=\S)(.+?)\*\*/g, '<strong>$1</strong>')
@@ -180,7 +182,8 @@
         while (i < L.length && !L[i].startsWith(m[1])) body.push(L[i++]);
         i++;
         const src = esc(body.join('\n')), diagram = `<div class="w-diagram"><pre class="code w-diagram-src">${src}</pre></div>`;
-        out += m[2] === 'terminal' ? `<div class="w-term" data-lines="${qesc(esc(JSON.stringify(body)))}"></div>`
+        out += /^(cast|asciicast)$/.test(m[2]) ? `<div class="w-term w-cast" data-inline="${qesc(esc(body.join('\n')))}"></div>`
+          : m[2] === 'terminal' ? `<div class="w-term" data-lines="${qesc(esc(JSON.stringify(body)))}"></div>`
           : m[2] === 'mermaid' && m[4] ? `<div class="w-with-source"><pre class="code"><code>${src}</code></pre>${diagram}</div>`   // {source}: the text beside its diagram
           : m[2] === 'mermaid' ? diagram
           : `<pre class="code"${m[2] ? ` data-lang="${m[2]}"` : ''}${m[3] ? ` data-steps="${qesc(m[3])}"` : ''}><code>${esc(body.join('\n'))}</code></pre>`;
@@ -231,7 +234,7 @@
     else if (/\.(mp4|webm|mov)(\?|#|$)/i.test(u)) return `<video src="${u}" controls playsinline preload="metadata" aria-label="${qesc(esc(alt))}"></video>`;
     else if (/\.cast(\?|#|$)/i.test(u)) return `<div class="w-term w-cast" data-src="${u}" data-title="${qesc(esc(alt))}"></div>`;
     else return '';
-    return `<div class="w-frame"><iframe src="${u}" title="${qesc(esc(alt || 'Video'))}" loading="lazy" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
+    return `<div class="w-frame"><iframe src="${u}" title="${qesc(esc(alt || 'Video'))}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen></iframe></div>`;
   }
 
   /* a Markdown deck: slides split by ---; a chunk of only `key: value` lines is the next slide's frontmatter */
@@ -595,13 +598,13 @@
     items.forEach((d, j) => d.firstChild.addEventListener('click', () => st.go(j)));
   }
 
-  // ::: features — a grid of cards, one per ### heading; an emoji at the start of the heading becomes its icon
+  // ::: features — a grid of cards, one per ### heading; an :icon: or image at the start of the heading becomes its icon
   function features(box) {
     const w = document.createElement('div'); w.className = 'w w-features';
     w.innerHTML = byHeading(box).map(g => {
-      const h = g[0].tagName === 'H3' ? g.shift() : null, m = h?.innerHTML.match(/^\s*(\p{Extended_Pictographic}[\u{FE0F}\u{200D}\p{Extended_Pictographic}]*)\s*/u);
-      const icon = m ? m[1] : '';
-      return `<div class="w-feature">${icon ? `<span class="w-icon">${icon}</span>` : ''}<h3>${h ? h.innerHTML.slice(icon ? m[0].length : 0) : ''}</h3>${g.map(x => x.outerHTML).join('')}</div>`;
+      const h = g[0].tagName === 'H3' ? g.shift() : null;
+      const m = h?.innerHTML.match(/^\s*(<i class="ico"[^>]*><\/i>|<img [^>]*>)\s*/);
+      return `<div class="w-feature">${m ? `<span class="w-icon">${m[1]}</span>` : ''}<h3>${h ? h.innerHTML.slice(m ? m[0].length : 0) : ''}</h3>${g.map(x => x.outerHTML).join('')}</div>`;
     }).join('');
     w.style.setProperty('--n', Math.min(3, w.children.length));
     box.replaceWith(w);
@@ -654,18 +657,21 @@
   }
   function cast(w) {
     w.className = 'w w-term w-cast';
-    w.innerHTML = termShell(w.dataset.title, `<a href="${w.dataset.src}">${esc(w.dataset.src)}</a>`);
+    w.innerHTML = termShell(w.dataset.title, w.dataset.src ? `<a href="${w.dataset.src}">${esc(w.dataset.src)}</a>` : '');
     const out = w.lastChild;
     let events = null, run = 0;
     const show = (upTo = Infinity) => { const sc = screen(); for (const [t, , d] of events) if (t <= upTo) sc.write(d); out.innerHTML = sc.html(); };
     const play = async () => {
       if (!events) {
         try {
-          const [head, ...rest] = (await (await fetch(w.dataset.src)).text()).trim().split('\n');
+          const [head, ...rest] = (w.dataset.inline ?? await (await fetch(w.dataset.src)).text()).trim().split('\n');
           const limit = JSON.parse(head).idle_time_limit || 1.5;
           let t0 = 0, at = 0;                       // squash long pauses, like asciinema's idle_time_limit
           events = rest.map(l => JSON.parse(l)).filter(e => e[1] === 'o').map(e => { at += Math.min(limit, e[0] - t0); t0 = e[0]; return [at, 'o', e[2]]; });
-        } catch { return; }                        // offline or file://: the link stays
+        } catch {                                  // file:// pages can't fetch: say so, and keep the link
+          if (location.protocol === 'file:') out.insertAdjacentHTML('beforeend', '\n<span class="t-o">Recordings play when the page is served (python3 -m http.server), or write the cast in a ```cast block.</span>');
+          return;
+        }
       }
       if (reading() || matchMedia('(prefers-reduced-motion: reduce)').matches) return show();
       const me = ++run, start = performance.now();
@@ -973,7 +979,7 @@
 
   // the theme picker (<html data-theme-picker>): each swatch carries the theme's own tokens
   const THEMES = {
-    Everyday: ['paper', 'clean', 'slate', 'ledger', 'noir'],
+    Everyday: ['clean', 'paper', 'slate', 'ledger', 'noir'],
     'Editorial & craft': ['editorial', 'swiss', 'atelier', 'mocha'],
     'Warm & friendly': ['rose', 'sunset', 'chalk', 'clinic'],
     'Nature & calm': ['forest', 'ocean', 'nord'],
@@ -1062,6 +1068,18 @@
     return i >= 0 ? [i + 1, 1] : [0, 1];
   }
 
+  // :name: icons from Lucide, fetched once per name and inlined so they take the text colour
+  const LUCIDE = 'https://cdn.jsdelivr.net/npm/lucide-static@0.468.0/icons/', iconCache = {};
+  function lucide() {
+    if (root.dataset.icons === 'off') return;
+    document.querySelectorAll('i.ico[data-icon]').forEach(el => {
+      const n = el.dataset.icon;
+      (iconCache[n] ??= fetch((root.dataset.icons || LUCIDE) + n + '.svg').then(r => r.ok ? r.text() : Promise.reject()))
+        .then(svg => { el.innerHTML = svg.replace(/<!--[\s\S]*?-->/g, '').replace(/<svg[^>]*>/, t => t.replace(/\s(width|height)="\d+"/g, '')); })   // size from CSS
+        .catch(() => { el.textContent = `:${n}:`; el.classList.add('missing'); });
+    });
+  }
+
   // ::: agenda lists the section slides, each linking to its slide
   function agendas() {
     const parts = slides().map((s, i) => [s, i]).filter(([s]) => s.classList.contains('layout-section'));
@@ -1146,6 +1164,7 @@
     assemble();
     agendas();
     qrs();
+    lucide();
     ink();
     link();
     if (presenter) presenterView();
