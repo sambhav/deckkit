@@ -4,7 +4,7 @@ const verifyLatest = require('./latest.cjs');
 async function verify(page, base) {
   const check = (ok, message) => { if (!ok) throw new Error(message); };
   const errors = [];
-  page.on('pageerror', e => errors.push(e.message));
+  page.on('pageerror', e => errors.push(e.stack || e.message));
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(base + '/?view=present');
