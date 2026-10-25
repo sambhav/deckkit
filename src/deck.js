@@ -1,5 +1,6 @@
 import { renderMarkdown, renderInline, slideChunks } from './markdown.js';
 import { parseCSV, chartDataset, csvDownload } from './data.js';
+import { visualTypes, visualChart } from './visual-charts.js';
 
 /* talkdown — slide decks written in Markdown (or HTML), presented on a 16:9 stage, read like an article on a phone.
  *
@@ -542,11 +543,11 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
         headers = [...(table.tHead?.rows[0]?.cells || [])].map(cell => cell.textContent);
         rows = [...(table.tBodies[0]?.rows || [])].map(row => [...row.cells].map(cell => cell.textContent));
       } else throw new Error('A chart needs a CSV code block or a table');
-      if (!['bar', 'hbar', 'line', 'donut'].includes(kind)) throw new Error('Unknown chart type: ' + kind);
+      if (!['bar', 'hbar', 'line', 'donut', ...visualTypes].includes(kind)) throw new Error('Unknown chart type: ' + kind);
       if (!['auto', 'chart', 'table', 'both'].includes(initial)) throw new Error('Unknown chart view: ' + initial);
-      const unknown = [...source.attributes].find(a => a.name.startsWith('data-') && !['data-type','data-chart','data-view','data-chart-view','data-title','data-series'].includes(a.name));
+      const unknown = [...source.attributes].find(a => a.name.startsWith('data-') && !['data-type','data-chart','data-view','data-chart-view','data-title','data-series','data-x','data-y','data-size','data-group'].includes(a.name));
       if (unknown) throw new Error('Unknown chart option: ' + unknown.name.slice(5));
-      model = chartDataset(headers, rows, kind, source.dataset.series, old);
+      model = visualTypes.includes(kind) ? { visual: visualChart(headers, rows, kind, { ...source.dataset, title }) } : chartDataset(headers, rows, kind, source.dataset.series, old);
     } catch (e) { error = e.message; }
     const box = document.createElement('figure'); box.className = 'w-chart-box';
     if (source.id) box.id = source.id;
@@ -573,7 +574,10 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
       document.body.append(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
     const w = document.createElement('div'); w.className = `w w-chart w-${kind}`; w.setAttribute('role', 'img'); w.setAttribute('aria-labelledby', `${id}-title`);
-    if (model) {
+    if (model?.visual) {
+      w.innerHTML = model.visual;
+      box.append(w);
+    } else if (model) {
       const labels = model.labels.map(v => esc(String(v)));
       const series = model.series.map(s => ({ name: esc(s.name), shown: rows.map(r => esc(String(r[s.index]))), v: s.values }));
       const values = series.flatMap(s => s.v), lo = Math.min(0, ...values), hi = Math.max(0, ...values);
