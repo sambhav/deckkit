@@ -4,11 +4,11 @@
 
 # talkdown
 
-**Write slides in Markdown. Present them on a stage. Send the same link to a phone and it reads like an essay.**
+**An agent-first slide format. Your agent writes a short Markdown file; you present it as slides, and everyone else reads it as an article.**
 
 One file · Instant preview · No build · Host on GitHub Pages
 
-[**Live demo**](https://sambhav.dev/talkdown/) &nbsp;·&nbsp; [Quick start](#-quick-start) &nbsp;·&nbsp; [Syntax](#-writing-slides) &nbsp;·&nbsp; [Widgets](#-widgets) &nbsp;·&nbsp; [Themes](#-themes) &nbsp;·&nbsp; [API](#-api)
+[**Live demo**](https://sambhav.dev/talkdown/) &nbsp;·&nbsp; [Quick start](#-quick-start) &nbsp;·&nbsp; [For agents](#-for-agents) &nbsp;·&nbsp; [Syntax](#-writing-slides) &nbsp;·&nbsp; [Widgets](#-widgets) &nbsp;·&nbsp; [Themes](#-themes) &nbsp;·&nbsp; [API](#-api)
 
 ![version](https://img.shields.io/badge/version-0.1.0-F1B000?style=flat-square) ![status](https://img.shields.io/badge/status-pre--release-555?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-3C9A5F?style=flat-square) ![build](https://img.shields.io/badge/build_step-none-2B63F5?style=flat-square) ![size](https://img.shields.io/badge/files-2-E8428E?style=flat-square)
 
@@ -22,20 +22,22 @@ One file · Instant preview · No build · Host on GitHub Pages
 
 ## Why talkdown?
 
-Most slides only make sense while someone is presenting them. Send a deck to someone who missed the talk and they get the bullet points without the reasoning behind them.
+Asking an agent for an HTML deck works, and the result looks great. But every slide costs a lot of tokens, and once it exists you can't change a heading or reorder two slides without asking the model again.
 
-talkdown keeps your speaker notes in the deck. Present it and the notes stay with you; open the same link later and they become the text between the slides. One file works in three places:
+talkdown is a small Markdown format. An agent writes a deck in a fraction of the tokens, and you can open the file and fix it by hand. The same file serves two audiences:
 
-| | On a laptop | On a phone | In a review |
-|---|---|---|---|
-| **You get** | A 16:9 stage, driven from the keyboard | A scrolling article, with your notes as the prose | One Markdown file, so changes are a normal diff |
+| | Presenting | Not there |
+|---|---|---|
+| **They get** | A 16:9 stage, driven from the keyboard | A scrolling article, with your speaker notes as the prose |
+| **You control** | `<!-- say: … -->`, `::: present-only` | `<!-- read: … -->`, `::: read-only` |
 
-And it stays out of your way: no install, no bundler, no framework. Write one file, open it, refresh to preview, and push it to GitHub Pages.
+It also stays out of your way: no install, no bundler, no framework. Write one file, open it, refresh to preview, and push it to GitHub Pages.
 
 ## ✨ Features
 
 - **Markdown first.** `---` between slides, `<!-- comments -->` for speaker notes, `|||` for columns.
 - **Steps built into navigation.** ← → change slides; ↑ ↓ walk the steps on a slide and then carry on, so a presenter can just keep pressing ↓.
+- **Two formats from one file.** Present as slides; the same link reads as an article, and you control each format separately.
 - **Read view.** Phones open the deck as an article: slides reflow, builds show finished, notes become paragraphs.
 - **Interactive widgets in plain Markdown.** Tabs, walkthroughs, explained tables, stepped code, flip cards, timelines, stats, callouts, charts, pull quotes, checklists, footnotes, maths and Mermaid diagrams.
 - **23 themes**, each a designed light/dark pair with its own typefaces, checked for WCAG AA contrast.
@@ -67,7 +69,7 @@ What happens when the tool you need arrives halfway through.
 
 September 2026 · 15 minutes {.meta}
 
-<!-- Speaker notes go in comments. In read view they become the text under the slide. -->
+<!-- Notes go in comments. In read view they become the text under the slide. -->
 
 ---
 ## One idea per slide
@@ -90,6 +92,22 @@ Open it in a browser and press →. That's it.
 Copy [`deck.css`](deck.css) and [`deck.js`](deck.js) next to your HTML and link them directly. [`examples/starter.html`](examples/starter.html) is a ready-made starting point. To publish, put the folder anywhere that serves static files: GitHub Pages, a bucket, an intranet share.
 
 </details>
+
+## 🤖 For agents
+
+Give your agent one URL and it learns the whole format:
+
+```
+https://sambhav.dev/talkdown/skills/talkdown/SKILL.md
+```
+
+The same file is on the CDN at `https://cdn.jsdelivr.net/gh/sambhav/talkdown@main/skills/talkdown/SKILL.md`, and [`llms.txt`](https://sambhav.dev/talkdown/llms.txt) is the short index for tools that look for one.
+
+A prompt that works:
+
+> Read https://sambhav.dev/talkdown/skills/talkdown/SKILL.md and make me a 10-slide talkdown deck about how our cache invalidation works. Put what you'd say in speaker notes so it also reads as an article.
+
+**In Claude Code**, copy the [`skills/talkdown`](skills/talkdown) folder into `~/.claude/skills/` (or a project's `.claude/skills/`) and ask for a talkdown deck. It loads when needed.
 
 ## 🧭 How it works
 
@@ -131,14 +149,14 @@ build: true
 |---|---|
 | `---` | Starts a new slide |
 | `key: value` lines between two `---` | Frontmatter for the next slide |
-| `<!-- … -->` | Speaker notes |
+| `<!-- … -->` | Notes: spoken when presenting, and the prose in the article. `<!-- say: … -->` is speaker-only, `<!-- read: … -->` article-only |
 | `\|\|\|` | Starts a column. Text before the first one spans the slide |
 | `::: name` … `:::` | Wraps blocks in `<div class="name">`. Containers nest. `::: grid` makes balanced rows |
 | `{.step}` | Reveals that block on ↓ |
 | `{.class #id}` | Adds a class or id. On its own line, applies to the block above |
 | `==text==` | Accent-coloured text |
 | `[text](#id)` | Links to the slide with that `id` |
-| `::: present-only` · `::: read-only` | Content for one view only. `{.present-only}` or `{.read-only}` works on a single block, and the classes work in HTML slides too |
+| `::: present-only` · `::: read-only` | Content for one format only. See [One deck, two formats](#one-deck-two-formats) |
 
 Everything else is ordinary Markdown, and inline HTML passes through. Inside a Markdown script, write `<\/script>` for a literal closing script tag.
 
@@ -157,6 +175,8 @@ Everything else is ordinary Markdown, and inline HTML passes through. Inside a M
 | `class` | Extra classes on the slide |
 | `name` | The slide's name in the overview. Defaults to its first heading |
 | `takeaway` | One line shown above the speaker notes |
+| `read` | `hide` leaves the slide out of the article. `text` shows only its prose in the article, not the slide |
+| `present` | `hide` makes an article-only slide: skipped when presenting |
 | `image` | A background picture. With `layout: image`, the text sits over it on a dark scrim |
 
 </details>
@@ -288,6 +308,7 @@ Every colour, typeface and size is a CSS custom property. Override them after `d
 | `O` · `N` · `F` · `?` | Overview · speaker notes · fullscreen · all keys |
 | `P` | Presenter view: a second window with the next slide, your notes and a timer, kept in step with the audience screen |
 | `L` · `D` | Laser pointer · draw on the slide (cleared on the next slide) |
+| `S` | Show the current slide's Markdown (view source) |
 
 On touch screens a dock replaces the keyboard, with buttons for back, next, notes and read view, and you can swipe between slides and steps.
 
@@ -301,6 +322,35 @@ Phones and portrait tablets open in **read view**, and on a laptop **R** switche
 - **Speaker notes become the prose.** Timing cues like `[~60s]` are dropped.
 - Builds and widgets show everything.
 - Hand-built slides become figures with a **Present** button.
+
+### One deck, two formats
+
+Presenting and reading want different things, so you control each separately:
+
+| Write | Presenting | Article |
+|---|---|---|
+| `<!-- notes -->` | Speaker notes | Prose under the slide |
+| `<!-- say: … -->` | Speaker notes | Left out |
+| `<!-- read: … -->` | Left out | Prose under the slide |
+| `::: present-only` … `:::` | Shown | Left out |
+| `::: read-only` … `:::` | Left out | Shown |
+| `read: hide` in frontmatter | Shown | The slide is left out |
+| `read: text` in frontmatter | Shown | Only its prose, not the slide |
+| `present: hide` in frontmatter | Skipped | Shown: an article-only section |
+
+`{.present-only}` and `{.read-only}` do the same for a single block, and work in HTML slides too.
+
+```md
+---
+read: text
+---
+## Cache hit rate
+
+![chart](hit-rate.png)
+
+<!-- say: Pause here and ask who has seen this graph. -->
+<!-- read: The hit rate rose from 61% to 94% once the cache moved to the edge. -->
+```
 
 Present view works on phones too. Held upright, slides go vertical and reflow at the phone's width, and speaker notes hide until you tap the notes button. Force a view with `?view=read` or `?view=present`.
 

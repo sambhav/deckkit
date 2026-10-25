@@ -1,0 +1,14 @@
+# talkdown
+
+> talkdown is a small, dependency-free slide engine and Markdown format built for agents. A deck is one HTML file with Markdown in a `<script type="text/markdown">` block, loaded with deck.css and deck.js from a CDN. It presents as 16:9 slides and, on a phone or in read view, reads as an article where the speaker notes become the prose. Agents write it quickly and cheaply, and humans can edit it by hand.
+
+## Agent instructions
+
+- [talkdown skill](https://sambhav.dev/talkdown/skills/talkdown/SKILL.md): how to write a deck: boilerplate, syntax, widgets, themes, rules, example. Read this first.
+- [talkdown skill (jsDelivr)](https://cdn.jsdelivr.net/gh/sambhav/talkdown@main/skills/talkdown/SKILL.md): same file, via CDN.
+
+## Docs and examples
+
+- [README](https://github.com/sambhav/talkdown/blob/main/README.md): full syntax, widgets and themes.
+- [Live demo](https://sambhav.dev/talkdown/): the demo deck, written in talkdown.
+- [Starter deck](https://sambhav.dev/talkdown/examples/starter.html): a minimal template to copy.

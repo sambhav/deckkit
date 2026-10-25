@@ -5,7 +5,7 @@
  *   ↑ ↓ Enter             steps, then slides   builds show finished, fixed-layout slides become figures
  *   1–9                   jump to a step       ← → hop between slides
  *   swipe                 next / previous
- *   Home End · O overview · N notes · T light / dark · R read / present · F fullscreen · ? keys · Esc close
+ *   Home End · O overview · N notes · T light / dark · R read / present · F fullscreen · S view source · ? keys · Esc close
  *
  * Themes: <html data-theme="rose">, 23 of them, each with a light and a dark mode and its own typefaces (fetched for the
  * active theme; <html data-fonts="off"> keeps system fonts). <html data-theme-picker> adds a picker to the top bar.
@@ -252,21 +252,22 @@
     return out;
   }
   let section = '', part = 0;
+  const sourceOf = new WeakMap();   // slide element -> its Markdown as written, for view source
   function mdSlides(src) {
     // a deck can't contain a literal closing script tag, so it writes <\/script> and we restore it here
     const chunks = split(dedent(src.replace(/\r/g, '').replace(/<\\\/script/gi, '</script').split('\n')), /^---\s*$/);
-    const out = []; let meta = {};
+    const out = []; let meta = {}, head = [];
     for (const c of chunks) {
       const filled = c.filter(l => l.trim());
       if (!filled.length) continue;
-      if (filled.every(l => META.test(l))) { for (const l of filled) { const [, k, v] = l.match(META); meta[k] = v.trim(); } continue; }
-      out.push(mdSlide(c, meta)); meta = {};
+      if (filled.every(l => META.test(l))) { for (const l of filled) { const [, k, v] = l.match(META); meta[k] = v.trim(); head.push(l.trim()); } continue; }
+      out.push(mdSlide(c, meta, head)); meta = {}; head = [];
     }
     return out;
   }
 
-  function mdSlide(L, meta) {
-    const notes = [];
+  function mdSlide(L, meta, head = []) {
+    const raw = L.join('\n').replace(/^\s*\n|\s+$/g, ''), notes = [];
     // HTML comments outside fenced code are the words around the slide: <!-- … --> is both what you say and what the
     // article reads; <!-- say: … --> is only for the speaker, <!-- read: … --> only for the article
     const article = [];
@@ -290,6 +291,7 @@
       + `${meta.kicker ? `<div class="kicker">${inline(meta.kicker)}</div>` : ''}${body}${feet.length ? `<div class="footnotes">${feet.join('')}</div>` : ''}</div>`
       + (notes.length ? `<aside class="notes">${blocks(notes.join('\n\n').split('\n'))}</aside>` : '')
       + (article.length ? `<aside class="article">${blocks(article.join('\n\n').split('\n'))}</aside>` : '');
+    sourceOf.set(el, (head.length ? head.join('\n') + '\n---\n' : '') + raw);
     const heading = el.querySelector('h1, h2, h3')?.textContent.trim() || '';
     section = meta.section ?? (layout === 'section' ? heading : section);
     Object.assign(el.dataset, { section, name: meta.name || heading });
@@ -785,6 +787,7 @@
     $('notesTitle').textContent = `SPEAKER NOTES · ${s.dataset.name || ''}`;
     $('notesTk').textContent = s.dataset.takeaway ? 'Takeaway: ' + s.dataset.takeaway : '';
     $('notesBody').textContent = s.querySelector('.notes')?.textContent.trim() || '—';
+    if ($('src').classList.contains('on')) fillSource();
     handlers.slide.forEach(f => f(s, cur));
     if (reading()) history.replaceState(null, '', '#' + (cur + 1)); else if (portrait.matches) fit();
   }
@@ -898,6 +901,7 @@
 
   /* ================= chrome ================= */
   const ICON = {
+    code: '<path d="M6.5 5L2.5 9l4 4M11.5 5l4 4-4 4"/>',
     notes: '<path d="M3.5 4.5h11M3.5 9h11M3.5 13.5h7"/>',
     palette: '<path d="M9 2a7 7 0 1 0 0 14c1 0 1.5-.6 1.5-1.4 0-.5-.3-.8-.3-1.3 0-.7.6-1.3 1.3-1.3h1.6A3 3 0 0 0 16 9c0-3.9-3.1-7-7-7z"/><circle cx="5.6" cy="8.4" r="1" fill="currentColor"/><circle cx="8.2" cy="5.4" r="1" fill="currentColor"/><circle cx="11.6" cy="6.2" r="1" fill="currentColor"/>',
     grid: '<rect x="2.5" y="2.5" width="5" height="5" rx="1"/><rect x="10.5" y="2.5" width="5" height="5" rx="1"/><rect x="2.5" y="10.5" width="5" height="5" rx="1"/><rect x="10.5" y="10.5" width="5" height="5" rx="1"/>',
@@ -925,7 +929,7 @@
     if (!$('bar')) stage.insertAdjacentHTML('afterbegin', `<div id="bar"><div class="title">${esc(document.title)}</div></div>`);
     const bar = $('bar');
     if (!$('sectionLabel')) bar.insertAdjacentHTML('beforeend', '<div class="section" id="sectionLabel"></div>');
-    bar.insertAdjacentHTML('beforeend', `<div class="tools"><button class="ib" id="ovBtn" title="Overview (O)">${svg('grid')}</button><button class="ib" id="viewBtn"></button>${picker ? `<button class="ib" id="lookBtn" title="Theme" aria-haspopup="true">${svg('palette')}</button>` : ''}<button class="ib" id="themeBtn" title="Light / dark (T)"></button></div>`);
+    bar.insertAdjacentHTML('beforeend', `<div class="tools"><button class="ib" id="ovBtn" title="Overview (O)">${svg('grid')}</button><button class="ib" id="srcBtn" title="View source (S)">${svg('code')}</button><button class="ib" id="viewBtn"></button>${picker ? `<button class="ib" id="lookBtn" title="Theme" aria-haspopup="true">${svg('palette')}</button>` : ''}<button class="ib" id="themeBtn" title="Light / dark (T)"></button></div>`);
 
     // each slide sits in a frame with a label and its notes-as-prose, both shown only in read view
     const cue = /\[~?[\d.]+\s*(?:s|sec|secs|m|min|mins)\b[^\]]*\]\s*/gi;
@@ -967,10 +971,14 @@
       <div id="keys"><div class="kcard"><h3>Keyboard</h3>
         <p><kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd> previous / next slide · <kbd>Home</kbd> <kbd>End</kbd> first / last</p>
         <p><kbd>↑</kbd> <kbd>↓</kbd> <kbd>Enter</kbd> previous / next step, then on to the next slide · <kbd>1</kbd>–<kbd>9</kbd> jump to a step</p>
-        <p><kbd>R</kbd> read as an article / present · <kbd>T</kbd> light / dark · <kbd>O</kbd> overview · <kbd>N</kbd> notes · <kbd>F</kbd> fullscreen · <kbd>Esc</kbd> close</p>
+        <p><kbd>R</kbd> read as an article / present · <kbd>T</kbd> light / dark · <kbd>O</kbd> overview · <kbd>N</kbd> notes · <kbd>F</kbd> fullscreen · <kbd>S</kbd> view the slide's Markdown · <kbd>Esc</kbd> close</p>
         <p><kbd>P</kbd> presenter view · <kbd>L</kbd> laser pointer · <kbd>D</kbd> draw on the slide</p>
-      </div></div>`);
+      </div></div>
+      <div id="src"><div class="kcard"><div class="sh"><h3>Markdown source</h3><button id="srcCopy">Copy</button></div><pre class="code"><code></code></pre></div></div>`);
 
+    $('srcBtn').onclick = toggleSource;
+    $('srcCopy').onclick = copySource;
+    $('src').onclick = e => { if (!e.target.closest('.kcard')) $('src').classList.remove('on'); };
     $('viewBtn').onclick = toggleView;
     $('themeBtn').onclick = toggleTheme;
     if (picker) buildPicker();
@@ -1022,6 +1030,19 @@
     document.addEventListener('click', e => { if (!e.target.closest('#looks')) pop.classList.remove('on'); });
     new MutationObserver(mark).observe(root, { attributes: true, attributeFilter: ['data-mode', 'data-theme'] });
   }
+  // view source: the current slide's Markdown as written (hand-built HTML slides have none); follows the slide while open
+  function fillSource() {
+    const md = sourceOf.get(slide())?.replace(/<\/script/gi, '<\\/script'), code = $('src').querySelector('code');   // as the author writes it
+    $('srcCopy').hidden = md == null;
+    if (md == null) { code.textContent = 'This slide is hand-built HTML; view the page source.'; return; }
+    code.textContent = md;
+    if (window.hljs?.getLanguage('markdown')) code.innerHTML = hljs.highlight(md, { language: 'markdown', ignoreIllegals: true }).value;
+  }
+  function toggleSource() { $('src').classList.toggle('on'); if ($('src').classList.contains('on')) fillSource(); }
+  function copySource() {
+    const b = $('srcCopy');
+    navigator.clipboard?.writeText(sourceOf.get(slide())).then(() => { b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy', 1400); }, () => {});
+  }
   function toggleOverview() { const ov = $('overview'); ov.classList.toggle('on'); if (ov.classList.contains('on')) ov.querySelector('.cur')?.focus(); }
 
   /* ================= input ================= */
@@ -1040,12 +1061,14 @@
       else if (k === 'Escape' || lk === 'o') ov.classList.remove('on');
       return;
     }
+    if ($('src').classList.contains('on') && (lk === 's' || k === 'Escape')) { $('src').classList.remove('on'); return; }
     if ($('keys').classList.contains('on')) { $('keys').classList.remove('on'); if (k === '?' || k === 'Escape') return; }
     if (customKeys[k]) { customKeys[k](e); return; }
 
     if (lk === 'r') toggleView();
     else if (lk === 't') toggleTheme();
     else if (lk === 'o') toggleOverview();
+    else if (lk === 's') toggleSource();
     else if (k === '?') $('keys').classList.add('on');
     else if (k === 'Escape') { delete root.dataset.laser; delete root.dataset.draw; ov.classList.remove('on'); $('notes').classList.remove('on'); $('looks')?.classList.remove('on'); }
     else if (reading()) {                                   // the page scrolls; ← → hop between slides

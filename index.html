@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>talkdown</title>
-<meta name="description" content="Slides you write in Markdown, present on a 16:9 stage, and send to a phone as an essay. Write one file, preview it instantly, host it on GitHub Pages.">
+<meta name="description" content="talkdown is an agent-first slide format: Markdown that agents write in a fraction of the tokens of an HTML deck, that you can edit by hand, and that reads as a blog post when you are not presenting.">
 <link rel="icon" href="docs/logo.svg">
-<link rel="stylesheet" href="deck.css?v=0.1.0-9">
-<script src="deck.js?v=0.1.0-9"></script>
+<link rel="stylesheet" href="deck.css?v=0.1.0-11">
+<script src="deck.js?v=0.1.0-11"></script>
 <style>
   /* quick start: what the Markdown on the left turns into */
   .mini { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--surface); box-shadow: 0 24px 60px -28px color-mix(in srgb, var(--fg) 45%, transparent); }
@@ -51,38 +51,72 @@ layout: title
 ---
 # talkdown
 
-Slides you write in Markdown, present on a stage, and send to a phone as an essay.
+Agent-first slides: a Markdown format that presents as a deck and reads as a blog post.
 
 One file · Instant preview · No build · Host on GitHub Pages {.meta}
 
 <!--
-talkdown is a small, dependency-free engine for HTML slide decks. You write the deck in Markdown, present it full-screen from the keyboard, and when someone opens the same link on a phone it becomes a long-form article, with your speaker notes as the prose between the slides.
+talkdown is a slide format that agents write in Markdown. It is small enough that an agent needs only a fraction of the tokens it would spend on a hand-written HTML deck, and plain enough that you can change it yourself in a text editor.
 
-You're looking at a talkdown deck. Press → to present it, R to read it as an article, and T for dark mode.
+The same file presents as slides and, when you are not there to present it, reads as a blog post. This page is a talkdown deck and a walkthrough of the format. Press the right arrow to step through it, and S to see the Markdown behind any slide.
 -->
 
 ---
-layout: statement
-section: Why
+kicker: Why
 ---
-Most slides only make sense while someone is presenting them.
+## Agents write good HTML decks. They are expensive to make and awkward to edit.
 
-talkdown keeps your speaker notes in the deck, so anyone who opens the link later gets the whole story, not just the bullet points.
+|||
+
+### What you get today
+
+- The result looks great
+- Every slide is hundreds of lines of HTML and CSS
+- A small change means asking the model again
+- Nobody can read the deck without presenting it
+
+|||
+
+### With talkdown
+
+- The agent writes Markdown, a fraction of the tokens
+- You fix a typo or reorder slides by hand in seconds
+- The same file reads as a blog post
+- Widgets and themes are built in
 
 <!--
-Slides are written to be talked over. Send them to someone who missed the talk and they get the bullet points without the reasoning behind them. In talkdown the speaker notes are part of the deck, so the same file works on a stage, in a review, and on a phone the next morning.
+Plenty of people ask an agent to write an HTML deck directly. The results look great, but the agent spends a lot of tokens on markup and styling, and once the deck exists it is hard to change. Moving a bullet or fixing a number means another round trip to the model, or editing a large file that nobody wrote by hand.
+
+talkdown moves the markup into the engine. The agent writes only the content and a few lines of structure, which costs a fraction of the tokens. You can open the file and edit it like any other text. And because the notes are part of the file, it also works as an article for people who were not in the room.
 -->
 
 ---
-kicker: Contents
+kicker: For agents
+id: agents
 ---
-## What's inside
+## Give your agent one URL
 
-::: agenda
-:::
+```text
+https://sambhav.dev/talkdown/skills/talkdown/SKILL.md
+```
+
+Also on jsDelivr:
+
+```text
+https://cdn.jsdelivr.net/gh/sambhav/talkdown@main/skills/talkdown/SKILL.md
+```
+
+An example prompt:
+
+```text
+Read https://sambhav.dev/talkdown/skills/talkdown/SKILL.md and write a
+12-slide talkdown deck about our Postgres migration, with speaker notes.
+```
 
 <!--
-This contents slide writes itself: an agenda block lists every section slide in the deck, each linking to it.
+To get an agent writing talkdown, give it the address of the skill file. It lists the whole syntax: layouts, widgets, how notes work, and how to verify the result. Paste the URL into a prompt, or install the file as a skill, and ask for a deck on whatever you like. If the first address is blocked, the same file is served from jsDelivr, at the second address on the slide.
+
+Ask for speaker notes, because they are what turns the deck into an article later. The agent returns a single HTML file with the deck inside it.
 -->
 
 ---
@@ -117,47 +151,69 @@ There is nothing to install and nothing to build. An HTML page links the stylesh
 -->
 
 ---
+kicker: Every slide is an example
+---
+## Press S on any slide to see its Markdown
+
+> [!TIP]
+> Press **S** on any slide of this deck to see the Markdown that produced it. Press **S** again to close it.
+
+This deck is written in talkdown, so every slide shows its own syntax. Copy what you see into your own deck.
+
+<!--
+This walkthrough is itself a talkdown deck, so each slide is its own example. Where a slide shows code beside the result, that is the syntax to copy. Where it does not, press S and the slide's Markdown opens over it. The source of the whole page is also one view-source away.
+-->
+
+---
+kicker: Contents
+---
+## What's inside
+
+::: agenda
+:::
+
+<!--
+This contents slide writes itself: an agenda block lists every section slide in the deck, each linking to it. The block is two lines, and it stays correct when you add or move sections.
+-->
+
+---
 layout: section
 ---
-# Writing
+# Writing slides
 
-Markdown in, slides out.
+Separators, layouts, builds and notes.
 
 ---
-kicker: Writing
+kicker: Writing slides
 ---
-## One Markdown block is the whole deck
+## A deck is one block of Markdown
 
 |||
 
-```md
+````md
 layout: title
 ---
 # Dynamic Tools
 
-What happens when the tool you need
-arrives halfway through.
-
-<!-- Speaker notes live in comments. -->
+A subtitle.
 
 ---
 ## The next slide
-```
+````
 
 |||
 
 - `---` starts a new slide
-- `key: value` lines above it set the layout
-- `<!-- comments -->` are speaker notes
-- `|||` splits a slide into columns
-- `::: card` wraps a block in a card
+- `key: value` lines above it set the layout, section or id
+- `|||` starts a new column
+- Everything else is ordinary Markdown
 
 <!--
-Three dashes separate slides. A block of key-value lines sets the next slide's layout, section or id. Comments are speaker notes. Three pipes start a column, and three colons with a class name wrap content in that class, which is also how the widgets are written. Everything else is ordinary Markdown.
+Three dashes separate slides. A block of key-value lines before the first dash, called frontmatter, sets that slide's layout, its section name or an id other slides can link to. Three pipes on a line start a new column. Everything else is ordinary Markdown: headings, lists, tables, links, code and images.
 -->
 
 ---
-kicker: Writing
+kicker: Writing slides
 ---
 ## Five layouts cover most slides
 
@@ -169,23 +225,172 @@ kicker: Writing
 | `default` | A heading and content; add `\|\|\|` for columns |
 | `center` | Everything centred, for a closing slide |
 
+Set one with `layout: section` in the slide's frontmatter. {.muted}
+
 <!--
 Pick a layout with one line of frontmatter. The set is deliberately small, and sizes come from a single type scale, so slides stay consistent without any styling. Anything more is a class away.
 -->
 
 ---
-kicker: Writing
+kicker: Writing slides
 build: true
 ---
-## Press ↓ to build a slide
+## Builds: press ↓ to reveal one at a time
 
 - **← →** move between slides
 - **↑ ↓** move between the steps on a slide
 - When the steps run out, **↓** carries on to the next slide
-- Coming back with **←** shows the slide finished
+- Add `build: true` to the frontmatter to build a slide
 
 <!--
-Steps are part of the navigation, not an add-on. Set build: true and every block after the heading appears one at a time, or tag a single block with {.step}. Left and right always change the slide; up and down walk the steps first and then move on, so a presenter can just keep pressing down. The URL records the step, so a link can point at step three of slide five.
+Steps are part of the navigation. Set build: true in a slide's frontmatter and every block after the heading appears one at a time, or tag a single block with {.step}. Left and right always change the slide; up and down walk the steps first and then move on, so a presenter can keep pressing down. The URL records the step, so a link can point at step three of slide five.
+-->
+
+---
+kicker: Writing slides
+---
+## Notes are HTML comments
+
+|||
+
+````md
+## Q3 results
+
+- Revenue up 18%
+
+<!--
+Say what happened, then why.
+Mention the two large renewals.
+-->
+````
+
+|||
+
+- A comment on a slide is its speaker note
+- Press **N** to show the notes while you present
+- In the read view, the same notes become the prose
+
+<!--
+Speaker notes are ordinary HTML comments written anywhere on the slide. While presenting, N shows them, and the presenter view shows them next to the next slide. When the deck is read as an article, the notes are the body text between the slides. Write them as sentences someone could read without having seen the talk.
+-->
+
+---
+layout: section
+---
+# One deck, two formats
+
+Present it on a stage. Read it as a post.
+
+---
+kicker: Two formats
+---
+## The same file presents and reads
+
+::: toggle
+### Present
+The 16:9 stage, scaled to the screen. Arrow keys on a laptop; on a phone, a dock and swipes. Steps reveal one at a time.
+### Read
+One column of text, like a blog post. Slides reflow, widgets lay everything out, builds show finished, and the notes become the prose.
+:::
+
+Press **R** to switch. On a phone the deck opens in the read view; add `?view=read` or `?view=present` to a link to choose. {.muted}
+
+<!--
+There is one file and two ways to see it. On a laptop the deck presents full screen from the keyboard. On a phone or a portrait tablet it opens as an article: each slide reflows into article typography with a small chapter label, and the speaker notes follow as paragraphs, so the deck reads top to bottom like a blog post. Send the link to someone who missed the talk and they get the reasoning as well as the bullets.
+-->
+
+---
+kicker: Two formats
+---
+## Control what each format says
+
+|||
+
+````md
+<!-- Spoken and read. -->
+
+<!-- say: Only the speaker. -->
+
+<!-- read: Only the article. -->
+````
+
+|||
+
+| Comment | Presenting | Reading |
+|---|---|---|
+| `<!-- … -->` | ✓ | ✓ |
+| `<!-- say: … -->` | ✓ | ✗ |
+| `<!-- read: … -->` | ✗ | ✓ |
+
+<!--
+A plain comment is both the speaker note and the paragraph in the article. Sometimes the two should differ. A comment that starts with say: is only for the speaker, for example a reminder to pause or a cue to demo something. A comment that starts with read: is only for the article, for example an explanation that would take too long to say out loud, or a link.
+-->
+
+<!-- say: Pause here and ask whether anyone has hit this problem. -->
+
+<!-- read: This slide has a say note that you will not see in the article, and this paragraph, which appears only here. -->
+
+---
+kicker: Two formats
+---
+## Slide content for one format
+
+|||
+
+````md
+::: present-only
+Press R to read this as an article.
+:::
+
+::: read-only
+> [!TIP]
+> Only shown in the read view.
+:::
+````
+
+|||
+
+::: present-only
+> [!NOTE]
+> You are presenting, so you can see this box. Press R and it disappears.
+:::
+
+::: read-only
+> [!TIP]
+> You are reading, so you can see this box. It is hidden when presenting.
+:::
+
+<!--
+Wrap any block in present-only to keep it on the stage, or read-only to keep it in the article. Use present-only for cues like press R, and read-only for a longer explanation, a link, or a table that is too big for a slide. You can also add the class to a single block, as in a paragraph ending in {.read-only}.
+-->
+
+---
+kicker: Two formats
+---
+## Hide a whole slide from one format
+
+| Frontmatter | Effect |
+|---|---|
+| `read: hide` | On stage only. Left out of the article. |
+| `read: text` | Only the slide's notes appear in the article, not the slide. |
+| `present: hide` | In the article only. Skipped when presenting. |
+
+<!--
+Some slides only make sense on a stage, such as a live demo or a section break. Mark them read: hide and the article skips them. Some slides are a visual that adds nothing in print, so read: text keeps just the prose that goes with them. And some material belongs only in the article, such as background, references or a longer argument. Mark that present: hide, and it is skipped when you present. The next slide is one of those.
+-->
+
+---
+kicker: Article only
+present: hide
+---
+## This section is only in the article
+
+You are reading the article version of this deck. This section has `present: hide` in its frontmatter, so it is skipped when the deck is presented. A speaker would never put this much text on a slide.
+
+Use a section like this for the background, the caveats or the links that you want in the written version but would not read out loud.
+
+<!--
+This slide exists only in the read view. When presenting, the arrow keys skip over it and the slide count leaves it out.
 -->
 
 ---
@@ -197,7 +402,7 @@ id: widgets
 Interactive slides, still in plain Markdown.
 
 <!--
-The interactive patterns that come up in almost every technical deck are built in: tabs, toggles, walkthroughs, comparison tables that explain themselves, code that highlights as you talk, and flip cards. Each one is a few lines of Markdown, takes part in the arrow keys, and turns into plain, readable content in read view.
+The interactive patterns that come up in almost every technical deck are built in: tabs, walkthroughs, comparison tables that explain themselves, code that highlights as you talk, charts and diagrams. Each one is a few lines of Markdown, takes part in the arrow keys, and turns into plain, readable content in the read view.
 -->
 
 ---
@@ -230,7 +435,7 @@ Slides go vertical and reflow at the phone's width; the tabs wrap to fit.
 :::
 
 <!--
-Every heading inside a tabs block becomes a tab, and the text under it becomes its panel. Press down to walk the tabs, or click one. A toggle block works the same way but looks like a switch, for two or three options. In read view all the panels are shown, one after another.
+Every heading inside a tabs block becomes a tab, and the text under it becomes its panel. Press down to walk the tabs, or click one. A toggle block works the same way but looks like a switch, for two or three options. In the read view all the panels are shown, one after another.
 -->
 
 ---
@@ -238,19 +443,30 @@ kicker: Widgets
 ---
 ## Walk through it, one step at a time
 
+|||
+
+````md
+::: steps
+### Write the block
+Each heading starts a step.
+### Press ↓
+The next step appears.
+:::
+````
+
+|||
+
 ::: steps
 ### Write a `::: steps` block
 Each `###` heading inside it starts a step, with its own title and text.
 ### Press ↓
-The next step appears. The counter and the dots follow, and Next works too.
+The next step appears. The counter and the dots follow.
 ### Keep pressing
-After the last step, ↓ carries on to the next slide, like any other build.
-### Read it on a phone
-Read view lists every step in order, numbered, so nothing is hidden.
+After the last step, ↓ carries on to the next slide.
 :::
 
 <!--
-A walkthrough is the same idea as tabs, laid out as a sequence: a step counter, progress dots and a Next button. It's the pattern behind most "here's how the flow works" slides.
+A walkthrough is the same idea as tabs, laid out as a sequence: a step counter, progress dots and a Next button. It suits any how-the-flow-works explanation. In the read view it lists every step in order, numbered, so nothing is hidden.
 -->
 
 ---
@@ -261,13 +477,14 @@ kicker: Widgets
 | | Hand-built HTML | Slides app | talkdown | Why |
 |---|---|---|---|---|
 | Plain text you can diff | ◐ | ✗ | ✓ | A talkdown deck is one Markdown block in an HTML file, so a review is an ordinary diff. |
-| Reads well on a phone | ✗ | ◐ | ✓ | Read view reflows Markdown slides and turns the speaker notes into the prose. |
-| Custom interactive diagrams | ✓ | ✗ | ✓ | Any slide can drop to HTML and register its walkthrough with Deck.steps(). |
-| No build step | ✓ | ✓ | ✓ | Write one file, refresh the browser, push to GitHub Pages. |
+| Cheap for an agent to write | ✗ | ✗ | ✓ | The agent writes content, and the engine supplies the markup and styling. |
+| Reads well on a phone | ✗ | ◐ | ✓ | The read view reflows Markdown slides and turns the speaker notes into the prose. |
 {.explain}
 
+Write a table, then `{.explain}` on the line after it. {.muted}
+
 <!--
-Put {.explain} on the line after a table and its last column becomes the explanation for whichever row is selected. Press down to walk the rows. Ticks, half circles and crosses at the start of a cell become icons in the theme's colours. In read view the explanations follow the table as a list.
+Put {.explain} on the line after a table and its last column becomes the explanation for whichever row is selected. Press down to walk the rows. Ticks, half circles and crosses at the start of a cell become icons in the theme's colours. In the read view the explanations follow the table as a list.
 -->
 
 ---
@@ -290,10 +507,10 @@ def present(markdown):
 
 - Add `{steps: 1-2 | 3-4}` after the language
 - Each group of lines lights up on ↓
-- The rest of the code dims, so the eye goes where you're talking
+- The rest of the code dims
 
 <!--
-Fenced code takes a list of line groups. Each press of down highlights the next group and dims everything else. In read view the code is shown plainly.
+Fenced code takes a list of line groups after the language name. Each press of down highlights the next group and dims everything else, so the eye goes where you are talking. In the read view the code is shown plainly. Highlighting is done by highlight.js, which is only fetched when a deck has code.
 -->
 
 ---
@@ -307,11 +524,8 @@ kicker: Widgets
 ```terminal
 $ npm create vite@latest demo
 Scaffolding project in ./demo…
-Done.
 $ cd demo && npm install
 added 18 packages in 2s
-$ npm run dev
-  ➜  Local: http://localhost:5173/
 ```
 ````
 
@@ -320,15 +534,12 @@ $ npm run dev
 ```terminal
 $ npm create vite@latest demo
 Scaffolding project in ./demo…
-Done.
 $ cd demo && npm install
 added 18 packages in 2s
-$ npm run dev
-  ➜  Local: http://localhost:5173/
 ```
 
 <!--
-A terminal block types each command as you press down, then prints its output. You set the pace, so a live demo can't go wrong on stage. In read view the whole session is shown.
+A terminal block types each command as you press down, then prints its output. Lines that start with a dollar sign are commands and the rest is output. You set the pace, so a live demo cannot go wrong on stage. In the read view the whole session is shown.
 -->
 
 ---
@@ -357,92 +568,77 @@ kicker: Widgets
 [6.8, "o", "\u001b[32m~/talk\u001b[0m $ "]
 ```
 
+
 Record with `asciinema rec demo.cast`, then write `![title](demo.cast)`, or paste the recording into a code block marked `cast`. It plays when the slide opens; click to replay. {.muted}
 
 <!--
-For anything longer, record a real session with asciinema and drop the file in. talkdown plays it in the same themed window and squashes long pauses, without needing the asciinema player.
+For anything longer, record a real session with asciinema and drop the file in. talkdown plays it in the same themed window and squashes long pauses, without needing the asciinema player. A file needs the page to be served over http; a cast code block, as here, plays anywhere.
 -->
 
 ---
 kicker: Widgets
 ---
-## Flip a card to answer it
+## Accordions and flip cards
 
-::: grid
-::: flip
+|||
+
+````md
+::: accordion
 ### Does it need a build step?
-No. Write one file and open it; refresh to see changes.
-:::
-::: flip
+No. Write one file and open it.
 ### Can I still write HTML?
-Yes. Any slide can be hand-built, next to the Markdown.
+Yes, on any slide.
 :::
-::: flip
-### Does it work offline?
-Yes, apart from web fonts, which fall back to system fonts.
-:::
-:::
+````
 
-<!--
-A flip block puts its heading on the front and the rest on the back. Click to flip, or press down to flip the cards one by one. In read view each card shows both sides.
--->
+Use `::: flip` for cards that turn over. {.muted}
 
----
-kicker: Widgets
----
-## Answers that unfold
+|||
 
 ::: accordion
 ### Does it need a build step?
 No. Write one file and open it; refresh to see changes.
 ### Can I still write HTML?
 Yes. Any slide can be hand-built, next to the Markdown, and joins the same navigation.
-### Does it work offline?
-Yes. Web fonts fall back to system fonts, and code, diagrams and maths fall back to their source.
 ### How do I share it?
 Push the folder to GitHub Pages, or anywhere that serves static files, and send the link.
 :::
 
 <!--
-An accordion opens one answer at a time as you press down. In read view every answer is open.
+An accordion opens one answer at a time as you press down, which suits a frequently-asked-questions slide. A flip block is the same idea as cards: the heading is the front and the rest is the back, and you click or press down to turn them over. In the read view every answer is open.
 -->
 
 ---
 kicker: Widgets
 ---
-## Features at a glance
+## Feature cards and icons
+
+|||
+
+````md
+::: features
+### :pen-line: Markdown first
+Slides and notes in one file.
+### :rocket: No build step
+Refresh to preview.
+:::
+````
+
+Write `:name:` anywhere for an icon, such as :sparkles: or :git-branch:. {.muted}
+
+|||
 
 ::: features
 ### :pen-line: Markdown first
-Slides, notes and widgets in one plain-text file.
+Slides and notes in one file.
 ### :smartphone: Reads on a phone
-The notes become the prose of an article.
-### :palette: 23 themes
-Each a light and dark pair, with its own fonts.
-### :keyboard: Keyboard driven
-Arrows for slides and steps, keys for everything else.
-### :blocks: Widgets
-Charts, terminals, diagrams, tabs and more.
+Notes become the prose.
 ### :rocket: No build step
-Refresh to preview, push to publish.
+Refresh to preview.
 :::
 
 <!--
-A features block lays its items out as cards. An icon at the start of a heading, like :rocket:, becomes the card's icon.
--->
-
----
-kicker: Widgets
----
-## Icons in the theme's colours
-
-- :rocket: Launch on Friday
-- :git-branch: One branch per talk
-- :shield-check: Reviewed before it ships
-- :sparkles: Any of the 1,500 icons at lucide.dev
-
-<!--
-Write a name between colons, like :rocket:, for any of the Lucide icons. They're drawn in the theme's colours, so they suit every theme, and a feature card takes the first one in its heading as its icon.
+A features block lays its items out as cards, and an icon at the start of a heading becomes the card's icon. The same colon syntax works in any text: write a name between colons, like rocket or git-branch, for any of the Lucide icons. They are drawn in the theme's colours, so they suit every theme.
 -->
 
 ---
@@ -467,69 +663,7 @@ flowchart LR
 ```
 
 <!--
-Write a mermaid code block and it becomes a diagram; add {source} and the text sits beside it. This one is a network diagram: two zones, a load balancer, two app servers and a database with a replica, from eleven lines of text. Mermaid is fetched only when a deck has a diagram, and every diagram takes its colours and fonts from the theme, so it follows light and dark. If Mermaid can't load, the source shows instead.
--->
-
----
-kicker: Widgets
----
-## Every kind of diagram
-
-::: tabs
-### Sequence
-```mermaid
-sequenceDiagram
-  participant U as User
-  participant A as Agent
-  participant T as Deploy tool
-  U->>A: Roll back auth-service
-  A->>T: rollback(build 411)
-  T-->>A: done, 14 s
-  A-->>U: Back on build 411
-```
-### Architecture
-```mermaid
-architecture-beta
-  group cloud(cloud)[Production]
-  service web(internet)[Gateway] in cloud
-  service api(server)[API] in cloud
-  service db(database)[Database] in cloud
-  service backup(disk)[Backups] in cloud
-  web:R --> L:api
-  api:R --> L:db
-  db:R --> L:backup
-```
-### State
-```mermaid
-stateDiagram-v2
-  direction LR
-  [*] --> Draft
-  Draft --> Review: submit
-  Review --> Draft: changes
-  Review --> Published: approve
-  Published --> [*]
-```
-### Chart
-```mermaid
-xychart-beta
-  title "Weekly active decks"
-  x-axis [Jan, Feb, Mar, Apr, May, Jun]
-  y-axis "Decks" 0 --> 1200
-  bar [180, 320, 410, 620, 830, 1100]
-  line [180, 320, 410, 620, 830, 1100]
-```
-### Pie
-```mermaid
-pie showData
-  title Where the time goes
-  "Writing" : 45
-  "Rehearsing" : 30
-  "Slides" : 25
-```
-:::
-
-<!--
-Mermaid covers far more than flowcharts: sequence diagrams for request flows, architecture diagrams with cloud and server icons, state machines, and simple bar, line and pie charts. Put several in tabs and press down to walk through them. In read view, they're all shown one after another.
+Write a mermaid code block and it becomes a diagram; add {source} after the language and the text sits beside it. This one is a network diagram: two zones, a load balancer, two app servers and a database with a replica, from a dozen lines of text. Mermaid also draws sequence diagrams, state machines, architecture diagrams and simple charts. It is fetched only when a deck has a diagram, and every diagram takes its colours and fonts from the theme, so it follows light and dark. If Mermaid cannot load, the source shows instead.
 -->
 
 ---
@@ -537,15 +671,25 @@ kicker: Widgets
 ---
 ## Numbers that land
 
+|||
+
+````md
+::: stats
+- **23** themes
+- **0** dependencies
+:::
+````
+
+|||
+
 ::: stats
 - **1** file to write, and no build step
 - **23** themes, each light and dark
 - **0** dependencies to install
-- **1** link for the stage, the phone and the review
 :::
 
 <!--
-A stats block turns a list into big numbers: the bold part of each item is the number, the rest is its label. It's the slide every product review and investor update needs.
+A stats block turns a list into big numbers: the bold part of each item is the number, and the rest is its label.
 -->
 
 ---
@@ -553,19 +697,30 @@ kicker: Widgets
 ---
 ## Roadmaps walk forward
 
+|||
+
+````md
 ::: timeline
 ### Today
-**Markdown decks** with steps, read view and themes
+**Markdown decks** with themes
+### Next
+**Export** to PDF
+:::
+````
+
+|||
+
+::: timeline
+### Today
+**Markdown decks** with steps and read view
 ### Next
 **Presenter view** on a second screen
 ### Later
 **Export** to PDF and images
-### Someday
-**Live audience** polls and Q&A
 :::
 
 <!--
-A timeline block lays milestones out on a line. Press down to walk it: each milestone lights up in turn. On a phone and in read view, it turns vertical.
+A timeline block lays milestones out on a line. Press down to walk it: each milestone lights up in turn. On a phone and in the read view it turns vertical.
 -->
 
 ---
@@ -581,9 +736,10 @@ kicker: Widgets
 | Q1 | 120 | 180 |
 | Q2 | 160 | 260 |
 | Q3 | 210 | 340 |
-| Q4 | 240 | 410 |
 {.chart}
 ````
+
+Use `{.chart .line}`, `{.chart .hbar}` or `{.chart .donut}` for the other kinds. {.muted}
 
 |||
 
@@ -592,60 +748,23 @@ kicker: Widgets
 | Q1 | 120 | 180 |
 | Q2 | 160 | 260 |
 | Q3 | 210 | 340 |
-| Q4 | 240 | 410 |
 {.chart}
 
 <!--
-Write a table and put {.chart} under it. The first column becomes the labels and every other column a series, coloured from the theme. With more than one series, down adds them one at a time, so you can show last year before this one. There's no charting library: the bars are HTML, so the text stays sharp and reflows on a phone, and the table stays in the page for screen readers.
+Write a table and put {.chart} under it. The first column becomes the labels and every other column a series, coloured from the theme. With more than one series, down adds them one at a time, so you can show last year before this one. Add .line for a trend, .hbar for a ranking, or .donut for shares of a whole. There is no charting library: the bars are HTML, so the text stays sharp and reflows on a phone, and the table stays in the page for screen readers.
 -->
 
 ---
 kicker: Widgets
 ---
-## Bars, lines and donuts
+## Quotes
 
-::: tabs
-### Line
-| Month | Weekly decks |
-|---|---|
-| Jan | 180 |
-| Feb | 320 |
-| Mar | 410 |
-| Apr | 620 |
-| May | 830 |
-| Jun | 1,100 |
-{.chart .line}
-### Ranking
-| Theme | Decks |
-|---|---|
-| Paper | 42% |
-| AI | 23% |
-| Rose | 15% |
-| Terminal | 11% |
-| Punk | 9% |
-{.chart .hbar}
-### Share
-| Where the time goes | Share |
-|---|---|
-| Writing | 45% |
-| Rehearsing | 30% |
-| Slides | 25% |
-{.chart .donut}
-:::
-
-<!--
-Add .line, .hbar or .donut after .chart for the other kinds: a line for a trend, horizontal bars for a ranking, a donut for shares of a whole.
--->
-
----
-kicker: Widgets
----
 > Slides are a speech with the speaker removed. Keep the speaker in, and the slides start to read like an essay.
 >
 > — The idea behind talkdown
 
 <!--
-A quote whose last line starts with a dash becomes a pull quote, with the line after the dash as its attribution.
+A quote whose last line starts with a dash becomes a pull quote, with the line after the dash as its attribution. Write it as a normal Markdown blockquote with the attribution as its last paragraph.
 -->
 
 ---
@@ -655,11 +774,22 @@ kicker: Widgets
 
 |||
 
+````md
+- [x] Write the deck
+- [ ] Send the link
+
+Reach is audience × shares[^1].
+
+$$ x^2 + y^2 = z^2 $$
+
+[^1]: A footnote.
+````
+
+|||
+
 - [x] Write the deck in Markdown
 - [x] Present it from the keyboard
 - [ ] Send the link to everyone who missed it
-
-|||
 
 A deck read on a phone keeps about 60% of the talk[^1]; the notes carry the rest.
 
@@ -683,7 +813,7 @@ kicker: Widgets
 Two lines of frontmatter: `layout: image` and `image: assets/dusk.svg`.
 
 <!--
-An image layout fills the slide with a picture and sets the text over it on a dark gradient, so it stays readable whatever the picture is. In read view the picture becomes a banner with the text on it.
+An image layout fills the slide with a picture and sets the text over it on a dark gradient, so it stays readable whatever the picture is. In the read view the picture becomes a banner with the text on it.
 -->
 
 ---
@@ -693,8 +823,10 @@ kicker: Widgets
 
 ![Big Buck Bunny, Blender Foundation (CC BY 3.0)](https://www.youtube.com/watch?v=aqz-KE-bpKQ)
 
+Write `![title](youtube-or-vimeo-or-mp4-link)`. {.muted}
+
 <!--
-Put a YouTube, Vimeo or video-file link in image syntax and it becomes a player, on the stage and in read view.
+Put a YouTube, Vimeo or video-file link in image syntax and it becomes a player, on the stage and in the read view.
 -->
 
 ---
@@ -702,7 +834,7 @@ layout: section
 ---
 # Presenting and reading
 
-One file, three ways to see it.
+Keys for the stage, a layout for the phone.
 
 ---
 kicker: Presenting
@@ -713,38 +845,12 @@ kicker: Presenting
 |---|---|
 | `←` `→` `Space` | Previous and next slide |
 | `↑` `↓` `Enter` | Previous and next step, then on to the next slide |
-| `1`–`9` | Jump to a step on this slide |
 | `R` · `T` · `O` · `N` | Read view · light and dark · overview · speaker notes |
-| `F` · `?` | Fullscreen · all the keys |
 | `P` · `L` · `D` | Presenter view · laser pointer · draw on the slide |
+| `S` · `F` · `?` | View this slide's Markdown · fullscreen · all the keys |
 
 <!--
-Presenting needs nothing but the keyboard. P opens a presenter view in a second window, with the next slide, your notes and a timer, and the two windows stay in step. L turns the mouse into a laser pointer, and D lets you draw on the slide. On a touch screen a dock appears instead, with large buttons for back, next, notes and read view, and you can swipe between slides and steps.
--->
-
----
-kicker: Reading
----
-## On a phone, the deck becomes an article
-
-::: toggle
-### Present
-The 16:9 stage, scaled to the screen. Arrow keys on a laptop; on a phone, a dock and swipes, with Markdown slides going vertical and reflowing at the phone's width.
-### Read
-One column of text, like a blog post. Slides reflow, widgets lay everything out, builds show finished, and speaker notes become the body.
-:::
-
-::: present-only
-Press R to read this deck as an article. {.muted}
-:::
-
-::: read-only
-> [!TIP]
-> This box only appears in read view. Wrap anything in `::: read-only` or `::: present-only` to show it in one view.
-:::
-
-<!--
-On a phone or a portrait tablet, talkdown opens in read view. Markdown slides reflow into article typography, each with a small chapter label, and their speaker notes follow as paragraphs, so the deck reads top to bottom like a blog post. On a laptop, press R or use the button in the top bar. Force a view with ?view=read or ?view=present in the URL. For content that belongs to one view, like a 'press R' hint or a longer explanation, wrap it in present-only or read-only.
+Presenting needs nothing but the keyboard. P opens a presenter view in a second window, with the next slide, your notes and a timer, and the two windows stay in step. L turns the mouse into a laser pointer, and D lets you draw on the slide. S shows the Markdown of the slide you are on, which is how every slide in this deck doubles as an example. On a touch screen a dock appears instead, with large buttons for back, next, notes and read view, and you can swipe between slides and steps.
 -->
 
 ---
@@ -753,6 +859,7 @@ layout: section
 # Make it yours
 
 HTML when you need it, tokens for the look.
+
 </script>
 
 <section class="slide" data-section="Make it yours" data-name="Some slides want to be built by hand">
@@ -794,10 +901,10 @@ kicker: Make it yours
 
 - Colours, fonts and the type scale are CSS custom properties
 - Dark mode redefines the same tokens
-- Override them after `deck.css`; nothing else to configure
+- Override them after `deck.css`
 
 <!--
-Every colour, typeface and type size is a token. Override a few after deck.css and the whole deck follows, in both themes and in every view. The type scale is tokens too, which is how read view and phone slides resize everything at once.
+Every colour, typeface and type size is a token. Override a few after deck.css and the whole deck follows, in both light and dark and in every view. The type scale is made of tokens too, which is how the read view and phone slides resize everything at once.
 -->
 
 ---
@@ -877,7 +984,7 @@ https://sambhav.dev/talkdown/
 :::
 
 <!--
-That's talkdown. View the source of this page: it's the deck you just read. The code and the documentation are on GitHub.
+That's talkdown. Press S on this slide to see how it is written, or view the source of the page: it is the deck you just read. The code and the documentation are on GitHub, and the skill file for agents is linked from the README.
 -->
 </script>
 
@@ -895,4 +1002,3 @@ That's talkdown. View the source of this page: it's the deck you just read. The 
   }, { read: 'end' });
 </script>
 </body>
-</html>
