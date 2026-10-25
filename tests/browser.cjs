@@ -8,7 +8,9 @@ async function verify(page, base) {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(base + '/?view=present');
-  await page.waitForFunction(() => window.Deck?.slides.length);
+  // A native HTML slide exists before the asynchronous runtime assembles the
+  // Markdown deck. Wait for the loader's readiness contract, not that raw node.
+  await page.evaluate(() => Talkdown.ready.then(() => {}));
   await page.evaluate(async () => {
     // The loader inserts stylesheets asynchronously; fonts.ready alone can
     // resolve before the optional Google Fonts stylesheet has arrived.

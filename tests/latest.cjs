@@ -5,6 +5,7 @@ async function verifyLatest(page, base) {
   const html = '<!doctype html><html data-fonts="off"><head><meta name="viewport" content="width=device-width, initial-scale=1"><script src="' + loader + '"></script></head><body><script type="text/markdown">## First</script><section class="slide flow" data-id="custom"><div class="content"><h2>Custom</h2><div id="customStep"></div></div></section><script>Talkdown.onReady(Deck => { window.setupCalls = (window.setupCalls || 0) + 1; Deck.steps(document.getElementById("customStep"), 3, i => document.getElementById("customStep").textContent = i); });</script></body></html>';
   await page.route('**/latest-test.html*', r => r.fulfill({ contentType: 'text/html', body: html }));
   await page.goto(base + '/latest-test.html?view=present#custom');
+  await page.evaluate(() => Talkdown.ready.then(() => {}));
   await page.waitForFunction(() => window.Deck?.slides.length === 2);
   check(await page.evaluate(() => window.setupCalls) === 1, 'Author setup must run exactly once');
   await page.keyboard.press('ArrowDown');
