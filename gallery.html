@@ -641,6 +641,24 @@ Sparklines show the shape of a trend; the accessible label lists every authored 
 :::
 
 ---
+id: w-envdiff
+---
+## Why does production differ?
+
+::: envdiff
+| Key | dev | staging | prod |
+|---|---|---|---|
+| `POOL` | 5 | 20 | **200** |
+| `TIMEOUT` | 30s | 30s | **5s** |
+| `LOG_LEVEL` | info | info | info |
+| `RETRIES` | 3 | 3 | 3 |
+:::
+
+::: notes
+Underlined, bold environment values mark rows that differ. Press ↓ or use Differences only to focus on those rows. Article view always includes the full table; narrow screens can scroll the table horizontally.
+:::
+
+---
 ## Explained table
 
 | Feature | Why it matters |

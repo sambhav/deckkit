@@ -264,6 +264,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Accordion** | `::: accordion`, then a `###` heading per item; ↓ opens them in turn |
 | **Glossary** | `::: glossary` with one plain `Term: Definition` per line. Articles annotate the first whole-word use per slide and end with expanded definitions; slide frontmatter `glossary: inline` opts the stage in. Hover, focus or tap terms |
 | **Speaker card** | `::: speaker` around an optional photo, one `### Name`, role and Markdown links. A compact author box in the article |
+| **Environment diff** | `::: envdiff` around a normal table: key column plus at least two environments. Differing rows have highlighted values; ↓ or Differences only hides identical rows. Article view shows every row; tables scroll on phones. No options. |
 | **Link cards** | `::: links` around `- [Title](URL) Description` items: a grid of further-reading cards with the domain; one column on phones and no metadata requests |
 | **Feature cards** | `::: features`, then a `###` heading per card. An `:icon:` or image at the start of the heading becomes its icon. Up to three per row; set `--n` on `.w-features` for more |
 | **Image hotspots** | `::: hotspots`, one Markdown image, then `- [12%, 30%] Label` bullets (x/y from left/top, 0–100%). ↓ walks numbered pins; article view shows the full legend. No options |
