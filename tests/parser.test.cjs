@@ -391,3 +391,22 @@ test('ask rejects unsafe, missing and malformed destinations with readable diagn
   assert.match(invalidBody, /leave the block empty/);
   assert.match(invalidBody, /<strong>Keep this<\/strong>/);
 });
+
+test('meters expose final accessible values and preserve authored fallback diagnostics', () => {
+  const html = md('::: meter value=72 max=100 label="Migration done" unit=%\n:::');
+  assert.match(html, /role="meter" aria-label="Migration done" aria-valuemin="0" aria-valuemax="100" aria-valuenow="72" aria-valuetext="72%"/);
+  assert.match(html, /width:72%/);
+  assert.match(md('::: meter value=0 label="Empty"\n:::'), /aria-valuenow="0"/);
+  for (const opts of ['value=101 label="Bad"', 'value=-1 label="Bad"', 'value=NaN label="Bad"', 'value=Infinity label="Bad"', 'value=1 max=0 label="Bad"', 'value=1 max=-2 label="Bad"', 'value=1', 'value=1 label="Bad" speed=2', 'value=1 label="Bad" unit=""']) {
+    assert.match(md('::: meter ' + opts + '\n:::'), /role="alert">meter:/);
+  }
+  assert.match(md('::: meter value=1 label="Test"\n**Fallback**\n:::'), /<strong>Fallback<\/strong>/);
+  assert.match(md(`::: meter value=2 label='<unsafe>' unit='"x'\n:::`), /aria-label="&lt;unsafe&gt;"/);
+});
+test('inline counts work inside emphasis and lists but leave code and escapes literal', () => {
+  const html = md('- **[1.2M]{count}** requests/day');
+  assert.match(html, /<strong><span class="w-countup" data-value="1.2" data-precision="1" data-suffix="M" role="img" aria-label="1.2M">/);
+  assert.match(md('[0]{count} [-12.5%]{count} [8k]{count}'), /data-value="-12.5"/);
+  for (const bad of ['NaN', 'Infinity', '1,000', 'one', '']) assert.match(md('[' + bad + ']{count}'), /role="alert">count:/);
+  assert.doesNotMatch(md('`[1.2M]{count}` \\[1.2M]{count}'), /w-countup/);
+});
