@@ -47,6 +47,7 @@ import { beforeAfter } from './before-after.js';
  *   ::: links                           a list of [Title](URL) descriptions becomes further-reading cards; no network fetches
  *   ::: hotspots                        image + - [12%, 30%] Label; ↓ selects each numbered pin; article shows a legend
  *   ::: timer 10m                     countdown started with ↓ or Start; pause/reset controls, duration text in articles
+ *   ::: meter value=72 max=100 label="Done" unit=% / [1.2M]{count}   animated on ↓, final values in read view
  *   ::: stats                           big numbers: "- **42%** faster first response"
  *   > [!NOTE] / [!TIP] / [!WARNING]     callouts
  *   ```mermaid                          diagrams (Mermaid, fetched only if the deck has one; <html data-diagrams="off"> to skip);
@@ -218,6 +219,7 @@ import { beforeAfter } from './before-after.js';
     c.querySelectorAll('.w-hotspots').forEach(hotspots);
     c.querySelectorAll('.w-explore').forEach(activateExplorable);
     c.querySelectorAll('.timer').forEach(countdown);
+    c.querySelectorAll('.w-meter, .w-countup').forEach(meter);
     c.querySelectorAll('blockquote').forEach(callout);
     c.querySelectorAll('blockquote:not(.callout)').forEach(quote);
     c.querySelectorAll('div.chart, figure[data-chart]').forEach(chart);
@@ -755,6 +757,43 @@ import { beforeAfter } from './before-after.js';
   }
 
   // ::: stats — each list item or paragraph leads with its number in bold: "**42%** faster first response"
+  // Two states: the initial baseline, then the authored final value on cue.
+  // Accessible text always exposes the final value, avoiding noisy live updates.
+  function meter(w) {
+    const owner = w.closest('.slide'), isMeter = w.classList.contains('w-meter');
+    const value = +w.dataset.value, precision = Math.min(20, +w.dataset.precision || 0), suffix = w.dataset.suffix || '';
+    const text = isMeter ? w.querySelector('strong') : w.firstElementChild;
+    const fill = w.querySelector('.w-meter-track > span'), finalText = text.textContent;
+    const motion = matchMedia('(prefers-reduced-motion: reduce)');
+    let frame = 0, state = 0, previous = '';
+    const paint = n => {
+      text.textContent = n === value ? finalText : n.toFixed(precision) + suffix;
+      if (fill) fill.style.width = `${n / +w.dataset.max * 100}%`;
+    };
+    const update = () => {
+      const active = owner === slide() && !reading();
+      const key = `${active}:${reading()}:${state}:${motion.matches}`;
+      if (key === previous) return;
+      previous = key;
+      cancelAnimationFrame(frame); frame = 0;
+      if (reading() || !active || motion.matches) { paint(value); return; }
+      paint(0);
+      if (!state) return;
+      const start = performance.now();
+      const tick = now => {
+        if (!w.isConnected) { frame = 0; return; }
+        const progress = Math.min(1, (now - start) / 900);
+        paint(value * (1 - (1 - progress) ** 3));
+        frame = progress < 1 ? requestAnimationFrame(tick) : 0;
+      };
+      frame = requestAnimationFrame(tick);
+    };
+    steps(w, 2, i => { state = i; update(); }, { read: 'end' });
+    handlers.slide.push(update);
+    new MutationObserver(update).observe(root, { attributes: true, attributeFilter: ['data-view'] });
+    motion.addEventListener('change', update);
+  }
+
   function stats(box) {
     const src = [...box.querySelectorAll(':scope > ul > li, :scope > ol > li, :scope > p')];
     const w = document.createElement('div'); w.className = 'w w-stats';

@@ -1,5 +1,6 @@
 import { hotspotMarkup } from './hotspots.js';
 import { explorableInline, explorable } from './explorable.js';
+import { countValue, meterValue } from './meter.js';
 import MarkdownIt from 'markdown-it';
 import { quadrant } from './quadrant.js';
 
@@ -101,7 +102,11 @@ md.inline.ruler.before('link', 'explorable', explorableInline);
 // Talkdown's small inline additions sit on top of the standard Markdown lexer.
 md.inline.ruler.before('emphasis', 'talkdown_inline', (state, silent) => {
   const text = state.src.slice(state.pos); let match, html, used;
-  if ((match = text.match(/^\[\^([\w-]+)\]/))) html = `<sup class="fn">${escape(match[1])}</sup>`;
+  if ((match = text.match(/^\[([^\]\n]*)\]\{count\}/))) {
+    try { const n = countValue(match[1]); html = `<span class="w-countup" data-value="${n.value}" data-precision="${n.precision}" data-suffix="${escape(n.suffix)}" role="img" aria-label="${escape(match[1])}"><span aria-hidden="true">${escape(match[1])}</span></span>`; }
+    catch (error) { html = `<span class="td-error" role="alert">${escape(error.message)}</span> ${escape(match[1])}`; }
+  }
+  else if ((match = text.match(/^\[\^([\w-]+)\]/))) html = `<sup class="fn">${escape(match[1])}</sup>`;
   else if ((match = text.match(/^:([a-z][a-z0-9]*(?:-[a-z0-9]+)*):/))) html = `<i class="ico" data-icon="${match[1]}" aria-hidden="true"></i>`;
   else if ((match = text.match(/^==(?=\S)(.+?)==/))) html = `<mark>${md.renderInline(match[1])}</mark>`;
   else if ((match = text.match(/^\$(?=[^\s$])([^$\n]*?\S)\$(?![\w$])/))) html = `<span class="math">${escape(match[1])}</span>`;
@@ -513,6 +518,15 @@ function compile(tokens, env) {
             : '<p class="td-error" role="alert">timer: use a duration such as 10m or 1h30m (1 second to 24 hours), with no options.</p>' + content;
         }
         else if (name === 'ask') { html += audienceAsk(body, options, classes, env); }
+        else if (name === 'meter') {
+          const content = compile(body, env);
+          try {
+            const { value, max } = meterValue(options);
+            if (classes.length || content.trim()) throw new Error('meter: use options on an empty container.');
+            const label = escape(options.label), unit = escape(options.unit || '');
+            html += `<div class="w w-meter" data-value="${value}" data-max="${max}" data-precision="${(options.value.split('.')[1] || '').length}" data-suffix="${unit}"><div class="w-meter-heading"><span>${label}</span><strong aria-hidden="true">${value}${unit}</strong></div><div class="w-meter-track" role="meter" aria-label="${label}" aria-valuemin="0" aria-valuemax="${max}" aria-valuenow="${value}" aria-valuetext="${value}${unit}"><span style="width:${value / max * 100}%"></span></div></div>`;
+          } catch (error) { html += `<p class="td-error" role="alert">${escape(error.message)}</p><p>${escape(token.content)}</p>${content}`; }
+        }
         else if (name === 'links') { html += linkCards(body, options, classes, env); }
         else if (['notes', 'say', 'read'].includes(name) && env.collectNotes) {
           const content = compile(body, { ...env, collectNotes: false });
