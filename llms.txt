@@ -39,3 +39,4 @@ Knowledge checks use `::: quiz`: one `###` question, at least two task-list choi
 Image gallery: `::: gallery` around Markdown images; stepped grid in slides, responsive grid and captioned lightbox in articles. See the skill for syntax.
 Stepped derivations use `$$ {steps}` with TeX rows separated by `\\` and alignment cells separated by `&`; `\text{…}` adds explanations. ↓ reveals each row and accents the current equation; article view shows all equations.
 Countdowns: `::: timer 10m` wraps exercise instructions; ↓ starts, buttons pause/reset, article shows duration text. See the talkdown skill for syntax.
+Audience Q&A uses an empty `::: ask url="https://example.com/questions"` container: a large QR with a readable destination in slides and an “Ask a question” link in articles. Use an absolute HTTP(S) URL without credentials; the link works when QR rendering is unavailable.
