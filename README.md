@@ -476,7 +476,7 @@ Current Chrome, Edge, Firefox and Safari, on desktop and mobile. Print from the 
 
 ## Contributing
 
-The engine is `src/` (JavaScript) and `deck.css`. Run `npm ci`, then `npm run build` and `npm test`; for the browser suite, run `npx playwright install chromium` and `npm run test:browser`. Don't commit `deck.js`, `latest.json` or `dist/`: they're built.
+The engine is `src/` (JavaScript) and `deck.css`. Run `npm ci`, then `npm run build` and `npm test`; for the browser suite (it drives your installed Google Chrome), run `npm run test:browser`. Don't commit `deck.js`, `latest.json` or `dist/`: they're built.
 
 Releases are automatic. When the checks pass on `main`, CI publishes the site and runtime to the `gh-pages` branch, which serves [sambhav.dev/talkdown](https://sambhav.dev/talkdown/). Older builds stay available there, so decks that loaded them keep working. Push a `vX.Y.Z` tag to also create a GitHub Release with the files attached.
 
