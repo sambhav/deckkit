@@ -505,6 +505,7 @@ td.mk-only, th.mk-only { text-align: center; }
 .md .w-diff .d-del .d-m { color: color-mix(in srgb, var(--red) 50%, var(--fg)); }
 .md .w-diff :is(.d-hunk, .d-meta) { color: var(--muted); }
 .md .w-diff .d-hunk:not(:first-child) { margin-top: .5em; }
+.md .w-diff .d-file { margin-top: 1em; padding-top: .5em; border-top: 1px solid var(--line); color: var(--fg); font-weight: 600; }
 .md .w-diff[data-steps] [data-hunk] { cursor: pointer; }
 .md .w-diff.stepping .ln { opacity: .4; }
 .md .w-diff.stepping .ln.on { opacity: 1; border-left-color: var(--accent); }
@@ -973,7 +974,8 @@ aside.article { display: none; }
 [data-view=read] .w-annotate .w-notes > li::before { background: var(--accent-soft); color: var(--accent-ink); top: .25em; }
 [data-view=read] .w-annotate pre.code .ln { opacity: 1; background: none; border-left-color: transparent; }
 [data-view=read] .w-pin { pointer-events: none; background: var(--accent-soft); color: var(--accent-ink); }
-[data-view=read] .md .w-diff pre .ln { opacity: 1; border-left-color: transparent; cursor: auto; }
+[data-view=read] .md .w-diff pre .ln, [data-view=read] .md .w-diff.stepping pre .ln.on { opacity: 1; border-left-color: transparent; cursor: auto; }
+[data-view=read] .md .w-diff.stepping pre .ln.on:is(.d-ctx, .d-hunk, .d-meta) { background: none; }
 [data-view=read] .md .w-diff pre .d-add { background: color-mix(in srgb, var(--green) 14%, transparent); }
 [data-view=read] .md .w-diff pre .d-del { background: color-mix(in srgb, var(--red) 13%, transparent); }
 :is([data-view=read], [data-tall]) .w-timeline { grid-template-columns: 1fr; gap: 18px; padding: 0 0 0 30px; }

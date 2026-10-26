@@ -306,7 +306,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
     const lines = [...fig.querySelectorAll('[data-line]')];
     const groups = spec === 'hunks'
       ? [...new Set(lines.map(l => +l.dataset.hunk || 0))].filter(Boolean).map(h => l => +l.dataset.hunk === h)
-      : spec.split('|').map(g => { const set = rangeSet(g); return l => set.has(+l.dataset.line); });
+      : spec.split('|').map(g => { const set = rangeSet(g); return l => set.has(+l.dataset.line); }).filter(g => lines.some(g));   // groups past the end are dropped
     if (!groups.length) return;
     fig.stepper = steps(fig, groups.length + 1, i => {
       fig.classList.toggle('stepping', i > 0 && !reading());

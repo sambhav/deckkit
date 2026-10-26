@@ -191,21 +191,43 @@ md.core.ruler.after('block', 'talkdown_annotate', state => {
 function diff(source, info) {
   // bad options still show the diff as plain code under the error, so nothing the author wrote is lost
   const fail = text => `<p class="td-error" role="alert">${escape(text)}</p>` + (source.trim() ? `<pre class="code"><code>${escape(source)}</code></pre>` : '');
-  const steps = info.match(/\{\s*steps:\s*([^}]*)\}/)?.[1].trim();
+  // {…} groups outside quotes are fence options; only {steps: …} is one
+  const braces = [], rest = info.replace(/"[^"]*"|'[^']*'|\{[^}]*\}/g, m => m[0] === '{' ? (braces.push(m), ' ') : m);
+  const odd = braces.find(b => !/^\{\s*steps:/.test(b));
+  if (odd) return fail(`diff: unknown option ${odd} (use {steps: hunks} or {steps: 1-2 | 3})`);
+  const steps = braces[0]?.match(/^\{\s*steps:\s*([^}]*)\}/)[1].trim();
+  const range = '\\d+(?:\\s*-\\s*\\d+)?(?:\\s*,\\s*\\d+(?:\\s*-\\s*\\d+)?)*';
+  if (steps != null && !new RegExp(`^(?:hunks|${range}(?:\\s*\\|\\s*${range})*)$`).test(steps)) return fail(`diff: steps must be hunks or line groups like 1-2 | 3, not "${steps}"`);
   let parsed;
-  try { parsed = directive(info.replace(/\{[^}]*\}/g, ' ').trim()); } catch (error) { return fail('diff: ' + error.message); }
+  try { parsed = directive(rest.trim()); } catch (error) { return fail('diff: ' + error.message); }
   const { title = '', view = 'unified', ...unknown } = parsed.options, extra = [...Object.keys(unknown), ...parsed.classes];
   if (extra.length) return fail(`diff: unknown option "${extra[0]}" (use title="…", view=unified|split or {steps: hunks})`);
   if (!['unified', 'split'].includes(view)) return fail(`diff: view must be unified or split, not "${view}"`);
   if (!source.trim()) return fail('diff: the block is empty');
   const lines = source.split('\n'), first = lines.findIndex(l => l.startsWith('@@'));
-  let file = '', hunk = 0, run = false;
-  const rows = lines.map((text, j) => {
-    if (j < first && /^(diff |index |--- |\+\+\+ |new file|deleted file|similarity |rename |old mode|new mode)/.test(text)) {
-      if (text.startsWith('+++ ') && !text.startsWith('+++ /dev/null')) file = text.slice(4).split('\t')[0].replace(/^b\//, '');
-      else if (text.startsWith('--- ') && !text.startsWith('--- /dev/null') && !file) file = text.slice(4).split('\t')[0].replace(/^a\//, '');
-      return null;
+  // file headers: a "diff …" line, or "--- " then "+++ " then "@@", plus git's extended header lines up to the hunk
+  const header = new Map();   // first line of each header -> its file name
+  for (let j = 0; j < lines.length; j++) {
+    const t = lines[j];
+    if (!t.startsWith('diff ') && !(t.startsWith('--- ') && lines[j + 1]?.startsWith('+++ ') && lines[j + 2]?.startsWith('@@'))) continue;
+    let k = j, name = '';
+    for (; k < lines.length && (k === j || /^(index |--- |\+\+\+ |new file|deleted file|similarity |rename |copy |old mode|new mode|Binary )/.test(lines[k])); k++) {
+      const m = lines[k].match(/^(\+\+\+|---) (?!\/dev\/null)([^\t]*)/);
+      if (m && (m[1] === '+++' || !name)) name = m[2].replace(/^[ab]\//, '');
+      if (!name && lines[k].startsWith('diff --git ')) name = lines[k].match(/ b\/(.*)$/)?.[1] || '';
     }
+    header.set(j, { name, end: k }); j = k - 1;
+  }
+  let file = '', hunk = 0, run = false, skip = -1, seen = false;
+  const rows = lines.map((text, j) => {
+    if (header.has(j)) {
+      const h = header.get(j); skip = h.end;
+      if (!seen && !file) { file = h.name; return null; }   // the first file names the figure
+      seen = true;
+      return h.name ? { kind: 'meta', line: j + 1, hunk: 0, mark: ' ', body: h.name, file: true } : null;   // later files: a separator
+    }
+    if (j < skip) return null;
+    seen = true;
     const kind = text[0] === '+' ? 'add' : text[0] === '-' ? 'del' : text.startsWith('@@') ? 'hunk' : text[0] === '\\' ? 'meta' : 'ctx';
     const changed = kind === 'add' || kind === 'del';
     if (kind === 'hunk') hunk++;
@@ -214,7 +236,7 @@ function diff(source, info) {
     return { kind, line: j + 1, hunk: own ? hunk : 0, mark: changed ? text[0] : ' ', body: plain ? text : text.slice(changed || text[0] === ' ' ? 1 : 0) };
   }).filter(Boolean);
   if (!rows.length) return fail('diff: nothing after the file header');
-  const cell = (r, wide) => `<span class="ln d-${r.kind}${wide ? ' d-wide' : ''}" data-line="${r.line}"${r.hunk ? ` data-hunk="${r.hunk}"` : ''}>`
+  const cell = (r, wide) => `<span class="ln d-${r.kind}${r.file ? ' d-file' : ''}${wide ? ' d-wide' : ''}" data-line="${r.line}"${r.hunk ? ` data-hunk="${r.hunk}"` : ''}>`
     + (r.kind === 'hunk' || r.kind === 'meta' ? escape(r.body) : `<span class="d-m">${r.mark}</span>${escape(r.body)}`) + '</span>';
   let split = '';
   if (view === 'split') {

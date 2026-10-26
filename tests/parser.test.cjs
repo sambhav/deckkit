@@ -184,3 +184,18 @@ test('diff options fail visibly and keep the code readable', async () => {
   assert.match(renderMarkdown('```diff colour=red\n+a\n```'), /role="alert">diff: unknown option &quot;colour&quot;/);
   assert.match(renderMarkdown('```diff\n```'), /role="alert">diff: the block is empty/);
 });
+test('a multi-file diff drops every file header and marks later files with a separator', async () => {
+  const { renderMarkdown } = await import('../src/markdown.js');
+  const html = renderMarkdown('```diff\ndiff --git a/a.py b/a.py\nindex 1..2\n--- a/a.py\n+++ b/a.py\n@@ -1 +1 @@\n-a\n+b\ndiff --git a/b.py b/b.py\nindex 3..4\n--- a/b.py\n+++ b/b.py\n@@ -1 +1 @@\n-c\n+d\n```');
+  assert.match(html, /<figcaption>a.py<\/figcaption>/);
+  assert.match(html, /class="ln d-meta d-file" data-line="8">b.py<\/span>/);
+  assert.doesNotMatch(html, /diff --git|index |a\/b.py|\+\+ b/);
+  assert.match(html, /data-line="12" data-hunk="2">@@/);
+});
+test('diff steps and brace options are validated; braces inside a quoted title are kept', async () => {
+  const { renderMarkdown } = await import('../src/markdown.js');
+  assert.match(renderMarkdown('```diff {steps: foo}\n+a\n```'), /role="alert">diff: steps must be hunks or line groups/);
+  assert.match(renderMarkdown('```diff {step: hunks}\n+a\n```'), /role="alert">diff: unknown option \{step: hunks\}/);
+  assert.match(renderMarkdown('```diff {steps: 1-2 | 3, 5}\n+a\n```'), /data-steps="1-2 \| 3, 5"/);
+  assert.match(renderMarkdown('```diff title="{x}.py" {steps: hunks}\n+a\n```'), /<figcaption>\{x\}.py<\/figcaption>/);
+});
