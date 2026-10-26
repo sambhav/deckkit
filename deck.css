@@ -487,11 +487,11 @@ td.mk-only, th.mk-only { text-align: center; }
 .md .w-notes { gap: calc(var(--t-list-gap) + .5em); }
 .md .w-notes > li { padding-left: 2.3em; font-size: var(--t-card); cursor: pointer; transition: opacity .2s; }
 .md .w-notes > li::before { content: attr(data-n); left: 0; top: .1em; font-size: .8em; }
-.w-annotate.stepping .w-notes > li { opacity: .45; }
-.w-annotate.stepping .w-notes > li.on { opacity: 1; }
-.w-annotate.stepping .w-notes > li.on::before { background: var(--accent); color: var(--on-accent); }
-.w-annotate.stepping pre.code .ln { opacity: .4; }
-.w-annotate.stepping pre.code .ln.on { opacity: 1; background: var(--accent-soft); border-left-color: var(--accent); }
+:root:not([data-view=read]) .w-annotate.stepping .w-notes > li { opacity: .45; }
+:root:not([data-view=read]) .w-annotate.stepping .w-notes > li.on { opacity: 1; }
+:root:not([data-view=read]) .w-annotate.stepping .w-notes > li.on::before { background: var(--accent); color: var(--on-accent); }
+:root:not([data-view=read]) .w-annotate.stepping pre.code .ln { opacity: .4; }
+:root:not([data-view=read]) .w-annotate.stepping pre.code .ln.on { opacity: 1; background: var(--accent-soft); border-left-color: var(--accent); }
 :is([data-tall]) .w-annotate { grid-template-columns: 1fr; }
 .w-flip { position: relative; display: grid; cursor: pointer; perspective: 1000px; min-height: 8.5em; }
 .w-face { grid-area: 1 / 1; backface-visibility: hidden; border-radius: var(--radius); padding: 1em 1.2em; border: 1px solid var(--line); background: var(--surface);

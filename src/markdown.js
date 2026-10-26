@@ -141,29 +141,47 @@ md.core.ruler.after('inline', 'talkdown_figures', state => {
 });
 // ```lang {annotate}: a "# (1)" comment closing a line becomes pin 1, explained by item 1 of the numbered list right after
 // the block (the Material for MkDocs convention, so the Markdown still reads as code plus a list on GitHub).
-const PIN = /\s*(?:(?:#|\/\/|--|;+|%)\s*\((\d+)\)!?|\/\*\s*\((\d+)\)!?\s*\*\/|<!--\s*\((\d+)\)!?\s*-->)\s*$/;
+// Only the language's own comment syntax counts, so Python's n // (2) stays code; unknown languages take # // and /* */.
+const COMMENTS = [
+  [/^(python|py|sh|bash|shell|console|zsh|fish|yaml|yml|toml|ruby|rb|perl|r|dockerfile|makefile|make|powershell|ps1|nix|elixir|ex|julia|graphql|ini|conf|tcl|coffeescript|crystal|nim)$/, ['#']],
+  [/^(sql|lua|haskell|hs|elm|ada|plsql|psql)$/, ['--']],
+  [/^(tex|latex|erlang|matlab|octave|prolog)$/, ['%']],
+  [/^(lisp|clojure|clj|scheme|racket|asm|nasm)$/, [';+']],
+  [/^(html|xml|svg|markdown|md|vue|xhtml)$/, ['<!--']],
+  [/^(css|scss|less)$/, ['/*']],
+];
+const pinPattern = lang => {
+  const kinds = COMMENTS.find(([re]) => re.test(lang.toLowerCase()))?.[1] || ['#', '//', '/*'];
+  const n = '\\(([1-9]\\d*)\\)!?';
+  const forms = kinds.map(k => k === '/*' ? `\\/\\*\\s*${n}\\s*\\*\\/` : k === '<!--' ? `<!--\\s*${n}\\s*-->` : `${k.replace(/\//g, '\\/')}\\s*${n}`);
+  const example = { '#': '# (1)', '//': '// (1)', '--': '-- (1)', '%': '% (1)', ';+': '; (1)', '<!--': '<!-- (1) -->', '/*': '/* (1) */' };
+  return { re: new RegExp(`(?:^|\\s+)(?:${forms.join('|')})\\s*$`), example: kinds.slice(0, 2).map(k => example[k]).join(' or ') };
+};
 md.core.ruler.after('block', 'talkdown_annotate', state => {
   const t = state.tokens;
+  const html = content => Object.assign(new state.Token('html_block', '', 0), { content, block: true });
+  const alert = e => `<p class="td-error" role="alert">${escape(e)}</p>\n`;
   for (let i = 0; i < t.length; i++) {
-    const fence = t[i];
-    if (fence.type !== 'fence' || !/\{\s*annotate\s*\}/.test(fence.info)) continue;
-    const pins = [], errors = [], lines = fence.content.replace(/\n$/, '').split('\n').map(line => {
-      const m = line.match(PIN); pins.push(m ? +(m[1] || m[2] || m[3]) : 0); return m ? line.slice(0, m.index) : line;
+    const fence = t[i], lang = fence.info.trim().match(/^[\w+-]+/)?.[0] || '';
+    if (fence.type !== 'fence' || !/\{\s*annotate\s*\}/.test(fence.info) || /^(terminal|cast|asciicast|mermaid)$/.test(lang)) continue;
+    // without its list the block is left as written (this also covers an unclosed fence that swallowed the rest)
+    if (!(t[i + 1]?.type === 'ordered_list_open' && t[i + 1].level === fence.level)) {
+      t.splice(i, 0, html(alert('{annotate} needs a numbered list right after the code block, one item per (n) marker'))); i++; continue;
+    }
+    const { re: PIN, example } = pinPattern(lang), pins = [], errors = [];
+    const lines = fence.content.replace(/\n$/, '').split('\n').map(line => {
+      const m = line.match(PIN); pins.push(m ? +m.slice(1).find(Boolean) : 0); return m ? line.slice(0, m.index) : line;
     });
     fence.content = lines.join('\n') + '\n'; fence.meta = { ...fence.meta, pins };
-    let end = i, first = 1, count = 0;
-    if (t[i + 1]?.type === 'ordered_list_open' && t[i + 1].level === fence.level) {
-      first = +(t[i + 1].attrGet('start') || 1);
-      for (end = i + 2; !(t[end].type === 'ordered_list_close' && t[end].level === fence.level); end++) if (t[end].type === 'list_item_open' && t[end].level === fence.level + 1) count++;
-      t[i + 1].attrJoin('class', 'w-notes');
-    } else errors.push('{annotate} needs a numbered list right after the code block, one item per (n) marker');
+    const first = +(t[i + 1].attrGet('start') ?? 1); let end = i + 2, count = 0;
+    for (; !(t[end].type === 'ordered_list_close' && t[end].level === fence.level); end++) if (t[end].type === 'list_item_open' && t[end].level === fence.level + 1) count++;
+    t[i + 1].attrJoin('class', 'w-notes');
     const used = new Set(pins.filter(Boolean));
-    if (!used.size) errors.push('{annotate} found no markers: end a line with a comment like # (1) or // (1)');
-    for (const n of [...used].sort((a, b) => a - b)) if (count && (n < first || n >= first + count)) errors.push(`Marker (${n}) has no note in the list after the code`);
+    if (!used.size) errors.push(`{annotate} found no markers: end a line with a comment like ${example}`);
+    for (const n of [...used].sort((a, b) => a - b)) if (n < first || n >= first + count) errors.push(`Marker (${n}) has no note in the list after the code`);
     if (used.size) for (let n = first; n < first + count; n++) if (!used.has(n)) errors.push(`Note ${n} has no (${n}) marker in the code`);
-    const html = content => Object.assign(new state.Token('html_block', '', 0), { content, block: true });
     t.splice(end + 1, 0, html('</div>\n'));
-    t.splice(i, 0, html(errors.map(e => `<p class="td-error" role="alert">${escape(e)}</p>\n`).join('') + '<div class="w-annotate">\n'));
+    t.splice(i, 0, html(errors.map(alert).join('') + '<div class="w-annotate">\n'));
     i = end + 2;
   }
 });

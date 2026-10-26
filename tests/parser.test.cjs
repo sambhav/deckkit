@@ -134,9 +134,17 @@ test('annotated code: line-end (n) comments become pins and the list after it be
 });
 test('annotated code reports missing notes, markers and lists', () => {
   assert.match(md('```js {annotate}\na() // (1)\n```'), /role="alert">\{annotate\} needs a numbered list/);
-  assert.match(md('```js {annotate}\na()\n```\n1. x'), /role="alert">\{annotate\} found no markers/);
+  assert.match(md('```js {annotate}\na()\n```\n1. x'), /role="alert">\{annotate\} found no markers: end a line with a comment like # \(1\) or \/\/ \(1\)/);
   const html = md('```js {annotate}\na() // (1)\nb() // (3)\n```\n1. x\n2. y');
   assert.match(html, /Marker \(3\) has no note/);
   assert.match(html, /Note 2 has no \(2\) marker/);
   assert.match(html, /<div class="w-annotate">/);   // the code still renders
+});
+test('annotated code only strips the language\'s own comments and leaves bad blocks as written', () => {
+  assert.match(md('```python {annotate}\nh = n // (2)\nx = 1  # (1)\n```\n1. x'), /data-pins="0,1"><code>h = n \/\/ \(2\)\nx = 1<\/code>/);
+  assert.match(md('```sql {annotate}\nselect 1 -- (1)\n```\n1. x'), /data-pins="1"><code>select 1<\/code>/);
+  assert.match(md('```js {annotate}\na() // (0)\n```\n0. x'), /role="alert">\{annotate\} found no markers/);   // pins count from 1
+  const unlisted = md('```js {annotate}\na() // (1)\n```');
+  assert.match(unlisted, /a\(\) \/\/ \(1\)<\/code>/); assert.doesNotMatch(unlisted, /w-annotate|data-pins/);
+  assert.doesNotMatch(md('```mermaid {annotate}\nA-->B %% (1)\n```\n1. x'), /w-annotate/);
 });

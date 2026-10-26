@@ -315,7 +315,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
   function annotate(box) {
     const pre = box.querySelector(':scope > pre[data-pins]'), ol = box.querySelector(':scope > ol');
     if (!pre) return;
-    const code = pre.firstChild, pins = pre.dataset.pins.split(',').map(Number), notes = ol ? [...ol.children] : [], first = ol?.start || 1;
+    const code = pre.firstChild, pins = pre.dataset.pins.split(',').map(Number), notes = ol ? [...ol.children] : [], first = ol ? ol.start : 1;
     const step = n => n >= first && n < first + notes.length ? n - first + 1 : -1;
     sources.set(pre, code.textContent);
     code.innerHTML = code.innerHTML.split('\n').map(l => `<span class="ln">${l}</span>`).join('');
@@ -328,7 +328,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
     const st = pre.stepper = steps(box, notes.length + 1, i => {
       const n = i ? first + i - 1 : 0;
       box.classList.toggle('stepping', i > 0);
-      [...code.children].forEach((l, j) => l.classList.toggle('on', pins[j] === n));
+      [...code.children].forEach((l, j) => l.classList.toggle('on', !!n && pins[j] === n));
       code.querySelectorAll('.w-pin').forEach(b => b.classList.toggle('on', +b.dataset.n === n));
       notes.forEach((li, j) => li.classList.toggle('on', j === i - 1));
     });

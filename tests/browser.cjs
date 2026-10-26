@@ -106,6 +106,9 @@ async function verify(page, base) {
   check(await annotated.locator('.ln.on').textContent() === 'close()' && await page.evaluate(() => Deck.cur) === 1, 'Clicking a note must jump to its line');
   await annotated.locator('.w-pin').first().click();
   check(await annotated.locator('.w-notes > li.on').textContent() === 'Opens.', 'Clicking a pin must jump to its note');
+  await page.evaluate(() => Deck.setView('read'));
+  check(await annotated.locator('.ln.on').evaluate(l => getComputedStyle(l).backgroundColor) === 'rgba(0, 0, 0, 0)', 'Read view must not keep the present-view line highlight');
+  await page.evaluate(() => Deck.setView('present'));
   const csv = ['Label,Before,After', '"A, B",10,5', '"two', 'lines",20,10'].join('\n');
   const charts = [
     '## CSV', '::: chart type=line view=both title="Latency & time"', '```csv', csv, '```', ':::',
