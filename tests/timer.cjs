@@ -1,0 +1,74 @@
+const assert = require('node:assert/strict');
+module.exports = async function verifyTimer(inputPage, base) {
+  // BroadcastChannel requires both windows to share one browser storage context.
+  const context = await inputPage.context().browser().newContext();
+  try {
+    const page = await context.newPage();
+    const source = '## Exercise\n::: timer 10s\nTry the exercise in **pairs**.\n:::\n---\n## Next';
+    const fixture = route => route.fulfill({ contentType: 'text/html; charset=utf-8', body:
+      '<!doctype html><html data-fonts="off" data-icons="off" data-highlight="off"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + source + '</script></body></html>' });
+    await page.route('**/timer-fixture.html*', fixture);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    // Playwright clocks belong to the context, so both windows share one frozen instant.
+    await context.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+    await context.clock.pauseAt(new Date('2026-01-01T01:00:00Z'));
+    await page.goto(base + '/timer-fixture.html?view=present');
+    assert.equal(await page.evaluate(() => window.Deck?.slides.length), 2);
+    const timer = page.locator('.w-timer'), clock = timer.locator('.w-timer-clock');
+    assert.equal(await clock.textContent(), '0:10');
+    const presenter = await context.newPage();
+    try {
+      await presenter.route('**/timer-fixture.html*', fixture);
+      await presenter.emulateMedia({ reducedMotion: 'reduce' });
+      await presenter.goto(base + '/timer-fixture.html?view=present&presenter');
+      assert.equal(await presenter.evaluate(() => window.Deck?.slides.length), 2);
+      await page.keyboard.press('ArrowDown');
+      // Observe the BroadcastChannel-driven DOM change without polling the paused RAF clock.
+      await presenter.evaluate(() => new Promise(resolve => {
+        const status = document.querySelector('.w-timer-status');
+        if (status.textContent === 'Running') return resolve();
+        const observer = new MutationObserver(() => {
+          if (status.textContent === 'Running') { observer.disconnect(); resolve(); }
+        });
+        observer.observe(status, { childList: true, characterData: true, subtree: true });
+      }));
+      assert.equal(await presenter.locator('.w-timer-clock').textContent(), '0:10', 'presenter receives the same countdown');
+    } finally { await presenter.close(); }
+    await page.clock.fastForward(4000);
+    assert.equal(await clock.textContent(), '0:06', 'suspended callbacks use elapsed wall time');
+    await timer.getByRole('button', { name: 'Pause', exact: true }).focus();
+    await page.keyboard.press('Enter');
+    await page.clock.fastForward(20000);
+    assert.equal(await clock.textContent(), '0:06', 'keyboard pause preserves remaining time');
+    const resume = timer.getByRole('button', { name: 'Resume', exact: true });
+    await resume.focus();
+    await page.keyboard.press(' ');
+    assert.equal(await page.evaluate(() => Deck.cur), 0, 'Space activates the control without navigating');
+    assert.equal(await timer.getByRole('button', { name: 'Pause', exact: true }).evaluate(el => document.activeElement === el), true, 'keyboard activation retains focus');
+    await page.clock.fastForward(7000);
+    assert.equal(await clock.textContent(), '0:00');
+    assert.equal(await timer.locator('[role=status]').textContent(), 'Time is up');
+    assert.equal(await clock.evaluate(el => getComputedStyle(el).animationName), 'none', 'reduced motion disables the completion flash');
+    await timer.getByRole('button', { name: 'Reset', exact: true }).click();
+    assert.equal(await clock.textContent(), '0:10');
+    await page.keyboard.press('s');
+    assert.match(await page.locator('#src').textContent(), /::: timer 10s/);
+    await page.keyboard.press('Escape');
+    await timer.getByRole('button', { name: 'Start', exact: true }).click();
+    await page.evaluate(() => Deck.setView('read'));
+    assert.equal(await timer.locator('.w-timer-panel').isVisible(), false);
+    assert.match(await timer.locator('.w-timer-duration').textContent(), /10 seconds/);
+    assert.match(await timer.locator('.w-timer-body').textContent(), /pairs/);
+    const previous = await clock.textContent();
+    await page.clock.fastForward(30000);
+    assert.equal(await clock.textContent(), previous, 'articles do not schedule clock updates');
+    await page.evaluate(() => Deck.setView('present'));
+    assert.equal(await clock.textContent(), '0:00', 'returning to slides catches up');
+    await page.setViewportSize({ width: 320, height: 740 });
+    // Resize fitting is queued on RAF; allow two frames on the paused clock.
+    await context.clock.runFor(32);
+    const bounds = await timer.boundingBox();
+    assert(bounds && bounds.width <= 320, 'timer fits a phone: ' + JSON.stringify(bounds));
+    assert.equal(await timer.locator('button').evaluateAll(buttons => buttons.every(b => b.getBoundingClientRect().height >= 24)), true);
+  } finally { await context.close(); }
+};
