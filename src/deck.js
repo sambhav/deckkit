@@ -55,6 +55,7 @@ import { beforeAfter } from './before-after.js';
  *   > quote, then a "— Name" line       a pull quote with its attribution
  *   - [x] done / - [ ] to do            a checklist
  *   text[^1] and a "[^1]: source" line  footnotes, set small at the foot of the slide
+ *   $$ {steps} … $$                   aligned equations separated by \\: ↓ reveals each line; article shows all
  *   $x^2$ and $$ … $$                   maths (KaTeX, fetched only if the deck has some; <html data-math="off"> to skip)
  *   layout: image + image: url          a full-bleed picture with the text over it
  *   ```diff {steps: hunks}              +/- lines tinted; ↓ highlights each @@ hunk (or {steps: 1-2 | 3}); title="file" view=split;
@@ -205,6 +206,7 @@ import { beforeAfter } from './before-after.js';
     [...c.querySelectorAll('.tabs, .toggle, .steps')].reverse().forEach(panes);
     c.querySelectorAll('.timeline').forEach(timeline);
     c.querySelectorAll('.w-chat').forEach(chat);
+    c.querySelectorAll('.w-derive').forEach(derive);
     c.querySelectorAll('.board').forEach(board);
     c.querySelectorAll('.w-quadrant').forEach(quadrantSteps);
     c.querySelectorAll('.gallery').forEach(b => gallery(b, steps));
@@ -435,9 +437,38 @@ import { beforeAfter } from './before-after.js';
   function maths() {
     const els = [...document.querySelectorAll('.math')], opt = root.dataset.math;
     if (!els.length || opt === 'off') return;
-    const run = () => els.forEach(el => { try { katex.render(el.textContent, el, { displayMode: el.classList.contains('math-block'), throwOnError: false }); } catch {} });
+    const run = () => els.forEach(el => {
+      const source = el.textContent, derive = el.closest('.w-derive');
+      try { katex.render(source, el, { displayMode: !!derive || el.classList.contains('math-block'), throwOnError: !!derive }); }
+      catch {
+        el.textContent = source;
+        if (derive && !derive.querySelector('.td-error')) {
+          const error = document.createElement('p'); error.className = 'td-error'; error.setAttribute('role', 'alert');
+          error.textContent = 'Derivation contains invalid TeX; the original equation is shown.'; derive.prepend(error);
+        }
+      }
+    });
     const js = opt || KATEX;
     window.katex ? run() : load(js, run, js.replace(/\.js$/, '.css'));
+  }
+  function derive(box) {
+    const rows = [...box.querySelectorAll('tr')];
+    const controls = document.createElement('div'); controls.className = 'w-derive-controls';
+    const status = document.createElement('span'); status.setAttribute('role', 'status');
+    const next = document.createElement('button'); next.type = 'button'; next.textContent = 'Next equation';
+    controls.append(status, next); box.append(controls);
+    const st = steps(box, rows.length, i => {
+      rows.forEach((row, j) => {
+        row.classList.toggle('current', j === i);
+        row.classList.toggle('unrevealed', j > i);
+        row.setAttribute('aria-hidden', String(j > i));
+      });
+      status.textContent = `Equation ${i + 1} of ${rows.length}`;
+      next.disabled = i === rows.length - 1;
+    }, { read: 'end' });
+    next.addEventListener('click', () => st.next());
+    // Space belongs to the focused native button, not slide navigation.
+    next.addEventListener('keydown', e => { if (e.key === ' ') e.stopPropagation(); });
   }
   /* diagrams: Mermaid, fetched only when the deck has a ```mermaid block; coloured from the theme and redrawn when it changes.
      <html data-diagrams="off"> leaves the source showing; data-diagrams="/path/mermaid.min.js" self-hosts it. */
