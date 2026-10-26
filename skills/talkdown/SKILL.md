@@ -114,6 +114,9 @@ Notes can span lines. Timing cues like `[~60s]` are dropped from the article. Co
 Stateful widgets step with ↓ and expand in the article; charts follow their `view` setting.
 
 - Image hotspots: `::: hotspots` around one `![Alt text](image.png)` followed by `- [12%, 30%] Label` bullets. Coordinates are x from the left and y from the top, each 0–100%. No options; labels accept inline formatting and links. The first pin starts selected; ↓ or a pin button selects the next label. Article view shows the image with all pins and a numbered legend.
+
+- Quadrant: `::: quadrant x="Effort" y="Impact"`, four consecutive `###` headings in top-left, top-right, bottom-left, bottom-right order, then optional `- Label [0.2, 0.8]` points. Coordinates range from 0 to 1, increasing right/up; 0.5 belongs to the right/top. ↓ reveals points (or quadrants when empty). Article shows the full matrix and points grouped by quadrant. Keep labels short and use a few points per slide. Axis labels default to X/Y; no other options.
+
 - Board: `::: board`, a `### Column` heading per column and a Markdown list per column (each top-level item is a card). ↓ reveals each column; article view shows every card, stacking columns on phones. Keep slides to 2–4 short columns; use a new slide for more. No options.
 
 - Flow / stack: `::: flow` or `::: stack` around a bulleted list, one box per item. `::: flow vertical` points down. Slide frontmatter `build: true` reveals every box on ↓; `{.step}` marks individual items. Article view shows all boxes; narrow screens stack flows vertically. No options besides `flow vertical`.

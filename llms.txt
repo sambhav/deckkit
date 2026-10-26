@@ -13,6 +13,8 @@ Write notes in `::: notes` / `::: say` / `::: read` blocks and charts in `::: ch
 
 ## Docs and examples
 
+- Quadrant matrices: `::: quadrant x="Effort" y="Impact"`, four consecutive `###` headings in top-left, top-right, bottom-left, bottom-right order, then optional `- Label [0.2, 0.8]` points (coordinates 0–1, increasing right/up). ↓ reveals points or empty quadrants; articles include a grouped point list.
+
 - Roadmap boards: `::: board` with `###` column headings and Markdown lists of cards. ↓ reveals columns in slides; articles show every card, with columns stacked on phones. Syntax and examples are in the skill and widget gallery.
 
 - [README](https://github.com/sambhav/talkdown/blob/main/README.md): setup instructions, authoring recommendations, syntax, widgets and themes.
