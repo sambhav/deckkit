@@ -32,7 +32,12 @@ module.exports = async function verifyMeter(page, base) {
   check(await meter.textContent() === '72%', 'No stale frame may overwrite read values');
   await page.evaluate(() => { Deck.setView('present'); Deck.go(1, 0); Deck.go(1, 1); });
   await page.emulateMedia({ reducedMotion: 'reduce' });
+  // Media-query changes are delivered at a rendering opportunity; flush one
+  // mocked frame, rather than waiting for the animation duration.
+  await page.clock.runFor(16);
   check(await meter.textContent() === '72%', 'Enabling reduced motion mid-animation must finish immediately');
+  await page.clock.runFor(1200);
+  check(await meter.textContent() === '72%', 'Reduced motion must cancel pending animation frames');
   await page.evaluate(() => Deck.go(1, 0));
   check(await count.textContent() === '1.2M', 'Reduced motion must show final inline values');
   await page.keyboard.press('s');

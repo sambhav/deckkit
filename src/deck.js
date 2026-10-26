@@ -782,6 +782,9 @@ import { beforeAfter } from './before-after.js';
       const start = performance.now();
       const tick = now => {
         if (!w.isConnected) { frame = 0; return; }
+        // A preference can change before its asynchronous media-query event arrives.
+        // Never let an already queued frame paint another intermediate value.
+        if (motion.matches) { frame = 0; paint(value); return; }
         const progress = Math.min(1, (now - start) / 900);
         paint(value * (1 - (1 - progress) ** 3));
         frame = progress < 1 ? requestAnimationFrame(tick) : 0;
