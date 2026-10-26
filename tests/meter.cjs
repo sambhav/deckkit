@@ -1,7 +1,10 @@
 // Deterministic clock: counts only run for the active present slide's cue.
 module.exports = async function verifyMeter(page, base) {
   const check = (ok, message) => { if (!ok) throw new Error(message); };
-  await page.clock.install();
+  // Freeze before navigation: RPC and parallel-suite latency must not advance
+  // the animation between runFor calls or consume its intermediate state.
+  await page.clock.install({ time: new Date('2030-01-01T00:00:00Z') });
+  await page.clock.pauseAt(new Date('2030-01-01T01:00:00Z'));
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   const source = '## Before\n---\nid: meter-test\n---\n## Migration\n::: meter value=72 max=100 label="Migration done" unit=%\n:::\n- **[1.2M]{count}** requests/day\n---\n## After';
   await page.route('**/meter-test.html*', r => r.fulfill({ contentType: 'text/html; charset=utf-8', body: '<!doctype html><html data-fonts="off" data-highlight="off" data-icons="off"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + source + '</script></body></html>' }));
