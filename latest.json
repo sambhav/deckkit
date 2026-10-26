@@ -1,11 +1,11 @@
 {
   "schema": 1,
   "js": {
-    "path": "dist/deck.a5858b0487ba683a.js",
-    "integrity": "sha256-pYWLBIe6aDokOe6ky54J2sFAPZul2Kyjj3ssK9orazM="
+    "path": "dist/deck.26491424b4b6104f.js",
+    "integrity": "sha256-JkkUJLS2EE9ZpNGKrP4/EUq+z2mIxKM0NfEnZbjhq3Y="
   },
   "css": {
-    "path": "dist/deck.3abbfe7eadbd4b7a.css",
-    "integrity": "sha256-Orv+fq29S3rufk5hVlSNx6heBy+toCWnxDSK9OY3AAE="
+    "path": "dist/deck.86ee38bb58fec20d.css",
+    "integrity": "sha256-hu44u1j+wg2rP6suwYdJFA34cdfZthR/1ZgkJ0TVQjY="
   }
 }
