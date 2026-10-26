@@ -48,6 +48,7 @@ import { beforeAfter } from './before-after.js';
  *   ::: hotspots                        image + - [12%, 30%] Label; ↓ selects each numbered pin; article shows a legend
  *   ::: timer 10m                     countdown started with ↓ or Start; pause/reset controls, duration text in articles
  *   ::: meter value=72 max=100 label="Done" unit=% / [1.2M]{count}   animated on ↓, final values in read view
+ *   `spark:9,8,8,6,5,5`                inline SVG trend in prose or tables; accessible values, same in both views
  *   ::: stats                           big numbers: "- **42%** faster first response"
  *   > [!NOTE] / [!TIP] / [!WARNING]     callouts
  *   ```mermaid                          diagrams (Mermaid, fetched only if the deck has one; <html data-diagrams="off"> to skip);

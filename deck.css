@@ -438,6 +438,10 @@ p, li { font-size: 16px; line-height: 1.5; }
 .layout-center .content { justify-content: center; align-items: center; text-align: center; }
 .layout-center ul { justify-items: start; text-align: left; }
 
+/* Inline trends keep the surrounding text colour and size in tables and prose. */
+.w-sparkline { display: inline-block; width: 4em; max-width: 100%; height: 1em; vertical-align: -.12em; color: inherit; }
+.w-sparkline-error { display: inline; padding: .1em .3em; overflow-wrap: anywhere; }
+
 /* ---------- widgets (sized by the same tokens, so they follow the canvas, the phone and read view) ---------- */
 .w-panes { display: grid; }
 .w-pane { grid-area: 1 / 1; visibility: hidden; opacity: 0; transition: opacity .25s ease; min-width: 0; }   /* stacked: the widget is as tall as its tallest pane */

@@ -116,6 +116,33 @@ md.inline.ruler.before('emphasis', 'talkdown_inline', (state, silent) => {
   state.pos += used; return true;
 });
 
+// A code span is the explicit opt-in; fences and ordinary numeric code stay literal.
+const codeInline = md.renderer.rules.code_inline;
+md.renderer.rules.code_inline = (tokens, i, options, env, self) => {
+  const source = tokens[i].content;
+  if (!source.startsWith('spark:')) return codeInline(tokens, i, options, env, self);
+  const parts = source.slice(6).split(',').map(s => s.trim());
+  const number = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i;
+  const values = parts.map(Number);
+  if (parts.some((s, n) => !number.test(s) || !Number.isFinite(values[n]))) {
+    return codeInline(tokens, i, options, env, self)
+      + '<span class="td-error w-sparkline-error" role="alert">spark: use comma-separated finite numbers (for example spark:9,8,5).</span>';
+  }
+  // Normalize before subtracting, so even opposite signs near Number.MAX_VALUE stay finite.
+  let magnitude = 0;
+  for (const value of values) magnitude = Math.max(magnitude, Math.abs(value));
+  const scaled = values.map(value => magnitude ? value / magnitude : 0);
+  let min = Infinity, max = -Infinity;
+  for (const value of scaled) { min = Math.min(min, value); max = Math.max(max, value); }
+  const y = value => max === min ? 12 : 22 - (value - min) / (max - min) * 20;
+  const points = scaled.map((value, n) => `${2 + n / Math.max(1, values.length - 1) * 92},${y(value)}`).join(' ');
+  const label = escape('Sparkline values: ' + parts.join(', '));
+  const drawing = values.length === 1
+    ? '<circle cx="48" cy="12" r="2" fill="currentColor"/>'
+    : `<polyline points="${points}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  return `<svg class="w-sparkline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 24" width="96" height="24" role="img" aria-label="${label}" focusable="false"><title>${label}</title>${drawing}</svg>`;
+};
+
 const attrPattern = /\s*\{((?:[.#][\w-]+\s*)+)\}\s*$/;
 md.core.ruler.before('inline', 'talkdown_attributes', state => {
   for (let i = 0; i < state.tokens.length; i++) {
