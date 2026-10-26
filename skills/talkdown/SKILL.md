@@ -140,6 +140,7 @@ Q2,340
 - Diff: a ` ```diff ` fence of `+`/`-`/` ` lines, tinted green and red; `@@ label` starts a hunk. Options: `{steps: hunks}` highlights one hunk per step (or `{steps: 1-2 | 3}` by line), `title="api.py"` (default: the `+++` file name), `view=split` for old beside new on the slide (unified on phones and in the article). Copy takes the new code.
 - HTTP exchange: a ` ```http ` fence with a request (`GET /users HTTP/1.1`), headers/body, a blank line, then the response (`HTTP/1.1 200 OK`) and its headers/body. No options. ↓ reveals the response; the article stacks both; each message has Copy.
 - Speaker: `::: speaker` around an optional `![Portrait](photo.jpg)`, one `### Name`, role text and Markdown links. Links get icons; the article shows a compact author box.
+- Link cards: `::: links` around a bulleted list of `- [Title](URL) Description` items. Shows title, domain and authored description; no options, no metadata requests. Use HTTP(S), relative URLs or `#section` links; descriptions can use inline emphasis/code but no additional links, HTML or images. Cards stack on phones.
 - Stats: `::: stats` around `- **42%** faster first response`.
 - Callout: `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]`.
 - Pull quote: a `>` quote whose last line is `> — Name`.
