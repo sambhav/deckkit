@@ -248,6 +248,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Video** | `![title](youtube, vimeo or .mp4 link)` embeds a player |
 | **Accordion** | `::: accordion`, then a `###` heading per item; ↓ opens them in turn |
 | **Feature cards** | `::: features`, then a `###` heading per card. An `:icon:` or image at the start of the heading becomes its icon. Up to three per row; set `--n` on `.w-features` for more |
+| **Roadmap board** | `::: board`, then a `###` heading and list of cards per column. ↓ reveals columns; article view shows all cards and stacks columns on phones. Keep slides to 2–4 short columns; no options |
 | **Agenda** | An empty `::: agenda` lists every section slide, each linking to it |
 | **QR code** | `::: qr` draws a QR code of the deck's link, or of a URL written inside it |
 | **Icons** | `:rocket:` anywhere: any of the [Lucide](https://lucide.dev/icons) icons, drawn in the theme's colours. A feature card's heading can also start with `![](icon.svg)` |
