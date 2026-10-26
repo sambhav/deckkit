@@ -244,6 +244,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Copy buttons** | Every code block gets a **Copy** button, shown on hover and always on touch screens |
 | **Before / after** | `::: compare` around two images with alt text; drag or use the range keys, ↓ reveals 0 / 50 / 100%; articles show both images |
 | **Quiz** | `::: quiz`: one `###` question, `- [ ]` choices and one `- [x]` answer. Add a blank line before explanation prose. ↓ reveals the answer; articles show the explanation and allow choices/reset. No answers are stored or sent. |
+| **Prompt / output** | `::: prompt model="any-model" temperature=0`, then `### Prompt` and `### Output`. Both options are optional; ↓ reveals the output, and the article stacks both cards |
 | **Flip cards** | `::: flip`: the `###` heading is the front, the rest is the back |
 | **Flow / stack** | `::: flow` or `::: stack` around a bulleted list. `::: flow vertical` points down; `build: true` or `{.step}` reveals boxes on ↓. Article view shows all boxes |
 | **Changelog** | `::: changelog`, `### v0.4.0 · 2026-10-25` per release, `#### Added` / `#### Fixed` labels and Markdown notes. One release per step; all linked in article view. Give the slide an `id:` for stable links |
