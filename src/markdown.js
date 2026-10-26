@@ -413,6 +413,21 @@ function compile(tokens, env) {
           try { html += hotspotMarkup(body, options, classes, { inline: ts => md.renderer.renderInline(ts, md.options, env), escape }); }
           catch (error) { html += `<p class="td-error" role="alert">hotspots: ${escape(error.message)}</p>` + compile(body, env); }
         }
+        else if (name === 'compare') {
+          const images = [];
+          let invalid = Object.keys(options).length || classes.length;
+          for (const t of body) {
+            if (t.type === 'inline') for (const [index, child] of (t.children || []).entries()) {
+              // The figure core rule adds a title caption; regenerate the comparison captions below.
+              if (child.type === 'html_inline' && index === 1 && t.children[0].type === 'image' && t.children[0].attrGet('title') && child.content === `<figcaption>${md.renderInline(t.children[0].attrGet('title'))}</figcaption>`) continue;
+              if (child.type === 'image' && child.content.trim() && !embed(child.attrGet('src'), child.content)) images.push(child);
+              else if (!['softbreak', 'hardbreak'].includes(child.type) && !(child.type === 'text' && !child.content.trim())) invalid = true;
+            }
+            else if (!['paragraph_open', 'paragraph_close'].includes(t.type)) invalid = true;
+          }
+          if (invalid || images.length !== 2) html += '<p class="td-error" role="alert">Compare needs exactly two Markdown images with alt text, before then after; it takes no options.</p>' + compile(body, env);
+          else html += '<div class="compare">' + images.map(t => '<figure>' + md.renderer.renderInline([t], md.options, env) + '<figcaption>' + (t.attrGet('title') ? md.renderInline(t.attrGet('title')) : escape(t.content)) + '</figcaption></figure>').join('') + '</div>';
+        }
         else if (name === 'links') { html += linkCards(body, options, classes, env); }
         else if (['notes', 'say', 'read'].includes(name) && env.collectNotes) {
           const content = compile(body, { ...env, collectNotes: false });
