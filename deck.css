@@ -1266,7 +1266,7 @@ aside.article { display: none; }
 .w-quiz .quiz-choices button { width: 100%; text-align: left; }
 .w-quiz button[aria-pressed=true] { border-color: var(--accent); background: var(--accent-soft); }
 .w-quiz button[aria-pressed=true]::before { content: 'Selected: '; font-weight: 700; }
-.w-quiz button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.w-quiz button:focus { outline: 2px solid var(--accent); outline-offset: 3px; }
 .w-quiz .quiz-answer { margin-top: var(--t-gap); padding-top: calc(var(--t-gap) * .5); border-top: 1px solid var(--line); }
 .md .w-quiz :is(.quiz-answer p, .quiz-status) { font-size: var(--t-card); line-height: 1.45; margin: .4em 0; }
 .w-quiz .quiz-status:empty { display: none; }
