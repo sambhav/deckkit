@@ -49,6 +49,8 @@ module.exports = async function verifyMeter(page, base) {
   await page.evaluate(() => Deck.setView('read'));
   for (const width of [320, 390, 1440]) {
     await page.setViewportSize({ width, height: 900 });
+    // Resize fitting is scheduled on RAF; the frozen clock needs an explicit render.
+    await page.clock.runFor(32);
     check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Meter must fit at ' + width + 'px');
   }
 };
