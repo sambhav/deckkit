@@ -254,6 +254,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Speaker card** | `::: speaker` around an optional photo, one `### Name`, role and Markdown links. A compact author box in the article |
 | **Link cards** | `::: links` around `- [Title](URL) Description` items: a grid of further-reading cards with the domain; one column on phones and no metadata requests |
 | **Feature cards** | `::: features`, then a `###` heading per card. An `:icon:` or image at the start of the heading becomes its icon. Up to three per row; set `--n` on `.w-features` for more |
+| **Image hotspots** | `::: hotspots`, one Markdown image, then `- [12%, 30%] Label` bullets (x/y from left/top, 0–100%). ↓ walks numbered pins; article view shows the full legend. No options |
 | **Roadmap board** | `::: board`, then a `###` heading and list of cards per column. ↓ reveals columns; article view shows all cards and stacks columns on phones. Keep slides to 2–4 short columns; no options |
 | **Agenda** | An empty `::: agenda` lists every section slide, each linking to it |
 | **QR code** | `::: qr` draws a QR code of the deck's link, or of a URL written inside it |

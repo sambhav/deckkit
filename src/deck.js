@@ -33,6 +33,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
  *   ::: board                           ### columns with lists of cards; ↓ reveals each column, all shown in read view
  *   ::: speaker                         optional photo, ### name, role and Markdown links; compact author box in read view
  *   ::: links                           a list of [Title](URL) descriptions becomes further-reading cards; no network fetches
+ *   ::: hotspots                        image + - [12%, 30%] Label; ↓ selects each numbered pin; article shows a legend
  *   ::: stats                           big numbers: "- **42%** faster first response"
  *   > [!NOTE] / [!TIP] / [!WARNING]     callouts
  *   ```mermaid                          diagrams (Mermaid, fetched only if the deck has one; <html data-diagrams="off"> to skip);
@@ -192,6 +193,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
     c.querySelectorAll('.timeline').forEach(timeline);
     c.querySelectorAll('.board').forEach(board);
     c.querySelectorAll('.stats').forEach(stats);
+    c.querySelectorAll('.w-hotspots').forEach(hotspots);
     c.querySelectorAll('blockquote').forEach(callout);
     c.querySelectorAll('blockquote:not(.callout)').forEach(quote);
     c.querySelectorAll('div.chart, figure[data-chart]').forEach(chart);
@@ -598,6 +600,38 @@ import { visualTypes, visualChart } from './visual-charts.js';
       button.disabled = reading(); button.setAttribute('aria-pressed', j === i);
     }), { read: 'end' });
     cols.forEach((col, i) => col.querySelector('.w-board-title').addEventListener('click', () => st.go(i)));
+  }
+
+  // ::: hotspots — native buttons over the intrinsic image, with a prose legend below.
+  function hotspots(w) {
+    const pins = [...w.querySelectorAll('.w-hotspot-pin')], labels = [...w.querySelector('.w-hotspots-legend').children];
+    const id = `hotspots-${++widgetId}`;
+    labels.forEach((label, i) => { label.id = `${id}-${i}`; pins[i].setAttribute('aria-controls', label.id); });
+    const st = steps(w, pins.length, i => pins.forEach((pin, j) => {
+      pin.classList.toggle('on', j === i); pin.setAttribute('aria-pressed', j === i);
+      pin.disabled = reading(); labels[j].classList.toggle('on', j === i);
+    }), { read: 'end' });
+    pins.forEach((pin, i) => {
+      pin.addEventListener('click', () => st.go(i));
+      // Space activates a native button without becoming the deck's next-slide shortcut.
+      pin.addEventListener('keydown', e => { if (e.key === ' ') e.stopPropagation(); });
+    });
+    const image = w.querySelector('img');
+    const failed = () => {
+      if (w.classList.contains('w-hotspots-failed')) return;
+      w.classList.add('w-hotspots-failed');
+      const error = document.createElement('p'); error.className = 'td-error'; error.setAttribute('role', 'alert');
+      error.textContent = `hotspots: could not load image “${image.alt || image.getAttribute('src')}”. See the numbered legend below.`;
+      w.prepend(error); pins.forEach(pin => pin.hidden = true);
+    };
+    // SVGs without width/height have no intrinsic width for a fit-content wrapper.
+    // Bound the full-width overlay by the image ratio instead of shrink-wrapping it.
+    const loaded = () => {
+      if (image.naturalWidth && image.naturalHeight) w.style.setProperty('--hotspots-ratio', image.naturalWidth / image.naturalHeight);
+    };
+    image.addEventListener('load', loaded); loaded();
+    image.addEventListener('error', failed);
+    if (image.complete && !image.naturalWidth) failed();
   }
 
   // ::: stats — each list item or paragraph leads with its number in bold: "**42%** faster first response"
