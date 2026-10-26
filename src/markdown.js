@@ -6,6 +6,7 @@ import { quadrant } from './quadrant.js';
 import { shortcut } from './keyboard-shortcuts.js';
 import { chatTranscript } from './chat.js';
 import { parseGlossary } from './glossary.js';
+import { derivation } from './derive.js';
 
 const escape = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 // Typographer keeps smart quotes; 'replacements' would also turn (c) into © and +- into ±,
@@ -537,7 +538,18 @@ function compile(tokens, env) {
       i = end;
     } else if (token.type === 'td_column') { flush(); html += columns ? '</div><div>' : '<div class="cols"><div>'; columns = true; }
     else if (token.type === 'td_slide') { flush(); html += '<hr>'; }
-    else if (token.type === 'td_math') { flush(); html += `<div class="math math-block">${escape(token.content)}</div>`; }
+    else if (token.type === 'td_math') {
+      flush();
+      if (/^\{steps\}(?:\s|$)/.test(token.content)) {
+        const source = token.content.replace(/^\{steps\}\s*/, '');
+        try {
+          const rows = derivation(source);
+          html += '<div class="w w-derive"><div class="w-derive-scroll" tabindex="0" role="region" aria-label="Equation derivation"><table role="presentation"><tbody>' + rows.map(row => '<tr>' + row.map(cell => `<td><span class="math">${escape(cell)}</span></td>`).join('') + '</tr>').join('') + '</tbody></table></div></div>';
+        } catch (error) {
+          html += `<p class="td-error" role="alert">${escape(error.message)}</p><pre>${escape(source)}</pre>`;
+        }
+      } else html += `<div class="math math-block">${escape(token.content)}</div>`;
+    }
     else if (token.type === 'td_foot') {
       const foot = `<p><sup>${escape(token.meta.id)}</sup> ${md.renderInline(token.content)}</p>`;
       if (env.collectNotes) env.feet.push(foot); else { flush(); html += foot; }
