@@ -1,6 +1,7 @@
 import { renderMarkdown, renderInline, slideChunks } from './markdown.js';
 import { parseCSV, chartDataset, csvDownload } from './data.js';
 import { visualTypes, visualChart } from './visual-charts.js';
+import { beforeAfter } from './before-after.js';
 
 /* talkdown — slide decks written in Markdown (or HTML), presented on a 16:9 stage, read like an article on a phone.
  *
@@ -27,6 +28,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
  *   ```lang {steps: 2 | 3-4}            highlight those lines, one group per step (code is syntax-highlighted by highlight.js,
  *                                       fetched only if the deck has code; <html data-highlight="off"> to skip it)
  *   ```lang {annotate} + a 1. 2. list   "# (1)" / "// (1)" line-end comments become numbered pins; ↓ highlights each line and its note
+ *   ::: compare                         two images; draggable wipe, ↓ reveals 0 / 50 / 100%; article shows both
  *   ::: flip                            ### front, the rest is the back
  *   ::: flow / ::: stack               bulleted boxes; flow vertical changes direction; build: true or {.step} reveals items
  *   ::: timeline                        ### milestones; ↓ walks them; vertical on phones and in read view
@@ -204,6 +206,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
     c.querySelectorAll('.w-diff').forEach(diffBlock);
     c.querySelectorAll('.w-http').forEach(httpExchange);
     c.querySelectorAll('pre.code').forEach(copyable);
+    c.querySelectorAll('.compare').forEach(box => beforeAfter(box, steps));
     c.querySelectorAll('.flip').forEach(flip);
     c.querySelectorAll('.accordion').forEach(accordion);
     c.querySelectorAll('.features').forEach(features);

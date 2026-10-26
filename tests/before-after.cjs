@@ -1,0 +1,44 @@
+const assert = require('node:assert/strict');
+module.exports = async function verifyBeforeAfter(page, base) {
+  const source = '## Changes\n::: compare\n![Before: crowded navigation](assets/compare-before.svg)\n![After: focused navigation](assets/compare-after.svg)\n:::\n---\n## End';
+  await page.route('**/before-after-fixture.html*', route => route.fulfill({ contentType: 'text/html', body:
+    '<!doctype html><html data-fonts="off" data-highlight="off"><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + source + '</script></body></html>' }));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(base + '/before-after-fixture.html?view=present');
+  await page.waitForFunction(() => window.Deck?.slides.length === 2);
+  const widget = page.locator('.w-before-after'), range = widget.locator('input');
+  assert.equal(await widget.locator('.w-compare-stage').getAttribute('role'), 'img');
+  assert.match(await widget.locator('.w-compare-stage').getAttribute('aria-label'), /crowded navigation.*focused navigation/);
+  assert.equal(await range.inputValue(), '0');
+  await page.keyboard.press('ArrowDown'); assert.equal(await range.inputValue(), '50');
+  await page.keyboard.press('ArrowDown'); assert.equal(await range.inputValue(), '100');
+  await range.focus(); await page.keyboard.press('Home'); assert.equal(await range.inputValue(), '0');
+  await page.keyboard.press('ArrowRight'); assert.equal(await range.inputValue(), '1');
+  await page.keyboard.press('End'); assert.equal(await range.inputValue(), '100');
+  assert.equal(await page.evaluate(() => Deck.cur), 0, 'range keys must not navigate the deck');
+  assert.equal(await range.getAttribute('aria-valuetext'), '100% after image revealed');
+  const rect = await widget.locator('.w-compare-stage').boundingBox();
+  await page.mouse.move(rect.x + rect.width / 4, rect.y + rect.height / 2);
+  await page.mouse.down(); await page.mouse.move(rect.x + rect.width * .7, rect.y + rect.height / 2); await page.mouse.up();
+  assert.ok(Math.abs(Number(await range.inputValue()) - 70) <= 1, 'pointer drag updates the wipe');
+  // Real touchscreen coverage uses Chromium's CDP touch event pipeline.
+  const session = await page.context().newCDPSession(page);
+  await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: rect.x + rect.width / 4, y: rect.y + rect.height / 2 }] });
+  await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: rect.x + rect.width * .6, y: rect.y + rect.height / 2 }] });
+  await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  assert.ok(Math.abs(Number(await range.inputValue()) - 60) <= 2, 'touch drag updates the wipe');
+  await session.detach();
+  await page.locator('h2').first().click(); await page.keyboard.press('s');
+  assert.match(await page.locator('#src').textContent(), /::: compare/); await page.keyboard.press('Escape');
+  await page.evaluate(() => Deck.setView('read'));
+  assert.equal(await range.isVisible(), false);
+  assert.equal(await widget.locator(':scope > figure:visible').count(), 2);
+  assert.equal(await widget.locator(':scope > figure img').evaluateAll(imgs => imgs.every(img => getComputedStyle(img).clipPath === 'none')), true);
+  assert.match(await widget.locator(':scope > figure figcaption').first().textContent(), /Before/);
+  await page.setViewportSize({ width: 320, height: 740 });
+  const figures = await widget.locator(':scope > figure').evaluateAll(fs => fs.map(f => { const r = f.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, right: r.right }; }));
+  assert.ok(figures[1].top >= figures[0].bottom, 'article images stack on phones');
+  assert.ok(figures.every(f => f.right <= 320), 'article pair fits a phone');
+  await page.evaluate(() => { Deck.setView('present'); Deck.go(0, 0); });
+  assert.equal(await range.inputValue(), '0');
+};
