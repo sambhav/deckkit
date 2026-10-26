@@ -248,6 +248,45 @@ async function request(url) {
 ```
 
 ---
+id: w-diff
+---
+## Diff, one hunk at a time
+
+```diff {steps: hunks} title="client.py"
+@@ def fetch(url):
+-    return requests.get(url)
++    return session.get(url, timeout=5)
+@@ def retry(call, attempts=3):
+     for attempt in range(attempts):
+-        time.sleep(1)
++        time.sleep(2 ** attempt)
+         try:
+```
+
+::: notes
+Press down to highlight each hunk in turn. Copy takes the new code, and the article shows the whole diff.
+:::
+
+---
+id: w-diff-split
+---
+## Diff, side by side
+
+```diff view=split title="config.yaml"
+@@ server:
+   port: 8080
+-  workers: 2
+-  timeout: 30
++  workers: 8
++  timeout: 5
++  retries: 3
+```
+
+::: notes
+view=split sets the old file beside the new one on the slide; phones and the article show the unified diff.
+:::
+
+---
 ## Terminal
 
 ```terminal
