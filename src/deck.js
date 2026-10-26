@@ -71,6 +71,7 @@ import { beforeAfter } from './before-after.js';
  *   :rocket:                            a Lucide icon in the theme's colours (any name from lucide.dev/icons)
  *   ::: browser url="…" / ::: window title="…" / ::: phone   CSS device frames around images, code or Markdown
  *   ::: agenda / ::: qr                 a contents slide linking every section / a QR code of the deck's link (or the URL inside)
+ *   ::: ask url="https://…"              audience QR and readable destination in slides; Ask a question link in articles
  * Two formats from one deck: ::: notes are spoken and read; ::: say spoken only; ::: read read only.
  *   ::: present-only / ::: read-only for slide content; frontmatter read: hide | text and present: hide for whole slides.
  * Presenting: P presenter view (next slide, notes, timer, in a second window) · L laser pointer · D draw on the slide
@@ -1721,12 +1722,26 @@ import { beforeAfter } from './before-after.js';
   // ::: qr — a QR code of the URL inside, or of this deck without its slide number (qrcode-generator, fetched when used)
   const QRLIB = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js';
   function qrs() {
-    const ws = [...document.querySelectorAll('.w-qr')];
+    const ws = [...document.querySelectorAll('.w-qr, .w-ask')];
     if (!ws.length) return;
+    // Links are available immediately, including offline or when QR generation fails.
+    ws.forEach(w => {
+      // Let a focused audience link keep its native keyboard behavior.
+      if (w.classList.contains('w-ask')) w.addEventListener('keydown', e => { if (['Enter', ' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End'].includes(e.key)) e.stopPropagation(); });
+      if (w.querySelector('a')) return;
+      const url = w.dataset.url || location.origin + location.pathname;
+      const link = document.createElement('a'); link.textContent = url.replace(/^https?:\/\//, '');
+      try { if (['http:', 'https:'].includes(new URL(url).protocol)) link.href = url; } catch {}
+      w.append(link);
+    });
     const draw = () => ws.forEach(w => {
-      const url = w.dataset.url || location.origin + location.pathname, q = qrcode(0, 'M');
-      q.addData(url); q.make();
-      w.innerHTML = `<div class="w-qr-code">${q.createSvgTag({ cellSize: 4, margin: 0, scalable: true })}</div><a href="${url}">${esc(url.replace(/^https?:\/\//, ''))}</a>`;
+      try {
+        const url = w.dataset.url || location.origin + location.pathname, q = window.qrcode(0, 'M');
+        q.addData(url); q.make();
+        const code = document.createElement('div'); code.className = 'w-qr-code'; code.setAttribute('aria-hidden', 'true');
+        code.innerHTML = q.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+        w.prepend(code);
+      } catch { w.dataset.qr = 'unavailable'; }
     });
     window.qrcode ? draw() : load(QRLIB, draw);
   }
