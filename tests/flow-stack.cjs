@@ -10,7 +10,7 @@ module.exports = async function verifyFlowStack(page, base) {
     '<!doctype html><html data-fonts="off" data-highlight="off" data-icons="off"><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + source + '</script></body></html>' }));
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(base + '/flow-stack-fixture.html?view=present');
-  await page.evaluate(() => Talkdown.ready.then(() => {}));
+  await page.waitForFunction(() => window.Deck?.slides.length === 4);
   const flow = page.locator('.w-flow').first();
   assert.equal(await flow.locator('> li.shown').count(), 0);
   assert.equal(await flow.locator('a').isVisible(), false, 'unrevealed links cannot receive focus');
