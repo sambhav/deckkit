@@ -53,7 +53,7 @@ if (require.main === module) {
       js: await fs.readFile(path.join(root, 'deck.js'), 'utf8'),
       css: await fs.readFile(path.join(root, 'deck.css'), 'utf8'),
     };
-    const browser = await chromium.launch({ channel: 'chrome' });
+    const browser = await chromium.launch({ channel: 'chrome', args: ['--disable-gpu'] });
     try { console.log(await verifySingleFile(await browser.newPage(), files, fs, os)); }
     finally { await browser.close(); }
   })().catch(error => { console.error(error); process.exitCode = 1; });

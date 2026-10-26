@@ -7,6 +7,8 @@ async function verify(page, base) {
   const errors = [];
   page.on('pageerror', e => errors.push(e.stack || e.message));
   await page.emulateMedia({ reducedMotion: 'reduce' });
+  // The demo's video embed keeps its frame, but its player would only compete for the CPU.
+  await page.route(/^https:\/\/(?:[\w-]+\.)*(?:youtube-nocookie\.com|youtube\.com|ytimg\.com|google\.com)\//, route => route.abort());
   // Suites that load their own pages run side by side in fresh pages while this page
   // checks the demo deck and the fixtures below.
   const sibling = async suite => {
@@ -346,7 +348,7 @@ module.exports = verify;
 if (require.main === module) {
   (async () => {
     const { chromium } = require('playwright-core');
-    const browser = await chromium.launch({ channel: 'chrome' });
+    const browser = await chromium.launch({ channel: 'chrome', args: ['--disable-gpu'] });
     try { console.log(await verify(await browser.newPage(), process.env.TALKDOWN_URL || 'http://127.0.0.1:8000')); }
     finally { await browser.close(); }
   })().catch(error => { console.error(error); process.exitCode = 1; });

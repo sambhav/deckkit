@@ -8,27 +8,36 @@ concurrency:
   group: checks-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
-  # One job, so setup happens once. The browser checks drive the Google Chrome that GitHub's
-  # Ubuntu runners already have, so nothing is downloaded beyond the npm packages.
+  # One job, so setup happens once. It uses the Node and Google Chrome that GitHub's Ubuntu
+  # runners already have, so nothing is downloaded beyond the npm packages.
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # Publishing runs only on pushes to main, after every check has passed.
+    env:
+      PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     permissions:
-      contents: write   # used only by the publish step, which runs on pushes to main
+      contents: write   # push the site to the gh-pages branch
+      pages: write      # deploy it straight to GitHub Pages
+      id-token: write
     steps:
       # Read Chrome into the page cache while the next steps run: launched from a cold disk it
-      # takes about 7s to start, warm about 1s.
+      # takes 5-7s to start, warm well under 1s.
       - run: (find /opt/google/chrome -type f -exec cat {} + > /dev/null 2>&1 &)
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
       - run: npm ci --no-audit --no-fund
       - run: npm run build
       - run: npm test
       - run: npm run test:browser
-      # After the checks pass on main, publish the site and the freshly built runtime to the
-      # gh-pages branch, which GitHub Pages serves. Hashed dist/ files are only ever added
-      # there, so cached manifests and pinned decks keep working.
-      - if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      # Copy the site and the freshly built runtime onto the gh-pages branch. Hashed dist/ files
+      # are only ever added there, so cached manifests and pinned decks keep working.
+      - if: env.PUBLISH == 'true'
         run: npm run publish:site
+      # Deploy that same tree from this job (Pages source: GitHub Actions) rather than waiting
+      # for a separate Pages build of the branch.
+      - if: env.PUBLISH == 'true'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+      - if: env.PUBLISH == 'true'
+        uses: actions/deploy-pages@v5

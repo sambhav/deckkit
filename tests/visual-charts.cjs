@@ -13,29 +13,28 @@ async function verifyVisualCharts(page, base) {
     for (const view of ['present', 'read']) {
       await page.evaluate(view => Deck.setView(view), view);
       await page.evaluate(() => new Promise(requestAnimationFrame));
-      for (let i = 0; i < 12; i++) {
-        const box = page.locator('.w-chart-box').nth(i);
-        await box.evaluate(box => {
-          Deck.go(Deck.slides.indexOf(box.closest('.slide')), 999);
-          box.scrollIntoView({ block: 'nearest' });
-        });
-        const dimensions = await box.evaluate(b => {
-          const w = b.querySelector('.w-chart'), svg = w.querySelector('.w-visual-svg'), content = b.closest('.content');
-          const bounds = b.getBoundingClientRect();
-          const data = { pageFits: document.documentElement.scrollWidth <= innerWidth + 1,
-            boxFits: bounds.left >= -1 && bounds.right <= innerWidth + 1,
-            contentFits: content.scrollHeight <= content.clientHeight + 2 || getComputedStyle(content).overflowY === 'auto' };
-          if (svg) {
-            w.scrollLeft = 40; w.scrollTop = 20;
-            data.canScroll = w.scrollWidth <= w.clientWidth + 1 || w.scrollLeft > 0;
-            data.fontSize = 14 * svg.clientWidth / svg.viewBox.baseVal.width;
-            const vb = svg.viewBox.baseVal;
-            data.labelsFit = [...svg.querySelectorAll('text')].every(t => {
-              const r = t.getBBox(); return r.x >= -1 && r.y >= -1 && r.x + r.width <= vb.width + 1 && r.y + r.height <= vb.height + 1;
-            });
-          }
-          return data;
-        });
+      // One round trip measures every chart; navigation and layout are synchronous.
+      const measured = await page.locator('.w-chart-box').evaluateAll(boxes => boxes.map(b => {
+        Deck.go(Deck.slides.indexOf(b.closest('.slide')), 999);
+        b.scrollIntoView({ block: 'nearest' });
+        const w = b.querySelector('.w-chart'), svg = w.querySelector('.w-visual-svg'), content = b.closest('.content');
+        const bounds = b.getBoundingClientRect();
+        const data = { pageFits: document.documentElement.scrollWidth <= innerWidth + 1,
+          boxFits: bounds.left >= -1 && bounds.right <= innerWidth + 1,
+          contentFits: content.scrollHeight <= content.clientHeight + 2 || getComputedStyle(content).overflowY === 'auto' };
+        if (svg) {
+          w.scrollLeft = 40; w.scrollTop = 20;
+          data.canScroll = w.scrollWidth <= w.clientWidth + 1 || w.scrollLeft > 0;
+          data.fontSize = 14 * svg.clientWidth / svg.viewBox.baseVal.width;
+          const vb = svg.viewBox.baseVal;
+          data.labelsFit = [...svg.querySelectorAll('text')].every(t => {
+            const r = t.getBBox(); return r.x >= -1 && r.y >= -1 && r.x + r.width <= vb.width + 1 && r.y + r.height <= vb.height + 1;
+          });
+        }
+        return data;
+      }));
+      check(measured.length === 12, 'Gallery must keep all twelve charts at ' + width + 'px in ' + view);
+      for (const [i, dimensions] of measured.entries()) {
         const context = `${types[i]} at ${width}px in ${view}: ${JSON.stringify(dimensions)}`;
         check(dimensions.pageFits && dimensions.boxFits && dimensions.contentFits, 'Clipped chart: ' + context);
         if (dimensions.fontSize) check(dimensions.fontSize >= 14 && dimensions.canScroll && dimensions.labelsFit, 'Unreadable SVG: ' + context);

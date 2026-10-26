@@ -27,7 +27,8 @@ if (require.main === module) (async () => {
   let browser;
   try {
     // The installed Google Chrome (preinstalled on GitHub runners), so no browser download.
-    browser = await chromium.launch({ channel: 'chrome' });
+    // Software rendering without the GPU process starts faster and uses less CPU on CI.
+    browser = await chromium.launch({ channel: 'chrome', args: ['--disable-gpu'] });
     // Each newPage() has its own context, so the single-file check can go offline alone.
     const [served, singleFile] = await Promise.all([
       verify(await browser.newPage(), 'http://127.0.0.1:' + server.address().port),
