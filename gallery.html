@@ -653,6 +653,37 @@ Write shortcuts with double brackets, separating keys with plus signs. Mod adapt
 :::
 
 ---
+id: w-code-group
+---
+## The same call in every language
+
+::: code-group
+```python
+client = Client(api_key)
+user = client.users.get("u_123")
+print(user.name)
+```
+```js [Node.js]
+const client = new Client(apiKey);
+const user = await client.users.get("u_123");
+console.log(user.name);
+```
+```go
+client := api.NewClient(apiKey)
+user, err := client.Users.Get(ctx, "u_123")
+fmt.Println(user.Name)
+```
+```sh [curl]
+curl https://api.example.com/users/u_123 \
+  -H "Authorization: Bearer $API_KEY"
+```
+:::
+
+::: notes
+Pick a language once: every code group in the deck switches to it, and the choice is remembered for next time.
+:::
+
+---
 ## Mermaid diagram
 
 ```mermaid

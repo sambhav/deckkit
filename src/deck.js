@@ -32,6 +32,8 @@ import { environmentDifferences } from './envdiff.js';
  *   a table then {.explain}             the last column becomes the detail for the selected row; ✓ ◐ ✗ cells are coloured
  *   ```lang {steps: 2 | 3-4}            highlight those lines, one group per step (code is syntax-highlighted by highlight.js,
  *                                       fetched only if the deck has code; <html data-highlight="off"> to skip it)
+ *   ::: code-group + one fence each     language tabs; a pick switches every group in the deck and is remembered.
+ *                                       ```js [Node.js] labels a tab; Deck.choice shares the stored pick with other widgets
  *   ```lang {annotate} + a 1. 2. list   "# (1)" / "// (1)" line-end comments become numbered pins; ↓ highlights each line and its note
  *   ::: compare                         two images; draggable wipe, ↓ reveals 0 / 50 / 100%; article shows both
  *   ::: explorable                      [qps=1000]{range=100..10000} values and {qps*40/1000} arithmetic
@@ -91,6 +93,22 @@ import { environmentDifferences } from './envdiff.js';
   const store = {
     get(k, d) { try { return JSON.parse(localStorage.getItem('talkdown:' + k)) ?? d; } catch { return d; } },
     set(k, v) { try { localStorage.setItem('talkdown:' + k, JSON.stringify(v)); } catch {} },
+  };
+  /* a choice shared by every widget in a group, remembered across slides, decks and windows (the presenter view follows).
+     Deck.choice.get('lang', ['python', 'go']) -> the newest pick that is one of those options, or undefined.
+     A group keeps its recent picks, so choosing pnpm in one code group does not forget python for another. */
+  const choiceKey = g => 'choice:' + g, choiceFns = {};
+  const choice = {
+    get(group, options) { return store.get(choiceKey(group), []).find(v => options.includes(v)); },
+    set(group, value) {
+      store.set(choiceKey(group), [value, ...store.get(choiceKey(group), []).filter(v => v !== value)].slice(0, 12));
+      (choiceFns[group] || []).forEach(f => f(value));
+    },
+    on(group, f) { (choiceFns[group] ||= []).push(f); },
+  };
+  const choiceElsewhere = e => {             // a pick made in another window of this deck (added in start)
+    const group = e.key?.startsWith('talkdown:choice:') && e.key.slice(16), value = group && store.get(choiceKey(group), [])[0];
+    if (value) (choiceFns[group] || []).forEach(f => f(value));
   };
 
   /* ---------- theme + view, set before first paint ---------- */
@@ -239,6 +257,7 @@ import { environmentDifferences } from './envdiff.js';
     c.querySelectorAll('.w-log').forEach(logBlock);
     c.querySelectorAll('pre.code').forEach(copyable);
     c.querySelectorAll('.compare').forEach(box => beforeAfter(box, steps));
+    [...c.querySelectorAll('.code-group')].reverse().forEach(codeGroup);
     c.querySelectorAll('.quiz').forEach(quiz);
     c.querySelectorAll('.w-prompt').forEach(prompt);
     c.querySelectorAll('.flip').forEach(flip);
@@ -482,6 +501,55 @@ import { environmentDifferences } from './envdiff.js';
       const pin = e.target.closest('.w-pin'), li = e.target.closest('.w-notes > li');
       const k = pin ? step(+pin.dataset.n) : li ? notes.indexOf(li) + 1 : -1;
       if (k > 0) st.go(k);
+    });
+  }
+
+  // ::: code-group: the same code in several languages, one tab each. Picking a language switches every group in the deck
+  // that has it, and is remembered (Deck.choice group "lang"). Not a stepper: the language is a preference, not a sequence.
+  const LANGS = { js: 'JavaScript', javascript: 'JavaScript', jsx: 'JSX', ts: 'TypeScript', typescript: 'TypeScript', tsx: 'TSX',
+    py: 'Python', python: 'Python', rb: 'Ruby', ruby: 'Ruby', go: 'Go', golang: 'Go', rs: 'Rust', rust: 'Rust', java: 'Java',
+    kt: 'Kotlin', kotlin: 'Kotlin', cs: 'C#', csharp: 'C#', cpp: 'C++', 'c++': 'C++', c: 'C', swift: 'Swift', php: 'PHP',
+    sh: 'Shell', bash: 'Bash', zsh: 'Zsh', shell: 'Shell', powershell: 'PowerShell', ps1: 'PowerShell', sql: 'SQL',
+    html: 'HTML', css: 'CSS', json: 'JSON', yaml: 'YAML', yml: 'YAML', toml: 'TOML', dart: 'Dart', scala: 'Scala', r: 'R' };
+  const CODE = ':is(pre.code, .w-annotate, .w-diff, .w-term, .w-diagram, .w-with-source)';
+  function codeGroup(box) {
+    const panes = [], waiting = [];         // each block starts a tab; an error goes with the block after it, anything else with the one before
+    for (const el of [...box.children]) {
+      if (el.matches(CODE)) panes.push([...waiting.splice(0), el]);
+      else if (panes.length && !el.matches('.td-error')) panes.at(-1).push(el);
+      else waiting.push(el);
+    }
+    if (!panes.length) { box.insertAdjacentHTML('afterbegin', '<p class="td-error" role="alert">code-group needs fenced code blocks, one per language</p>'); return; }
+    panes.at(-1).push(...waiting);
+    const blocks = panes.map(p => p.find(el => el.matches(CODE)));
+    const labels = blocks.map(b => {
+      const lang = b.dataset.label || b.querySelector('[data-label]')?.dataset.label || b.dataset.lang || b.querySelector('pre[data-lang]')?.dataset.lang;
+      return lang ? LANGS[lang.toLowerCase()] || lang : b.matches('.w-term') ? 'Terminal' : b.matches('.w-diff') ? 'Diff' : b.matches('.w-diagram, .w-with-source') ? 'Diagram' : 'Code';
+    });
+    const keys = labels.map(l => l.toLowerCase()), id = `td-code-${++widgetId}`;
+    const w = document.createElement('div');
+    w.className = `w w-codegroup ${[...box.classList].filter(k => k !== 'code-group').join(' ')}`.trim();
+    w.innerHTML = `<div class="w-langs" role="tablist" aria-label="Language">${labels.map((l, j) =>
+      `<button type="button" role="tab" id="${id}-tab-${j}" aria-controls="${id}-panel-${j}">${esc(l)}</button>`).join('')}</div><div class="w-cg-panes"></div>`;
+    for (const [j, g] of panes.entries())
+      w.lastChild.insertAdjacentHTML('beforeend', `<section class="w-cg-pane" role="tabpanel" id="${id}-panel-${j}" aria-labelledby="${id}-tab-${j}" data-label="${qesc(esc(labels[j]))}"></section>`), w.lastChild.lastChild.append(...g);
+    const twice = labels.find((l, j) => keys.indexOf(keys[j]) !== j);
+    if (twice) w.insertAdjacentHTML('afterbegin', `<p class="td-error" role="alert">code-group has two ${esc(twice)} tabs: label them like \`\`\`js [Node.js]</p>`);
+    box.replaceWith(w);
+    const tabs = [...w.querySelector('.w-langs').children], ps = [...w.lastChild.children];
+    const show = i => {
+      ps.forEach((p, j) => p.classList.toggle('on', j === i));
+      tabs.forEach((b, j) => { b.classList.toggle('on', j === i); b.setAttribute('aria-selected', j === i); b.tabIndex = j === i ? 0 : -1; });
+      if (started && w.closest('.slide') === slide()) sync();   // steps inside the hidden panes no longer count
+    };
+    show(Math.max(0, keys.indexOf(choice.get('lang', keys))));
+    choice.on('lang', v => { const j = keys.indexOf(v); if (j >= 0) show(j); });
+    tabs.forEach((b, j) => b.addEventListener('click', () => choice.set('lang', keys[j])));
+    tabs[0].parentNode.addEventListener('keydown', e => {
+      const j = tabs.indexOf(e.target); if (j < 0) return;
+      const i = { ArrowRight: (j + 1) % tabs.length, ArrowLeft: (j + tabs.length - 1) % tabs.length, Home: 0, End: tabs.length - 1 }[e.key];
+      if (i == null) return;
+      e.preventDefault(); e.stopPropagation(); choice.set('lang', keys[i]); tabs[i].focus();
     });
   }
 
@@ -1261,7 +1329,7 @@ import { environmentDifferences } from './envdiff.js';
   function steps(el, n, show, { read } = {}) {
     const owner = el.closest('.slide');
     const st = {
-      n, i: 0, read,
+      n, i: 0, read, el,
       // quiet: a batch caller (setAt) syncs the chrome once at the end
       go(k, quiet) { st.i = Math.max(0, Math.min(n - 1, k)); show(st.i); if (!quiet && started && owner === slide()) sync(); return st; },
       next() { return st.i < n - 1 && (st.go(st.i + 1), true); },
@@ -1288,7 +1356,8 @@ import { environmentDifferences } from './envdiff.js';
     return steps(el, n, i => els.forEach(e => { const s = +e.dataset.step; e.classList.toggle('shown', s <= i); e.classList.toggle('current', s === i); }), { read: 'end' });
   }
 
-  const stepsOf = s => steppers.get(s) || [];
+  // a stepper inside a code group's hidden language is skipped, so ↓ walks only the code on screen
+  const stepsOf = s => (steppers.get(s) || []).filter(st => !st.el.closest('.w-cg-pane:not(.on)'));
   const at = s => stepsOf(s).reduce((a, st) => a + st.i, 0);
   const total = s => stepsOf(s).reduce((a, st) => a + st.n - 1, 0) + 1;
   const done = s => at(s) >= total(s) - 1;
@@ -2051,6 +2120,7 @@ import { environmentDifferences } from './envdiff.js';
     };
     addEventListener('hashchange', followUrl);
     addEventListener('popstate', followUrl);   // Back and Forward after a link jump
+    addEventListener('storage', choiceElsewhere);
     let resizing = false;
     addEventListener('resize', () => { if (!resizing) { resizing = true; requestAnimationFrame(() => { resizing = false; fit(); squeeze(); }); } });
     watch = typeof ResizeObserver === 'function' ? new ResizeObserver(resized) : null;
@@ -2076,7 +2146,7 @@ import { environmentDifferences } from './envdiff.js';
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', boot) : setTimeout(boot);
 
   window.Deck = {
-    steps, tabs, build, go, next, prev, store, setView, chart, markdown: s => renderMarkdown(dedent(s.split('\n')).join('\n')),
+    steps, tabs, build, go, next, prev, store, choice, setView, chart, markdown: s => renderMarkdown(dedent(s.split('\n')).join('\n')),
     get cur() { return cur; },
     get slides() { return slides(); },
     get slide() { return slide(); },

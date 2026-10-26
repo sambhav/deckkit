@@ -257,6 +257,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Copy buttons** | Every code block gets a **Copy** button, shown on hover and always on touch screens |
 | **Stepped code** | ` ```python {steps: 1-2 \| 3-4} ` lights up each group of lines in turn |
 | **Annotated code** | ` ```python {annotate} ` turns `# (1)` comments into numbered pins, explained by the `1.` `2.` list after the block; ↓ walks them |
+| **Code groups** | `::: code-group` around one fence per language makes language tabs. A pick switches every group in the deck and is remembered; ` ```js [Node.js] ` names a tab |
 | **Terminal** | A ` ```terminal ` block: each `$ command` types out on ↓, and the lines after it are its output |
 | **Recordings** | `![title](demo.cast)` plays an [asciinema](https://asciinema.org/) recording without the player. A file needs http; a ` ```cast ` block plays anywhere |
 | **Logs** | ` ```log {steps: 3 \| 5-6} ` numbers log lines, dims timestamps and styles levels. ↓ highlights line groups; Copy keeps the raw log |
@@ -507,6 +508,7 @@ Links show as small pills beside the title, and talkdown still adds the section 
 | `Deck.markdown(text)` | Render Markdown to HTML |
 | `Deck.chart(element)` | Enhance a chart container added by custom JavaScript |
 | `Deck.store.get(k, fallback)` · `.set(k, v)` | localStorage, namespaced `talkdown:` |
+| `Deck.choice.get(group, options)` · `.set(group, v)` · `.on(group, f)` | A remembered pick shared by widgets, such as code groups' `'lang'` |
 
 ## Hosting and versions
 
