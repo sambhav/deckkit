@@ -246,3 +246,18 @@ test('invalid HTTP exchanges fail visibly and retain the authored source', () =>
   }
   assert.match(md('```http {steps: 1}\nGET / HTTP/1.1\n\nHTTP/1.1 200 OK\n```'), /http: no options are supported/);
 });
+
+
+test('speaker cards preserve ordinary Markdown, inline formatting and links', () => {
+  const html = md('::: speaker\n![Portrait](photo.jpg)\n### Ada **Lovelace**\nEngineer\n- [GitHub](https://github.com/ada) · [Site](https://example.com)\n:::');
+  assert.match(html, /<div class="speaker"><figure><img src="photo.jpg" alt="Portrait"><\/figure><h3>Ada <strong>Lovelace<\/strong><\/h3>/);
+  assert.match(html, /<li><a href="https:\/\/github.com\/ada"[^>]*>GitHub<\/a> · <a href="https:\/\/example.com"[^>]*>Site<\/a><\/li>/);
+  assert.match(md('::: speaker\n### No photo\nA role.\n:::'), /<h3>No photo<\/h3><p>A role.<\/p>/);
+  assert.match(md('```md\n::: speaker\n### Example\n:::\n```'), /::: speaker/);
+});
+
+
+test('speaker portrait titles render as captions without losing image metadata', () => {
+  const html = md('::: speaker\n![Ada portrait](photo.jpg "Ada **Lovelace**")\n### Ada Lovelace\nEngineer\n:::');
+  assert.match(html, /<figure><img src="photo.jpg" alt="Ada portrait" title="Ada \*\*Lovelace\*\*"><figcaption>Ada <strong>Lovelace<\/strong><\/figcaption><\/figure>/);
+});
