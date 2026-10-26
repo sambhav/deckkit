@@ -118,6 +118,8 @@ Stateful widgets step with ↓ and expand in the article; charts follow their `v
 - Quadrant: `::: quadrant x="Effort" y="Impact"`, four consecutive `###` headings in top-left, top-right, bottom-left, bottom-right order, then optional `- Label [0.2, 0.8]` points. Coordinates range from 0 to 1, increasing right/up; 0.5 belongs to the right/top. ↓ reveals points (or quadrants when empty). Article shows the full matrix and points grouped by quadrant. Keep labels short and use a few points per slide. Axis labels default to X/Y; no other options.
 
 - Chat: `::: chat` with `**user:** Text`, `**assistant:** Text`, `**system:** Text` or ``**tool** `command` → result`` on separate lines. Blank lines, lists and fences continue the preceding message. ↓ reveals one message per step; articles show all messages with expandable tool calls. Keep slide transcripts short. No options.
+- Image gallery: `::: gallery` around `![Caption](image.png)` lines. No options. ↓ highlights each image; click or Enter opens a lightbox, ← → browse, Escape closes and restores focus. Article view shows a responsive grid with every alt-text caption.
+
 - Board: `::: board`, a `### Column` heading per column and a Markdown list per column (each top-level item is a card). ↓ reveals each column; article view shows every card, stacking columns on phones. Keep slides to 2–4 short columns; use a new slide for more. No options.
 
 - Flow / stack: `::: flow` or `::: stack` around a bulleted list, one box per item. `::: flow vertical` points down. Slide frontmatter `build: true` reveals every box on ↓; `{.step}` marks individual items. Article view shows all boxes; narrow screens stack flows vertically. No options besides `flow vertical`.
