@@ -1198,3 +1198,8 @@ aside.article { display: none; }
   .w-quadrant-cell { font-size: var(--t-small); padding: .25em; }
   [data-view=read] .w-quadrant-groups { grid-template-columns: 1fr; }
 }
+
+/* Inline keyboard shortcuts share the help overlay's keycap style, scaled to prose. */
+.w-kbd { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: .15em; max-width: 100%; vertical-align: baseline; }
+.w-kbd kbd { min-width: 0; overflow-wrap: anywhere; font-size: .78em; color: var(--fg); padding: .08em .35em; border-radius: .25em; }
+.w-kbd-plus { color: var(--muted); font-size: .8em; }

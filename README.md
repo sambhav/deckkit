@@ -261,6 +261,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Roadmap board** | `::: board`, then a `###` heading and list of cards per column. ↓ reveals columns; article view shows all cards and stacks columns on phones. Keep slides to 2–4 short columns; no options |
 | **Agenda** | An empty `::: agenda` lists every section slide, each linking to it |
 | **QR code** | `::: qr` draws a QR code of the deck's link, or of a URL written inside it |
+| **Keyboard shortcuts** | `[[Ctrl+Shift+P]]` renders inline keycaps. `[[Mod+K]]` shows ⌘ on Apple platforms and Ctrl elsewhere; use `Plus` for the + key. Same in slides and articles |
 | **Icons** | `:rocket:` anywhere: any of the [Lucide](https://lucide.dev/icons) icons, drawn in the theme's colours. A feature card's heading can also start with `![](icon.svg)` |
 
 ```md
