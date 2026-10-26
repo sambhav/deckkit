@@ -408,6 +408,39 @@ function deviceFrame(name, options, classes, content) {
   return `<figure class="${escape(['w', 'w-device', `w-${name}`, ...classes].join(' '))}" aria-label="${escape(label)}">${chrome}<div class="w-device-body">${content}</div></figure>`;
 }
 
+// A single question keeps the source readable as a heading and a task list.
+function quiz(tokens, options, classes, env) {
+  const fail = message => `<p class="td-error" role="alert">quiz: ${escape(message)}</p>${compile(tokens, env)}`;
+  if (Object.keys(options).length || classes.length) return fail('takes no options');
+  if (tokens[0]?.type !== 'heading_open' || tokens[0].tag !== 'h3' || !tokens[1]?.content.trim() || tokens[3]?.type !== 'bullet_list_open')
+    return fail('start with one ### question and a task list');
+  const choices = []; let i = 4, continuation = '';
+
+  while (tokens[i]?.type === 'list_item_open') {
+    const item = tokens[i], text = tokens[i + 2];
+    if (tokens[i + 1]?.type !== 'paragraph_open' || text?.type !== 'inline' || tokens[i + 3]?.type !== 'paragraph_close' || tokens[i + 4]?.type !== 'list_item_close')
+      return fail('each choice must be one text paragraph');
+    const mark = text.content.match(/^\[([ xX])\]\s+/);
+    const task = item.attrGet('data-task') || (mark ? mark[1] === ' ' ? 'todo' : 'done' : null);
+    let label = mark ? text.content.slice(mark[0].length) : text.content;
+    // The proposal places explanation immediately after the final choice.
+    // Markdown treats it as a soft continuation of that item; lift it back out.
+    if (label.includes('\n') && tokens[i + 5]?.type === 'bullet_list_close') {
+      const lines = label.split('\n'); label = lines.shift(); continuation = lines.join('\n');
+    }
+    if (label.includes('\n')) return fail('keep each choice on one line');
+    if (!task || !label.trim() || md.parseInline(label, env)[0].children?.some(t => ['link_open', 'image', 'html_inline'].includes(t.type)))
+      return fail('use - [ ] choices and one - [x] answer; choices cannot contain links or HTML');
+    choices.push({ correct: task === 'done', label }); i += 5;
+  }
+  if (tokens[i]?.type !== 'bullet_list_close' || choices.length < 2 || choices.filter(c => c.correct).length !== 1)
+    return fail('needs at least two choices and exactly one - [x] answer');
+  const explanation = tokens.slice(i + 1);
+  if (explanation.some(t => t.type === 'heading_open')) return fail('use one question per quiz');
+  const answer = choices.find(c => c.correct);
+  return `<div class="quiz"><h3>${md.renderInline(tokens[1].content)}</h3><ul class="quiz-choices">${choices.map(c => `<li data-correct="${c.correct}">${md.renderInline(c.label)}</li>`).join('')}</ul><div class="quiz-answer"><p><strong>Answer:</strong> ${md.renderInline(answer.label)}</p>${continuation ? compile(md.parse(continuation, env), env) : ''}${compile(explanation, env)}</div></div>`;
+}
+
 function compile(tokens, env) {
   let html = '', buffer = [], columns = false;
   const flush = () => { html += md.renderer.render(buffer, md.options, env); buffer = []; };
@@ -457,6 +490,7 @@ function compile(tokens, env) {
           } catch (error) { html += `<p class="td-error" role="alert">Glossary: ${escape(error.message)}</p>` + compile(body, env); }
         }
         else if (name === 'explorable') { html += explorable(body, options, classes, md, escape, env); }
+        else if (name === 'quiz') { html += quiz(body, options, classes, env); }
         else if (name === 'links') { html += linkCards(body, options, classes, env); }
         else if (['notes', 'say', 'read'].includes(name) && env.collectNotes) {
           const content = compile(body, { ...env, collectNotes: false });
