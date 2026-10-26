@@ -48,6 +48,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
  *   ```diff {steps: hunks}              +/- lines tinted; ↓ highlights each @@ hunk (or {steps: 1-2 | 3}); title="file" view=split;
  *                                       Copy takes the new code
  *   ```terminal                         "$ command" lines type out one per ↓, the rest is their output
+ *   ::: endpoint GET /users/{id}        method badge, highlighted path parameters and Markdown reference; article path is a permalink
  *   ```http                             request then a blank line and HTTP status; ↓ reveals the response; article shows both
  *   ![title](demo.cast) or ```cast     plays an asciinema recording (a file needs the page served over http; a ```cast block plays anywhere); ![](youtube / vimeo / .mp4 link) embeds a video
  *   ::: accordion / ::: features        ### items that open one per ↓ / a grid of cards (a leading :icon: or image is the card's icon)
@@ -1274,6 +1275,22 @@ import { visualTypes, visualChart } from './visual-charts.js';
       if (isMd && n.closest('#stage')) n.before(...made); else stage.append(...made);
       if (isMd) n.remove();
     }
+    // Reuse slide navigation IDs: arbitrary child hashes are not deck destinations.
+    const slideIds = new Set([...stage.querySelectorAll('.slide[data-id]')].map(s => s.dataset.id));
+    stage.querySelectorAll('.w-endpoint-path').forEach(link => {
+      const slide = link.closest('.slide');
+      if (!slide) return;
+      const label = link.closest('.w-endpoint').getAttribute('aria-label');
+      if (!slide.dataset.id) {
+        const base = 'endpoint-' + label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-$/, '');
+        let id = base, n = 2;
+        while (slideIds.has(id) || document.getElementById(id)) id = base + '-' + n++;
+        slide.dataset.id = id;
+        slideIds.add(id);
+      }
+      link.href = '#' + encodeURIComponent(slide.dataset.id);
+      link.setAttribute('aria-label', 'Permalink to ' + label);
+    });
     // an author's own <div id="bar"> (a .title plus any links) becomes the top bar; talkdown adds the section and tools
     const own = $('bar');
     if (own && !stage.contains(own)) stage.prepend(own);

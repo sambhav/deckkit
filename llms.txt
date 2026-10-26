@@ -24,3 +24,5 @@ Write notes in `::: notes` / `::: say` / `::: read` blocks and charts in `::: ch
 latest.js loads the current release each time a page opens, so published decks never need updating. Custom scripts use Talkdown.onReady(Deck => { ... }). For offline or pinned decks, link deck.js and deck.css directly (download them from sambhav.dev/talkdown or a GitHub release).
 
 HTTP exchanges use a `http` fence: request line, headers/body, a blank line, then the response status line and headers/body. Present view reveals the response on ↓; article view stacks both with Copy buttons.
+
+API endpoint references use `::: endpoint GET /v1/users/{id}` around a description and optional Markdown parameter table. Both views show all content; the article path is a permalink. Use an uppercase standard HTTP method and slash-prefixed path; `{name}` highlights parameters. No options.

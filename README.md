@@ -231,6 +231,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Stepped code** | ` ```python {steps: 1-2 \| 3-4} ` lights up each group of lines in turn |
 | **Annotated code** | ` ```python {annotate} ` turns `# (1)` line-end comments into numbered pins, explained by the `1.` `2.` list right after the block; ↓ walks them |
 | **Diffs** | ` ```diff {steps: hunks} title="api.py" ` tints added and removed lines and highlights each `@@` hunk on ↓. `view=split` shows old beside new on the slide; **Copy** takes the new code |
+| **API endpoint** | `::: endpoint GET /v1/users/{id}` around a description and Markdown parameter table; path parameters are highlighted, with a permalink on the path in the article |
 | **HTTP exchange** | A ` ```http ` fence: request line and headers, a blank line, then `HTTP/1.1 200 OK` and the response. ↓ reveals the response; the article stacks both messages |
 | **Copy buttons** | Every code block gets a **Copy** button, shown on hover and always on touch screens |
 | **Flip cards** | `::: flip`: the `###` heading is the front, the rest is the back |
