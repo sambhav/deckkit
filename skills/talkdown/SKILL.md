@@ -112,6 +112,7 @@ Notes can span lines. Timing cues like `[~60s]` are dropped from the article. Co
 ## Widgets (plain Markdown)
 
 - Stepped equations: `$$ {steps}` on its own line, TeX rows separated by `\\`, then `$$`. Use `&` to align cells and `\text{…}` for explanations. ↓ or **Next equation** reveals each row; article view shows every equation. Existing KaTeX loading and `data-math="off"` work unchanged.
+- `::: meter value=72 max=100 label="Migration done" unit=%` (empty container) and `[1.2M]{count}`: ↓ animates each value once on cue; articles and reduced motion show final values. Meter max defaults to 100, requires 0 ≤ value ≤ max and a label; unit is optional short plain text. Counters accept signed decimals with optional k/M/B and %.
 
 Stateful widgets step with ↓ and expand in the article; charts follow their `view` setting.
 

@@ -601,6 +601,12 @@ td.mk-only, th.mk-only { text-align: center; }
 /* Mermaid sizes boxes by measuring labels at 16px off-slide; keep slide typography out so they render exactly as measured */
 .w-diagram.drawn svg :is(p, span, div, li) { font-size: 18px !important; line-height: 1.5 !important; letter-spacing: normal !important; margin: 0 !important; padding: 0; color: inherit; max-width: none; }
 /* stats: big numbers */
+.w-meter { display: grid; gap: calc(var(--t-gap) * .5); padding: var(--t-gap); border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); min-width: 0; }
+.w-meter-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .4em 1em; overflow-wrap: anywhere; }
+.w-meter-heading strong { color: var(--accent-ink); font-size: 1.4em; font-variant-numeric: tabular-nums; }
+.w-meter-track { height: .5em; border-radius: var(--radius); background: var(--surface-2); overflow: hidden; }
+.w-meter-track > span { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+.w-countup { font-variant-numeric: tabular-nums; }
 .w-stats { display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: calc(var(--t-gap) * 1.4) calc(var(--t-gap) * 1.6); }
 .w-stat { border-top: 2px solid var(--accent); padding-top: .7em; }
 .w-stat-n { font: 700 var(--t-stat) / 1 var(--display); letter-spacing: -.03em; color: var(--fg); font-variant-numeric: tabular-nums; }
