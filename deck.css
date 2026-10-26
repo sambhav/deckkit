@@ -351,8 +351,8 @@ p, li { font-size: 16px; line-height: 1.5; }
   --t-leading: 1.45; --t-gap: 22px; --t-list-gap: 14px; --t-bullet: 34px; --t-ui: 18px; --t-stat: 76px;
 }
 .md .content { display: flex; flex-direction: column; padding: 60px 88px 72px; }
-.md .content > * { zoom: var(--squeeze, 1); }
-:root { --heat-ink: var(--on-accent); }   /* heatmap values in the high half; the runtime picks per theme */   /* set by the runtime only when a slide would clip */
+.md .content > * { zoom: var(--squeeze, 1); }   /* set by the runtime only when a slide would clip */
+:root { --heat-ink: var(--on-accent); }   /* heatmap values in the high half; the runtime picks per theme */
 .md .content :is(p, li, h1, h2, h3, a) { overflow-wrap: anywhere; }
 .md .content > *, .md .card > *, .w-pane > * { min-width: 0; }
 .md .content > * + *, .md .cols > div > * + *, .md .card > * + * { margin-top: var(--t-gap); }

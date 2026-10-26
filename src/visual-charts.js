@@ -35,12 +35,12 @@ export function visualChart(headers, rows, type, options = {}) {
   const line = (x1, y1, x2, y2, color = 'var(--line)') => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}"/>`;
   const palette = ['var(--chart-1, var(--accent))', 'var(--chart-2, var(--blue))', 'var(--chart-3, var(--green))', 'var(--chart-4, var(--orange))', 'var(--chart-5, var(--red))', 'var(--chart-6, var(--muted))'];
   const extent = values => values.reduce(([lo, hi], v) => [Math.min(lo, v), Math.max(hi, v)], [Infinity, -Infinity]);
-  // the smallest round step (1, 2, 2.5, 5 × 10^n) whose four intervals from a rounded start cover lo..hi, so axis ticks read cleanly
+  // round axis bounds: the smallest 1/2/2.5/5 × 10^n step that covers lo..hi in at most six intervals → [start, end, intervals]
   const nice = (lo, hi) => {
-    if (!(hi > lo) || !Number.isFinite(hi - lo)) return [lo, hi];   // domain() reports a range too large to plot
-    for (let e = 10 ** Math.floor(Math.log10((hi - lo) / 4)); ; e *= 10) for (const f of [1, 2, 2.5, 5]) {
-      const step = f * e, start = Math.floor(lo / step) * step;
-      if (start + 4 * step >= hi) return [start, start + 4 * step];
+    if (!(hi > lo) || !Number.isFinite(hi - lo)) return [lo, hi, 4];   // domain() reports a range too large to plot
+    for (let e = 10 ** Math.floor(Math.log10((hi - lo) / 6)); ; e *= 10) for (const f of [1, 2, 2.5, 5]) {
+      const step = f * e, start = Math.floor(lo / step + 1e-9) * step, end = Math.ceil(hi / step - 1e-9) * step, n = Math.round((end - start) / step);
+      if (n <= 6) return [start, end, Math.max(1, n)];
     }
   };
   const domain = (lo, hi) => {
@@ -50,18 +50,18 @@ export function visualChart(headers, rows, type, options = {}) {
   };
   const scale = (lo, hi, a, b) => v => a + (v - lo) / (hi - lo) * (b - a);
   let out = '', width = 680, height = 340;
-  const xAxis = (lo, hi, left, right, y, format = fmt) => {
+  const xAxis = (lo, hi, left, right, y, format = fmt, n = 4) => {
     const px = scale(lo, hi, left, right);
     out += line(left, y, right, y, 'var(--muted)');
-    for (let i = 0; i <= 4; i++) {
-      const v = lo + (hi - lo) * i / 4, x = px(v);
+    for (let i = 0; i <= n; i++) {
+      const v = lo + (hi - lo) * i / n, x = px(v);
       out += line(x, y, x, y + 5) + label(x, y + 23, format(v), 'middle', 16);
     }
   };
-  const yAxis = (lo, hi, left, right, top, bottom) => {
+  const yAxis = (lo, hi, left, right, top, bottom, n = 4) => {
     const py = scale(lo, hi, bottom, top);
-    for (let i = 0; i <= 4; i++) {
-      const v = lo + (hi - lo) * i / 4, y = py(v);
+    for (let i = 0; i <= n; i++) {
+      const v = lo + (hi - lo) * i / n, y = py(v);
       out += line(left, y, right, y) + label(left - 10, y + 5, fmt(v), 'end', 12);
     }
   };
@@ -112,10 +112,11 @@ export function visualChart(headers, rows, type, options = {}) {
     const points = rows.map(r => ({ name: r[0], x: number(r, xi), y: number(r, yi), size: si < 0 ? 1 : number(r, si) }));
     if (points.some(p => p.size < 0)) throw Error('Bubble sizes must be nonnegative');
     // pad by about one marker so points at the extremes do not sit on the axes and cover their labels
-    const pad = ([lo, hi], k) => nice(lo - (hi - lo) * k, hi + (hi - lo) * k), k = si < 0 ? .03 : .07;
-    const [xmin, xmax] = domain(...pad(extent(points.map(p => p.x)), k)), [ymin, ymax] = domain(...pad(extent(points.map(p => p.y)), k));
+    // non-negative data never gets a negative axis
+    const pad = ([lo, hi], k) => nice(lo >= 0 ? Math.max(0, lo - (hi - lo) * k) : lo - (hi - lo) * k, hi + (hi - lo) * k), k = si < 0 ? .03 : .07;
+    const [xmin, xmax, xn] = pad(domain(...extent(points.map(p => p.x))), k), [ymin, ymax, yn] = pad(domain(...extent(points.map(p => p.y))), k);
     const smax = Math.max(...points.map(p => p.size)), px = scale(xmin, xmax, 100, 620), py = scale(ymin, ymax, 260, 55);
-    yAxis(ymin, ymax, 100, 620, 55, 260); xAxis(xmin, xmax, 100, 620, 260);
+    yAxis(ymin, ymax, 100, 620, 55, 260, yn); xAxis(xmin, xmax, 100, 620, 260, fmt, xn);
     // Radius is sqrt(value): area, rather than radius, encodes the size column.
     points.forEach(p => { out += `<circle cx="${px(p.x)}" cy="${py(p.y)}" r="${si < 0 ? 6 : smax ? 22 * Math.sqrt(p.size / smax) : 0}" fill="var(--accent)" fill-opacity=".65" stroke="var(--fg)" stroke-width=".5"><title>${esc(p.name)}: ${esc(names[xi])} ${p.x}, ${esc(names[yi])} ${p.y}${si < 0 ? '' : ', ' + esc(names[si]) + ' ' + p.size}</title></circle>`; });
     out += label(360, 324, names[xi], 'middle', 55) + label(100, 24, names[yi], 'start', 30);

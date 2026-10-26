@@ -83,3 +83,15 @@ test('heatmap cells show values, bracketed header text sits on a second line, an
   assert.doesNotMatch(svg, /<rect[^>]*><title>A, Score/);
   assert.throws(() => visualChart(['Bank', 'V'], [['A', '1']], 'heatmap', { total: 'Bank' }), /label column/);
 });
+
+test('scatter and bubble axes are round, keep non-negative data non-negative and use most of the plot', async () => {
+  const { visualChart } = await load();
+  const ticks = svg => [...svg.matchAll(/<\/title>(-?[\d.]+)<\/text>/g)].map(m => +m[1]);
+  for (const [lo, hi] of [[0, 100], [0, 1], [0, 10], [1990, 2020], [80, 150]]) {
+    const t = ticks(visualChart(['Name', 'X', 'Y', 'Size'], [['A', String(lo), String(lo), '1'], ['B', String(hi), String(hi), '4']], 'bubble'));
+    const min = Math.min(...t), max = Math.max(...t);
+    assert.ok(lo < 0 || min >= 0, `${lo}..${hi}: no negative ticks (${t})`);
+    assert.ok((min < lo || min === 0) && max > hi, `${lo}..${hi}: points stay off the axes, except a zero on a zero axis (${t})`);
+    assert.ok((hi - lo) / (max - min) >= .6, `${lo}..${hi}: data fills most of the axis (${t})`);
+  }
+});

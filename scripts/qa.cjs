@@ -56,6 +56,14 @@ const failures = [], warnings = [];
 const fail = (where, msg) => failures.push(`${where}: ${msg}`);
 const warn = (where, msg) => warnings.push(`${where}: ${msg}`);
 
+// wait for late renders (fonts, KaTeX, Mermaid) so measurements are not taken mid-swap; CDN-backed, so allow up to 10s
+const settle = page => page.evaluate(async () => {
+  const done = () => [...document.querySelectorAll('.w-diagram')].every(d => d.classList.contains('drawn') || d.querySelector(':scope > pre'))
+    && [...document.querySelectorAll('.math')].every(m => m.querySelector('.katex'));
+  for (let t = 0; t < 100 && !done(); t++) await new Promise(r => setTimeout(r, 100));
+  await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 3000))]);
+});
+
 async function open(browser, device, { theme, mode, view }) {
   const ctx = await browser.newContext({ ...DEVICES[device], deviceScaleFactor: 2, reducedMotion: 'reduce' });
   const page = await ctx.newPage();
@@ -78,6 +86,7 @@ async function open(browser, device, { theme, mode, view }) {
     return true;
   }, [args.slide, view]);
   if (!found) throw new Error(`No slide with id: ${args.slide} in ${page_}`);
+  await settle(page);
   await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   await page.waitForTimeout(150);
   return { ctx, page, errors };
@@ -262,6 +271,7 @@ async function audit(browser, page_) {
     await page.goto(`${base}/${page_}?view=${view}`);
     await page.evaluate(() => Talkdown.ready.then(() => {}));
     await page.evaluate(`window.__inspect = ${inspect}`);
+    await settle(page);
     for (const [theme, mode] of themes) {   // [theme, mode] pairs; layout-only runs need just one of each
       // switch in place: the runtime fetches the theme's fonts; wait for their stylesheet and faces before measuring
       await page.evaluate(async ([t, m]) => {
