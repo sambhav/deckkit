@@ -32,6 +32,7 @@ import { beforeAfter } from './before-after.js';
  *   ::: flip                            ### front, the rest is the back
  *   ::: flow / ::: stack               bulleted boxes; flow vertical changes direction; build: true or {.step} reveals items
  *   ::: timeline                        ### milestones; ↓ walks them; vertical on phones and in read view
+ *   ::: quadrant x="Effort" y="Impact"  four ### quadrant labels, then optional - Label [0.2, 0.8] points
  *   ::: board                           ### columns with lists of cards; ↓ reveals each column, all shown in read view
  *   ::: speaker                         optional photo, ### name, role and Markdown links; compact author box in read view
  *   ::: links                           a list of [Title](URL) descriptions becomes further-reading cards; no network fetches
@@ -194,6 +195,7 @@ import { beforeAfter } from './before-after.js';
     [...c.querySelectorAll('.tabs, .toggle, .steps')].reverse().forEach(panes);
     c.querySelectorAll('.timeline').forEach(timeline);
     c.querySelectorAll('.board').forEach(board);
+    c.querySelectorAll('.w-quadrant').forEach(quadrantSteps);
     c.querySelectorAll('.stats').forEach(stats);
     c.querySelectorAll('.w-hotspots').forEach(hotspots);
     c.querySelectorAll('blockquote').forEach(callout);
@@ -635,6 +637,15 @@ import { beforeAfter } from './before-after.js';
     image.addEventListener('load', loaded); loaded();
     image.addEventListener('error', failed);
     if (image.complete && !image.naturalWidth) failed();
+  }
+
+  function quadrantSteps(w) {
+    const points = [...w.querySelectorAll('.w-quadrant-point')];
+    const items = points.length ? [...w.querySelectorAll('[data-point]')] : [...w.querySelectorAll('[data-group]')];
+    steps(w, points.length || 4, i => items.forEach((el, j) => {
+      const index = points.length ? +el.dataset.point : j;
+      el.classList.toggle('shown', index <= i);
+    }), { read: 'end' });
   }
 
   // ::: stats — each list item or paragraph leads with its number in bold: "**42%** faster first response"
