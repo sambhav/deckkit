@@ -397,6 +397,18 @@ function flowStack(name, tokens, options, classes, env) {
   return compile(tokens, env);
 }
 
+// Audience destinations must stand alone when the QR library is unavailable.
+function audienceAsk(tokens, options, classes, env) {
+  const fail = message => `<p class="td-error" role="alert">ask: ${escape(message)}</p>${compile(tokens, env)}`;
+  if (classes.length || Object.keys(options).some(key => key !== 'url')) return fail('only the url option is supported.');
+  if (tokens.length) return fail('put the destination in url="https://…" and leave the block empty.');
+  let url;
+  try { url = new URL(options.url); } catch { return fail('provide an absolute HTTP(S) URL.'); }
+  if (!/^https?:\/\//i.test(options.url) || !['http:', 'https:'].includes(url.protocol) || url.username || url.password || /[\s\u0000-\u001f\u007f]/.test(options.url)) return fail('provide an absolute HTTP(S) URL without credentials or whitespace.');
+  const href = escape(url.href), short = escape(url.href.replace(/^https?:\/\//, ''));
+  return `<div class="w w-ask" data-url="${href}"><a href="${href}"><span class="w-ask-label">Ask a question</span><span class="w-ask-url" aria-hidden="true">${short}</span></a></div>`;
+}
+
 // Decorative device chrome is static: preserve all of the Markdown content in both views.
 function deviceFrame(name, options, classes, content) {
   const allowed = name === 'browser' ? ['url'] : name === 'window' ? ['title'] : [];
@@ -500,6 +512,7 @@ function compile(tokens, env) {
             ? `<div class="timer" data-duration="${duration}"><p class="w-timer-duration">Duration: ${timerLabel(duration)}</p><div class="w-timer-body">${content}</div></div>`
             : '<p class="td-error" role="alert">timer: use a duration such as 10m or 1h30m (1 second to 24 hours), with no options.</p>' + content;
         }
+        else if (name === 'ask') { html += audienceAsk(body, options, classes, env); }
         else if (name === 'links') { html += linkCards(body, options, classes, env); }
         else if (['notes', 'say', 'read'].includes(name) && env.collectNotes) {
           const content = compile(body, { ...env, collectNotes: false });
