@@ -2,7 +2,7 @@
 
 > talkdown is a small, no-install slide engine and Markdown format built for agents. A deck is one HTML file with Markdown in a `<script type="text/markdown">` block, loaded through https://sambhav.dev/talkdown/latest.js for automatic runtime updates, or direct deck.css/deck.js links for offline or pinned decks. Slides are the default on desktop and mobile. Article view turns shared speaker notes into prose; phones have visible Previous/Next buttons that move through steps and then slides, without extra inline navigation bars, and a menu containing Slides / Article, Home, and a section/slide picker. Native scrolling and browser gestures remain enabled; there is no custom swipe or edge-tap navigation. A `?view=read#section-id` link opens the article at a named section. The runtime supplies layout and interaction, keeping the authored source compact and editable by hand. Built-in components share the selected theme, and custom HTML and JavaScript can join the deck's navigation. Charts cover bar, horizontal bar, line, donut, heatmap, scatter, bubble, waterfall, timeline, Sankey, treemap and range, all from one Markdown table or CSV. Readers can click a Mermaid diagram or a chart to open it full screen and zoom. A `<div id="bar">` in the page (a `.title` plus links) replaces the default top bar.
 
-For new decks, prefer `::: notes` / `::: say` / `::: read` and explicit `::: chart` containers. Use one HTML file by default; referenced Markdown is optional over HTTP. The public root `deck.js` and `deck.css` URLs remain the supported runtime links.
+Write notes in `::: notes` / `::: say` / `::: read` blocks and charts in `::: chart` containers with plain numbers. Use one HTML file by default; a referenced Markdown file works when served over HTTP.
 
 ## Agent instructions
 
@@ -17,4 +17,4 @@ For new decks, prefer `::: notes` / `::: say` / `::: read` and explicit `::: cha
 - [Starter deck](https://sambhav.dev/talkdown/examples/starter.html): a minimal template to copy.
 
 
-The stable latest.js loader checks an uncached latest.json manifest on each visit and loads a matched content-hashed JS/CSS pair. Custom scripts use Talkdown.onReady(Deck => { ... }). New builds update the manifest, so consuming articles do not need version bumps.
+latest.js loads the current release each time a page opens, so published decks never need updating. Custom scripts use Talkdown.onReady(Deck => { ... }). For offline or pinned decks, link deck.js and deck.css directly (download them from sambhav.dev/talkdown or a GitHub release).
