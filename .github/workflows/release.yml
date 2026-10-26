@@ -1,0 +1,22 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      # The release carries the runtime for self-hosting and the content-hashed pair named in
+      # latest.json, for decks that pin an exact version.
+      - run: gh release create "$GITHUB_REF_NAME" --generate-notes deck.js deck.css latest.json $(node -p "const r = require('./latest.json'); r.js.path + ' ' + r.css.path")
+        env:
+          GH_TOKEN: ${{ github.token }}

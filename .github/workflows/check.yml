@@ -15,7 +15,6 @@ jobs:
           node-version: '24'
       - run: npm ci
       - run: npm run build
-      - run: git diff --exit-code -- deck.js latest.json dist
       - run: npm test
   single-file:
     runs-on: ubuntu-latest
@@ -25,7 +24,25 @@ jobs:
         with:
           node-version: '24'
       - run: npm ci
+      - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: node tests/single-file.cjs
       - run: node tests/run-browser.cjs
-
+  # After the checks pass on main, publish the site and the freshly built runtime to the
+  # gh-pages branch, which GitHub Pages serves. Hashed dist/ files are only ever added
+  # there, so cached manifests and pinned decks keep working.
+  publish:
+    needs: [parser, single-file]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency: publish
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - run: npm run build
+      - run: scripts/publish.sh
