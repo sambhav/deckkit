@@ -288,6 +288,19 @@ export function directive(text) {
   return { name, options, classes };
 }
 
+// Decorative device chrome is static: preserve all of the Markdown content in both views.
+function deviceFrame(name, options, classes, content) {
+  const allowed = name === 'browser' ? ['url'] : name === 'window' ? ['title'] : [];
+  const invalid = Object.keys(options).find(key => !allowed.includes(key));
+  const error = invalid ? `${name}: unsupported option "${invalid}"` : !content.trim() ? `${name}: add an image, code block or Markdown content` : '';
+  if (error) return `<p class="td-error" role="alert">${escape(error)}</p>${content}`;
+  const label = name === 'browser' ? options.url || 'Browser' : name === 'window' ? options.title || 'Window' : 'Phone';
+  const chrome = name === 'phone'
+    ? '<div class="w-device-speaker" aria-hidden="true"></div>'
+    : `<figcaption class="w-device-bar"><span class="w-device-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="w-device-label">${escape(label)}</span></figcaption>`;
+  return `<figure class="${escape(['w', 'w-device', `w-${name}`, ...classes].join(' '))}" aria-label="${escape(label)}">${chrome}<div class="w-device-body">${content}</div></figure>`;
+}
+
 function compile(tokens, env) {
   let html = '', buffer = [], columns = false;
   const flush = () => { html += md.renderer.render(buffer, md.options, env); buffer = []; };
@@ -327,7 +340,10 @@ function compile(tokens, env) {
             }
           }
           const attrs = Object.entries(options).map(([k, v]) => ` data-${k}="${escape(v)}"`).join('');
-          html += `<div class="${escape([name, ...classes].join(' '))}"${attrs}>${compile(body, env)}</div>`;
+          const content = compile(body, env);
+          html += ['browser', 'window', 'phone'].includes(name)
+            ? deviceFrame(name, options, classes, content)
+            : `<div class="${escape([name, ...classes].join(' '))}"${attrs}>${content}</div>`;
         }
       } catch (error) { html += `<p class="td-error" role="alert">${escape(error.message)}</p>`; }
       i = end;

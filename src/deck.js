@@ -48,6 +48,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
  *   ![title](demo.cast) or ```cast     plays an asciinema recording (a file needs the page served over http; a ```cast block plays anywhere); ![](youtube / vimeo / .mp4 link) embeds a video
  *   ::: accordion / ::: features        ### items that open one per ↓ / a grid of cards (a leading :icon: or image is the card's icon)
  *   :rocket:                            a Lucide icon in the theme's colours (any name from lucide.dev/icons)
+ *   ::: browser url="…" / ::: window title="…" / ::: phone   CSS device frames around images, code or Markdown
  *   ::: agenda / ::: qr                 a contents slide linking every section / a QR code of the deck's link (or the URL inside)
  * Two formats from one deck: ::: notes are spoken and read; ::: say spoken only; ::: read read only.
  *   ::: present-only / ::: read-only for slide content; frontmatter read: hide | text and present: hide for whole slides.

@@ -3,6 +3,7 @@
 const verifyLatest = require('./latest.cjs');
 const verifyVisualCharts = require('./visual-charts.cjs');
 const verifyBoard = require('./board.cjs');
+const verifyDeviceFrames = require('./device-frames.cjs');
 async function verify(page, base) {
   const check = (ok, message) => { if (!ok) throw new Error(message); };
   const errors = [];
@@ -19,7 +20,7 @@ async function verify(page, base) {
     await tab.emulateMedia({ reducedMotion: 'reduce' });
     try { return await suite(tab, base); } finally { await tab.close(); }
   };
-  const suites = Promise.all([verifyMobileNavigation, verifyNativeScrolling, verifyVisualCharts, verifyLatest, verifyBoard].map(sibling));
+  const suites = Promise.all([verifyMobileNavigation, verifyNativeScrolling, verifyVisualCharts, verifyLatest, verifyBoard, verifyDeviceFrames].map(sibling));
   suites.catch(() => {});   // awaited below; this only stops an early failure here from going unhandled
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(base + '/?view=present');
