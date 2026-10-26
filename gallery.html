@@ -642,6 +642,19 @@ Write shortcuts with double brackets, separating keys with plus signs. Mod adapt
 :::
 
 ---
+id: w-explore
+---
+## How many workers?
+
+::: explorable
+With [qps=1000]{range=100..10000 step=100} requests/s at [ms=40]{range=5..200} ms, you need **{qps*ms/1000}** concurrent workers.
+:::
+
+::: notes
+Adjust request volume or latency to see how concurrency changes. Each slider also supports arrow keys; the article starts with the authored values.
+:::
+
+---
 ## Pull quote
 
 > The best presentation is one people can still read afterwards.
