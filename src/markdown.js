@@ -1,4 +1,5 @@
 import { hotspotMarkup } from './hotspots.js';
+import { explorableInline, explorable } from './explorable.js';
 import MarkdownIt from 'markdown-it';
 import { quadrant } from './quadrant.js';
 
@@ -93,6 +94,7 @@ md.inline.ruler.before('link', 'talkdown_shortcut', (state, silent) => {
   if (!silent) { const token = state.push('html_inline', '', 0); token.content = shortcut(match[1]); }
   state.pos += match[0].length; return true;
 });
+md.inline.ruler.before('link', 'explorable', explorableInline);
 
 // Talkdown's small inline additions sit on top of the standard Markdown lexer.
 md.inline.ruler.before('emphasis', 'talkdown_inline', (state, silent) => {
@@ -454,6 +456,7 @@ function compile(tokens, env) {
             html += '<dl class="w-glossary">' + entries.map(([term, definition]) => `<dt>${escape(term)}</dt><dd>${escape(definition)}</dd>`).join('') + '</dl>';
           } catch (error) { html += `<p class="td-error" role="alert">Glossary: ${escape(error.message)}</p>` + compile(body, env); }
         }
+        else if (name === 'explorable') { html += explorable(body, options, classes, md, escape, env); }
         else if (name === 'links') { html += linkCards(body, options, classes, env); }
         else if (['notes', 'say', 'read'].includes(name) && env.collectNotes) {
           const content = compile(body, { ...env, collectNotes: false });
