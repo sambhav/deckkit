@@ -2,6 +2,7 @@ import { activateExplorable } from './explorable.js';
 import { renderMarkdown, renderInline, slideChunks } from './markdown.js';
 import { glossary } from './glossary.js';
 import { parseCSV, chartDataset, csvDownload } from './data.js';
+import { gallery } from './gallery.js';
 import { visualTypes, visualChart } from './visual-charts.js';
 import { beforeAfter } from './before-after.js';
 
@@ -38,6 +39,7 @@ import { beforeAfter } from './before-after.js';
  *   ::: timeline                        ### milestones; ↓ walks them; vertical on phones and in read view
  *   ::: quadrant x="Effort" y="Impact"  four ### quadrant labels, then optional - Label [0.2, 0.8] points
  *   ::: chat                            **user:** / **assistant:** / **tool** messages; ↓ reveals messages; tool rows expand
+ *   ::: gallery                         Markdown images become a grid; ↓ highlights each, click opens a captioned lightbox
  *   ::: board                           ### columns with lists of cards; ↓ reveals each column, all shown in read view
  *   ::: glossary                       Term: Definition lines; first use tooltips in articles, glossary: inline opts slides in
  *   ::: speaker                         optional photo, ### name, role and Markdown links; compact author box in read view
@@ -205,6 +207,7 @@ import { beforeAfter } from './before-after.js';
     c.querySelectorAll('.w-chat').forEach(chat);
     c.querySelectorAll('.board').forEach(board);
     c.querySelectorAll('.w-quadrant').forEach(quadrantSteps);
+    c.querySelectorAll('.gallery').forEach(b => gallery(b, steps));
     c.querySelectorAll('.stats').forEach(stats);
     c.querySelectorAll('.w-hotspots').forEach(hotspots);
     c.querySelectorAll('.w-explore').forEach(activateExplorable);
@@ -1555,6 +1558,7 @@ import { beforeAfter } from './before-after.js';
 
   /* ================= input ================= */
   function onKey(e) {
+    if (document.querySelector('.w-gallery-lightbox[open]')) return;
     if ($('mobileNav').open) return;    // the dialog owns focus, tab arrows and Escape
     if ($('zoom')?.classList.contains('on')) {    // the diagram viewer owns the keyboard
       if (e.key === 'Escape') unzoom(); else if (!e.metaKey && !e.ctrlKey && $('zoom').key(e.key)) e.preventDefault();
