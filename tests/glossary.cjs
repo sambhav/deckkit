@@ -1,0 +1,41 @@
+module.exports = async function verifyGlossary(page, base) {
+  const check = (ok, message) => { if (!ok) throw new Error(message); };
+  const source = 'section: TTFB\nid: glossary\nglossary: inline\n---\n## Latency\n\nTTFB and TTFB; p99 and p999. C++ helps.\n\n`TTFB` and [p99](https://example.com).\n\n::: glossary\nTTFB: Time to first byte.\np99: The latency 99% of requests beat.\nC++: A programming language.\n:::\n\n---\n## Default stage\n\nTTFB is plain on stage.\n\n---\n## Invalid\n\n::: glossary\nMissing separator\n:::';
+  await page.route('**/glossary-test.html*', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html data-fonts="off" data-icons="off"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + source + '</script></body></html>' }));
+  await page.goto(base + '/glossary-test.html?view=present');
+  await page.waitForFunction(() => window.Deck?.slides.length === 4);
+  const first = page.locator('.slide').first(), term = first.locator('.glossary-button').first();
+  check(await first.locator('.glossary-button').count() === 3, 'Only first complete term occurrences are annotated, including C++');
+  check(await page.locator('.rh .glossary-term').count() === 0, 'Generated section labels do not consume first-use definitions');
+  check(await first.locator('code .glossary-term, a .glossary-term').count() === 0, 'Code and links stay intact');
+  check(await term.isVisible(), 'Stage opts into inline definitions');
+  await term.hover();
+  check(await page.locator('.glossary-tooltip').isVisible(), 'Hover opens definition');
+  await term.focus();
+  check(await term.getAttribute('aria-expanded') === 'true', 'Focus opens accessible definition');
+  await page.keyboard.press('Escape');
+  check(await term.getAttribute('aria-expanded') === 'false', 'Escape dismisses definition');
+  await page.keyboard.press('Enter');
+  check(await page.locator('.glossary-tooltip').isVisible(), 'Enter opens definition without advancing slide');
+  check(await first.evaluate(el => el.classList.contains('active')), 'Definition activation retains the slide');
+  await page.keyboard.press('Enter');
+  check(!await page.locator('.glossary-tooltip').isVisible(), 'Enter toggles the pinned definition closed');
+  await page.keyboard.press('s');
+  check(await page.locator('#src').textContent().then(text => text.includes('::: glossary') && text.includes('glossary: inline')), 'Source retains authored glossary and frontmatter');
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => Deck.go(1));
+  check(!await page.locator('.slide').nth(1).locator('.glossary-button').isVisible(), 'Stage definitions default off');
+  for (const width of [1440, 320, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(() => { Deck.setView('read'); Deck.go(0); });
+    check(await page.locator('.glossary-appendix dt').count() === 3, 'Article contains every expanded definition');
+    check(await page.locator('.glossary-appendix dd').first().isVisible(), 'Definitions need no article interaction');
+    await term.click();
+    check(await page.locator('.glossary-tooltip').isVisible(), 'Tap/click opens the definition');
+    check(await page.locator('.glossary-tooltip').evaluate(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.top >= 0; }), 'Tooltip fits narrow viewports');
+    await page.locator('.glossary-appendix h2').click();
+    check(!await page.locator('.glossary-tooltip').isVisible(), 'Click outside closes definition');
+    check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Article glossary does not overflow');
+  }
+  check(await page.locator('.td-error').textContent().then(text => text.includes('Glossary:')), 'Malformed definitions fail visibly');
+};
