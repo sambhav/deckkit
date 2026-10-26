@@ -1329,3 +1329,17 @@ aside.article { display: none; }
 @media (prefers-reduced-motion: reduce) { .w-timer.is-finished .w-timer-clock { animation: none; } }
 [data-view=read] .w-timer-panel { display: none; }
 [data-view=read] .w-timer { background: var(--bg); }
+
+/* Literal log lines: theme-native levels and article highlights, with an internal stage viewport. */
+.md pre.code.w-log { position: relative; max-height: 18em; overflow: auto; white-space: normal; }
+.md pre.code.w-log code { display: block; }
+.md pre.code.w-log .ln { position: relative; margin: 0; padding: 0 .5em 0 3.5em; white-space: pre-wrap; overflow-wrap: anywhere; min-height: 1.5em; }
+.w-log .ln::before { content: attr(data-line); position: absolute; left: 0; width: 2.5em; text-align: right; color: var(--muted); font-weight: 400; user-select: none; }
+.w-log .log-time { color: var(--muted); }
+.w-log .log-level { color: var(--fg); font-weight: 600; }
+.w-log :is(.log-trace, .log-debug) { color: var(--muted); font-weight: 400; }
+.w-log :is(.log-warn, .log-warning) { color: var(--fg); text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: .2em; }
+.w-log :is(.log-error, .log-fatal, .log-critical) { color: var(--on-accent); background: var(--accent); border-radius: .15em; }
+.md pre.code.w-log .ln.on { background: var(--accent-soft); border-left-color: var(--accent); }
+.md pre.code.w-log:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+[data-view=read] .md pre.code.w-log { max-height: none; overflow: visible; }

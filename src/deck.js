@@ -64,6 +64,7 @@ import { beforeAfter } from './before-after.js';
  *   layout: image + image: url          a full-bleed picture with the text over it
  *   ```diff {steps: hunks}              +/- lines tinted; ↓ highlights each @@ hunk (or {steps: 1-2 | 3}); title="file" view=split;
  *                                       Copy takes the new code
+ *   ```log {steps: 3 | 5-6}          numbered logs with timestamps, severity and stepped highlights
  *   ```terminal                         "$ command" lines type out one per ↓, the rest is their output
  *   ::: endpoint GET /users/{id}        method badge, highlighted path parameters and Markdown reference; article path is a permalink
  *   ```http                             request then a blank line and HTTP status; ↓ reveals the response; article shows both
@@ -230,6 +231,7 @@ import { beforeAfter } from './before-after.js';
     c.querySelectorAll('.w-annotate').forEach(annotate);
     c.querySelectorAll('.w-diff').forEach(diffBlock);
     c.querySelectorAll('.w-http').forEach(httpExchange);
+    c.querySelectorAll('.w-log').forEach(logBlock);
     c.querySelectorAll('pre.code').forEach(copyable);
     c.querySelectorAll('.compare').forEach(box => beforeAfter(box, steps));
     c.querySelectorAll('.quiz').forEach(quiz);
@@ -420,6 +422,22 @@ import { beforeAfter } from './before-after.js';
     const a = Math.max(1, +m[1]), b = Math.min(max, +(m[2] || m[1]));
     return Array.from({ length: Math.max(0, b - a + 1) }, (_, k) => a + k);
   }));
+  function logBlock(pre) {
+    sources.set(pre, pre.dataset.source); delete pre.dataset.source;
+    // Keep Space native for scrolling and activating Copy when the log owns focus.
+    pre.addEventListener('keydown', e => { if (e.key === ' ') e.stopPropagation(); });
+    const spec = pre.dataset.logSteps; if (!spec) return;
+    const lines = [...pre.querySelectorAll('.ln')];
+    const groups = spec.split('|').map(g => rangeSet(g.replace(/\s/g, ''), lines.length));
+    const marked = new Set(groups.flatMap(g => [...g]));
+    pre.stepper = steps(pre, groups.length + 1, i => {
+      pre.classList.toggle('stepping', i > 0 && !reading());
+      lines.forEach((line, j) => line.classList.toggle('on', reading() ? marked.has(j + 1) : i > 0 && groups[i - 1].has(j + 1)));
+      // Move only the log's viewport; scrolling a step must never move the slide or article.
+      const target = i > 0 && !reading() ? lines.find(l => groups[i - 1].has(+l.dataset.line)) : null;
+      if (target) pre.scrollTop = Math.max(0, target.offsetTop - pre.clientHeight / 3);
+    }, { read: 'end' });
+  }
   function codeSteps(pre) {
     const code = pre.firstChild;
     sources.set(pre, code.textContent);
@@ -1887,7 +1905,7 @@ import { beforeAfter } from './before-after.js';
       if (done(s)) setAt(s, 0); else stepsOf(s).some(st => st.next());
     }));
     // a clicked button keeps focus, so Space / Enter would press it again; hand the keys back to the deck
-    document.addEventListener('click', e => { const b = e.target.closest('#stage button'); if (b && !b.matches('.glossary-button') && !b.closest('.w-quiz, .w-timer-controls')) b.blur(); });
+    document.addEventListener('click', e => { const b = e.target.closest('#stage button'); if (b && !b.matches('.glossary-button') && !b.closest('.w-quiz, .w-timer-controls, .w-log')) b.blur(); });
     // [text](#id) links to the slide with that id; [text](?theme=rose#id) and ?mode=dark restyle this page in place,
     // so the slide and step you're on stay put
     document.addEventListener('click', e => {
