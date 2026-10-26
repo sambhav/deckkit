@@ -496,6 +496,17 @@ function compile(tokens, env) {
           const content = compile(body, { ...env, collectNotes: false });
           if (name !== 'read') env.notes.push(content); if (name !== 'say') env.article.push(content);
         } else {
+          if (name === 'gallery') {
+            const images = body.filter(t => t.type === 'inline');
+            const valid = !Object.keys(options).length && images.length && body.every(t =>
+              ['paragraph_open', 'paragraph_close'].includes(t.type) || t.type === 'inline' && t.children.every((c, j) =>
+                (['image', 'softbreak', 'hardbreak'].includes(c.type) && (c.type !== 'image' || !embed(c.attrGet('src'), c.content))) ||
+                (c.type === 'html_inline' && j === 1 && t.children.length === 2 && t.children[0].type === 'image' && t.children[0].attrGet('title'))));
+            if (!valid) {
+              html += '<p class="td-error" role="alert">Gallery needs Markdown images and takes no options.</p>' + compile(body, env);
+              i = end; continue;
+            }
+          }
           if (name === 'board') {
             let columns = 0, invalid = Object.keys(options).length || classes.length;
             for (let j = 0; j < body.length;) {
