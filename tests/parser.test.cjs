@@ -218,3 +218,31 @@ test('diff steps and brace options are validated; braces inside a quoted title a
   assert.match(renderMarkdown('```diff {steps: 1-2 | 3, 5}\n+a\n```'), /data-steps="1-2 \| 3, 5"/);
   assert.match(renderMarkdown('```diff title="{x}.py" {steps: hunks}\n+a\n```'), /<figcaption>\{x\}.py<\/figcaption>/);
 });
+
+
+test('HTTP fences pair a request and response and preserve escaped message bodies', () => {
+  const html = md('```http\nPOST /users HTTP/1.1\nContent-Type: application/json\n\n{"name":"<Sam>"}\n\nHTTP/1.1 201 Created\nContent-Type: application/json\n\n{"id":7}\n```');
+  assert.match(html, /class="w-http" data-status="success"/);
+  assert.match(html, /aria-label="HTTP request"[^]*w-http-badge">POST<\/strong>/);
+  assert.match(html, /w-http-response[^]*w-http-badge">201 Created<\/strong>/);
+  assert.match(html, /&lt;Sam&gt;/);
+  assert.match(html, /&quot;name&quot;:&quot;&lt;Sam&gt;&quot;}<\/code><\/pre>/);
+  assert.match(md('```http\nGET / HTTP/2\n\nHTTP/2 404 Not Found\n```'), /data-status="error"/);
+  assert.match(md('```http\nGET / HTTP/3\n\nHTTP/3 302\n```'), /data-status="redirect"/);
+});
+
+test('invalid HTTP exchanges fail visibly and retain the authored source', () => {
+  for (const [source, error] of [
+    ['', 'start with a request line'],
+    ['GET /users', 'start with a request line'],
+    ['GET / HTTP/1.1', 'add a blank line'],
+    ['GET / HTTP/1.1\nHTTP/1.1 200 OK', 'add a blank line'],
+    ['GET / HTTP/1.1\n\nHTTP/1.1 999 Nope', 'the response status must be between'],
+  ]) {
+    const html = md('```http\n' + source + '\n```');
+    assert.match(html, new RegExp('role="alert">http: ' + error));
+    assert.match(html, /<pre class="code"><code>/);
+    assert.doesNotMatch(html, /class="w-http"/);
+  }
+  assert.match(md('```http {steps: 1}\nGET / HTTP/1.1\n\nHTTP/1.1 200 OK\n```'), /http: no options are supported/);
+});

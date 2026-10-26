@@ -258,10 +258,30 @@ function diff(source, info) {
     + (name ? `<figcaption>${escape(name)}</figcaption>` : '')
     + `<pre class="code w-diff-uni"><code>${rows.map(r => cell(r)).join('')}</code></pre>${split}</figure>`;
 }
+// A single HTTP exchange: a request, a blank separator, then the response status line.
+// Keep both messages as code, so bodies and headers remain readable without JavaScript.
+function httpExchange(source, info) {
+  const fail = message => `<p class="td-error" role="alert">${escape('http: ' + message)}</p><pre class="code"><code>${escape(source)}</code></pre>`;
+  if (info !== 'http') return fail('no options are supported; use a plain http fence');
+  const lines = source.split('\n');
+  const request = lines[0]?.match(/^([!#$%&'*+.^_`|~0-9A-Z-]+)\s+(\S+)\s+HTTP\/(\d+(?:\.\d+)?)\s*$/);
+  if (!request) return fail('start with a request line, for example GET /users HTTP/1.1');
+  const at = lines.findIndex((line, i) => i > 0 && !lines[i - 1].trim() && /^HTTP\//.test(line));
+  if (at < 0) return fail('add a blank line followed by a response status line, for example HTTP/1.1 200 OK');
+  const response = lines[at].match(/^HTTP\/\d+(?:\.\d+)?\s+([1-5]\d{2})(?:\s+(.*))?\s*$/);
+  if (!response) return fail('the response status must be between 100 and 599');
+  const status = response[1], kind = +status < 200 ? 'info' : +status < 300 ? 'success' : +status < 400 ? 'redirect' : 'error';
+  const panel = (name, badge, content, cls) => `<section class="w-http-${cls}" aria-label="HTTP ${name.toLowerCase()}"><header><span>${name}</span><strong class="w-http-badge">${escape(badge)}</strong></header><pre class="code" data-lang="http"><code>${escape(content)}</code></pre></section>`;
+  // Remove only the one separating blank line; preserve any authored blank lines inside each message.
+  return `<figure class="w-http" data-status="${kind}">`
+    + panel('Request', request[1], lines.slice(0, at - 1).join('\n'), 'request')
+    + panel('Response', status + (response[2]?.trim() ? ' ' + response[2].trim() : ''), lines.slice(at).join('\n'), 'response') + '</figure>';
+}
 md.renderer.rules.fence = (tokens, i) => {
   const token = tokens[i], info = token.info.trim(), lang = info.match(/^[\w+-]+/)?.[0] || '';
   const source = token.content.replace(/\n$/, ''), code = escape(source);
   if (lang === 'diff') return diff(source, info);
+  if (lang === 'http') return httpExchange(source, info);
   if (/^(cast|asciicast)$/.test(lang)) return `<div class="w-term w-cast" data-inline="${code}"></div>`;
   if (lang === 'terminal') return `<div class="w-term" data-lines="${escape(JSON.stringify(source ? source.split('\n') : []))}"></div>`;
   const diagram = `<div class="w-diagram"><pre class="code w-diagram-src">${code}</pre></div>`;

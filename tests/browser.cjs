@@ -186,6 +186,33 @@ async function verify(page, base) {
   check(await page.locator('.slide.active .w-diff-split').isVisible() && !(await page.locator('.slide.active .w-diff-uni').isVisible()), 'view=split must show the split view on the stage');
   await page.evaluate(() => Deck.setView('read'));
   check(!(await page.locator('.w-diff-split').first().isVisible()) && await page.locator('.w-diff[data-view=split] .w-diff-uni').isVisible(), 'The article must show the unified diff');
+  // HTTP exchanges reveal only the response on ↓; articles show both and Copy preserves each raw message.
+  const exchange = '## HTTP\n```http\nGET /users HTTP/1.1\nAccept: application/json\n\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n{"id":7}\n```';
+  await page.route('**/http-exchange.html*', r => r.fulfill({ contentType: 'text/html', body:
+    '<!doctype html><html data-fonts="off" data-highlight="off"><head><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + exchange + '</script></body></html>' }));
+  await page.goto(base + '/http-exchange.html?view=present');
+  await page.waitForFunction(() => window.Deck?.slides.length === 1);
+  const http = page.locator('.w-http'), response = http.locator('.w-http-response');
+  check(await http.locator('.w-http-request').isVisible() && !(await response.isVisible()), 'HTTP must start with the request only');
+  check(await response.getAttribute('aria-hidden') === 'true' && await response.evaluate(el => el.inert), 'Unrevealed HTTP response must not expose controls');
+  await page.keyboard.press('s');
+  check((await page.locator('#src code').textContent()).includes('```http\nGET /users HTTP/1.1\nAccept: application/json\n\nHTTP/1.1 200 OK'), 'HTTP source view must retain the complete exchange');
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('ArrowDown');
+  check(await response.isVisible() && await response.getAttribute('aria-hidden') === 'false', 'Down must reveal the HTTP response');
+  check(await page.evaluate(() => Deck.cur) === 0, 'HTTP reveal must remain on its slide');
+  await page.evaluate(() => { window.__copied = null; navigator.clipboard.writeText = t => { window.__copied = t; return Promise.resolve(); }; });
+  await response.locator('.w-copy').click({ force: true });
+  await page.waitForFunction(() => window.__copied != null);
+  check(await page.evaluate(() => window.__copied) === 'HTTP/1.1 200 OK\nContent-Type: application/json\n\n{"id":7}', 'HTTP Copy must preserve the response message');
+  await page.keyboard.press('ArrowUp');
+  check(!(await response.isVisible()), 'Up must return to the HTTP request');
+  await page.evaluate(() => Deck.setView('read'));
+  check(await response.isVisible() && !(await response.evaluate(el => el.inert)), 'Article must expose both HTTP messages');
+  await page.setViewportSize({ width: 320, height: 740 });
+  check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'HTTP article must fit a small phone');
+  await page.evaluate(() => Deck.setView('present'));
+  check(!(await response.isVisible()), 'Returning to slides must restore the request step');
   // Exercise multiple asynchronous references.
   for (const assets of ['']) {
     const source = '## External\n\n```html\n<script>hello</script>\n```';
