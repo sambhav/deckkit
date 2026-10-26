@@ -7,7 +7,7 @@ const fs = require('node:fs');
 const context = {
   document: { documentElement: { dataset: { fonts: 'off' }, hasAttribute: () => false }, readyState: 'loading', addEventListener() {} },
   location: { search: '' }, localStorage: { getItem: () => null },
-  URLSearchParams, matchMedia: () => ({ matches: false }),
+  URL, URLSearchParams, matchMedia: () => ({ matches: false }),
   MutationObserver: class { observe() {} }, window: {},
 };
 vm.runInNewContext(fs.readFileSync(require.resolve('../deck.js'), 'utf8'), context);
@@ -245,4 +245,31 @@ test('invalid HTTP exchanges fail visibly and retain the authored source', () =>
     assert.doesNotMatch(html, /class="w-http"/);
   }
   assert.match(md('```http {steps: 1}\nGET / HTTP/1.1\n\nHTTP/1.1 200 OK\n```'), /http: no options are supported/);
+});
+
+test('link cards use authored titles, destinations and inline descriptions', () => {
+  const html = md('::: links\n- [**Talkdown**](https://github.com/sambhav/talkdown) Write `Markdown`.\n- [Guide](guide.html) Local guide\n- [Next](#next)\n:::');
+  assert.match(html, /class="w w-links"/);
+  assert.equal((html.match(/class="w-link-card"/g) || []).length, 3);
+  assert.match(html, /w-link-domain">github.com<\/span>/);
+  assert.match(html, /w-link-title"><strong>Talkdown<\/strong><\/span>/);
+  assert.match(html, /w-link-description">Write <code>Markdown<\/code>./);
+  assert.match(html, /href="guide.html"><span class="w-link-domain">This site/);
+  assert.match(html, /href="#next"/);
+  assert.doesNotMatch(html, /<img|<iframe/);
+});
+test('invalid link cards show diagnostics and retain ordinary Markdown fallback', () => {
+  for (const body of ['', 'No list', '- Missing link', '- [Title](https://example.com) [Second](https://example.org)', '- [Title](mailto:hello@example.com)', '- [Title](https://example.com)\n  - nested', '- [Title](https://example.com) <b>HTML</b>']) {
+    const html = md('::: links\n' + body + '\n:::');
+    assert.match(html, /class="td-error" role="alert">links:/);
+    assert.doesNotMatch(html, /class="w w-links"/);
+    if (body.includes('Title')) assert.match(html, />Title<\/a>/);
+  }
+  assert.match(md('::: links columns=2\n- [Title](https://example.com)\n:::'), /links: no options/);
+});
+test('link cards preserve escaped destinations, loose lists and relative paths', () => {
+  const html = md('::: links\n- [One](https://example.com/a?x=1&y=2 "A & B") First\n\n- [Two](../read.html) Second\n:::');
+  assert.match(html, /href="https:\/\/example.com\/a\?x=1&amp;y=2"/);
+  assert.match(html, /title="A &amp; B"/);
+  assert.match(html, /href="..\/read.html"/);
 });

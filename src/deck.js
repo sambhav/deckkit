@@ -30,6 +30,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
  *   ::: flip                            ### front, the rest is the back
  *   ::: timeline                        ### milestones; ↓ walks them; vertical on phones and in read view
  *   ::: board                           ### columns with lists of cards; ↓ reveals each column, all shown in read view
+ *   ::: links                           a list of [Title](URL) descriptions becomes further-reading cards; no network fetches
  *   ::: stats                           big numbers: "- **42%** faster first response"
  *   > [!NOTE] / [!TIP] / [!WARNING]     callouts
  *   ```mermaid                          diagrams (Mermaid, fetched only if the deck has one; <html data-diagrams="off"> to skip);

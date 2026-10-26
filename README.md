@@ -248,6 +248,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Recordings** | `![title](demo.cast)` plays an [asciinema](https://asciinema.org/) recording in the same window, without the asciinema player. A file needs the page served over http; paste the recording into a ` ```cast ` block to play it anywhere |
 | **Video** | `![title](youtube, vimeo or .mp4 link)` embeds a player |
 | **Accordion** | `::: accordion`, then a `###` heading per item; ↓ opens them in turn |
+| **Link cards** | `::: links` around `- [Title](URL) Description` items: a grid of further-reading cards with the domain; one column on phones and no metadata requests |
 | **Feature cards** | `::: features`, then a `###` heading per card. An `:icon:` or image at the start of the heading becomes its icon. Up to three per row; set `--n` on `.w-features` for more |
 | **Roadmap board** | `::: board`, then a `###` heading and list of cards per column. ↓ reveals columns; article view shows all cards and stacks columns on phones. Keep slides to 2–4 short columns; no options |
 | **Agenda** | An empty `::: agenda` lists every section slide, each linking to it |
