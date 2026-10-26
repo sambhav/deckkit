@@ -648,9 +648,9 @@ Current Chrome, Edge, Firefox and Safari, on desktop and mobile. Print from the 
 
 Deck authors never build anything: use `latest.js`, or local `deck.js` and `deck.css` for offline decks. Maintainers edit `deck.css` directly and the JavaScript in `src/`, then run `npm ci`, `npm run build` and `npm test`. Built files (`deck.js`, `latest.json`, `dist/`) are git-ignored; don't commit them.
 
-Releasing is automatic. When the checks pass on `main`, CI builds the runtime and publishes the site to the `gh-pages` branch, which GitHub Pages serves at sambhav.dev/talkdown ([`scripts/publish.sh`](scripts/publish.sh)). Each build adds its content-hashed pair to `dist/` there; older pairs are never removed. Push a `vX.Y.Z` tag to also create a GitHub Release with `deck.js`, `deck.css`, `latest.json` and the hashed pair.
+Releasing is automatic. When the checks pass on `main`, CI builds the runtime and publishes the site to the `gh-pages` branch, which GitHub Pages serves at sambhav.dev/talkdown (`npm run publish:site`, see [`scripts/publish.sh`](scripts/publish.sh)). Each build adds its content-hashed pair to `dist/` there; older pairs are never removed. Push a `vX.Y.Z` tag to also create a GitHub Release with `deck.js`, `deck.css`, `latest.json` and the hashed pair.
 
-For browser checks, run `npx playwright install chromium`, then `npm run test:single-file` and `node tests/run-browser.cjs`. The browser suite covers the full demo, phone layouts, CSV and Markdown table equivalence, view switching, downloads, invalid data, native HTML charts, notes and keyboard controls.
+For browser checks, run `npx playwright install chromium`, then `npm run test:single-file` and `npm run test:browser`. The browser suite covers the full demo, phone layouts, CSV and Markdown table equivalence, view switching, downloads, invalid data, native HTML charts, notes and keyboard controls.
 
 talkdown is pre-release (0.3.0), so the syntax may still change before 1.0.
 

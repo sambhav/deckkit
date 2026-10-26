@@ -26,8 +26,8 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npx playwright install --with-deps chromium
-      - run: node tests/single-file.cjs
-      - run: node tests/run-browser.cjs
+      - run: npm run test:single-file
+      - run: npm run test:browser
   # After the checks pass on main, publish the site and the freshly built runtime to the
   # gh-pages branch, which GitHub Pages serves. Hashed dist/ files are only ever added
   # there, so cached manifests and pinned decks keep working.
@@ -45,4 +45,4 @@ jobs:
           node-version: '24'
       - run: npm ci
       - run: npm run build
-      - run: scripts/publish.sh
+      - run: npm run publish:site
