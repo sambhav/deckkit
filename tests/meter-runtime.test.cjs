@@ -21,7 +21,7 @@ function setup() {
   return { text, fill, frames, w, cue: i => cue(i),
     tick(ms) { now += ms; const queue = [...frames.values()]; frames.clear(); queue.forEach(f => f(now)); },
     leave() { active = {}; handlers.slide.forEach(fn => fn()); },
-    read() { read = true; observe(); }, reduce() { motion.matches = true; change(); } };
+    read() { read = true; observe(); }, reduce(notify = true) { motion.matches = true; if (notify) change(); } };
 }
 test('meter cue animates with a deterministic clock and stops exactly at its final value', () => {
   const m = setup(); assert.equal(m.text.textContent, '0%'); assert.equal(m.frames.size, 0);
@@ -36,4 +36,13 @@ test('leaving, reading, reducing motion and detaching stop pending meter frames'
     m.tick(1000); assert.equal(m.text.textContent, '72%');
   }
   const m = setup(); m.cue(1); m.w.isConnected = false; m.tick(100); assert.equal(m.frames.size, 0);
+});
+
+test('a queued frame honors reduced motion before its change event is delivered', () => {
+  const m = setup(); m.cue(1); m.tick(200);
+  m.reduce(false); m.tick(16);
+  assert.equal(m.text.textContent, '72%');
+  assert.equal(m.fill.style.width, '72%');
+  assert.equal(m.frames.size, 0);
+  m.tick(1000); assert.equal(m.text.textContent, '72%');
 });
