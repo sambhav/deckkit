@@ -8,7 +8,7 @@
 
 Markdown an agent can write and you can edit · Themed interactive components · Escape hatches to HTML and JavaScript · No author build
 
-[**Live demo**](https://sambhav.dev/talkdown/) &nbsp;·&nbsp; [Why](#why-talkdown) &nbsp;·&nbsp; [Quick start](#-quick-start) &nbsp;·&nbsp; [For agents](#-for-agents) &nbsp;·&nbsp; [Syntax](#-writing-slides) &nbsp;·&nbsp; [Widgets](#-widgets) &nbsp;·&nbsp; [Themes](#-themes) &nbsp;·&nbsp; [API](#-api)
+[**Live demo**](https://sambhav.dev/talkdown/) &nbsp;·&nbsp; [**Widget gallery**](https://sambhav.dev/talkdown/gallery.html) &nbsp;·&nbsp; [Why](#why-talkdown) &nbsp;·&nbsp; [Quick start](#-quick-start) &nbsp;·&nbsp; [For agents](#-for-agents) &nbsp;·&nbsp; [Syntax](#-writing-slides) &nbsp;·&nbsp; [Widgets](#-widgets) &nbsp;·&nbsp; [Themes](#-themes) &nbsp;·&nbsp; [API](#-api)
 
 ![version](https://img.shields.io/badge/version-0.3.0-F1B000?style=flat-square) ![status](https://img.shields.io/badge/status-pre--release-555?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-3C9A5F?style=flat-square) ![build](https://img.shields.io/badge/build_step-none-2B63F5?style=flat-square) ![size](https://img.shields.io/badge/files-2-E8428E?style=flat-square)
 
@@ -51,7 +51,7 @@ The [live demo](https://sambhav.dev/talkdown/) is itself a talkdown deck: a shor
 | To… | Start with… |
 |---|---|
 | See the pitch | [The opening presentation](https://sambhav.dev/talkdown/#why) |
-| Explore live components | [The widget tour](https://sambhav.dev/talkdown/#widgets) |
+| Explore live components | [Full widget gallery](https://sambhav.dev/talkdown/gallery.html) or [the widget tour](https://sambhav.dev/talkdown/#widgets) |
 | Create a deck | [Quick start](#-quick-start) or [the starter file](examples/starter.html) |
 | Have an agent write a deck | [For agents](#-for-agents) |
 | Add a custom interaction | [HTML slides](#-html-slides) and [the API](#-api) |
@@ -150,6 +150,85 @@ Use the quick start above for published decks that follow runtime updates. [`exa
 | A published deck that must stay reproducible | Link a matching content-hashed pair from a known release manifest, or pin both URLs to the same commit SHA. |
 
 Always check desktop present view, phone-width read view, the chart's data table, and source copying before sharing. Optional fonts, diagrams, maths, icons, and recordings may require network access or self-hosted assets; a single authored HTML file does not automatically embed every resource.
+
+
+### Additional visual chart types (experimental)
+
+The same `::: chart` container now accepts `heatmap`, `scatter`, `bubble`, `waterfall`, `timeline`, `sankey`, `treemap`, and `range`. All use a Markdown table or fenced CSV as their single source of truth, with the existing Table/Both views and CSV export. These render as dependency-free SVG.
+
+```md
+::: chart type=heatmap title="Requests by hour"
+| Day | 09:00 | 10:00 | 11:00 |
+|---|---:|---:|---:|
+| Mon | 12 | 22 | 45 |
+| Tue | 16 | 31 | 58 |
+:::
+
+::: chart type=scatter x="Latency" y="Throughput" title="Latency vs throughput"
+| System | Latency | Throughput |
+|---|---:|---:|
+| A | 80 | 950 |
+| B | 110 | 820 |
+:::
+
+::: chart type=bubble x="Latency" y="Throughput" size="Users"
+| System | Latency | Throughput | Users |
+|---|---:|---:|---:|
+| A | 80 | 950 | 20 |
+| B | 110 | 820 | 50 |
+:::
+
+::: chart type=waterfall title="Latency improvements (ms)"
+| Stage | Value | Kind |
+|---|---:|---|
+| Initial | 500 | total |
+| Cache | -200 | change |
+| Final | 300 | total |
+:::
+
+::: chart type=timeline title="Release roadmap"
+| Task | Start | End |
+|---|---|---|
+| Design | 2026-10-01 | 2026-10-31 |
+| Release | 2026-11-05 | |
+:::
+
+::: chart type=sankey title="Request routing"
+| Source | Target | Value |
+|---|---|---:|
+| Requests | Tools | 600 |
+| Requests | RAG | 300 |
+:::
+
+::: chart type=treemap title="Infrastructure spend"
+| Path | Value |
+|---|---:|
+| Compute / GPU | 400 |
+| Compute / CPU | 200 |
+| Storage / Object | 150 |
+:::
+
+::: chart type=range title="Latency distribution (ms)"
+| System | Min | Max | Median |
+|---|---:|---:|---:|
+| A | 30 | 180 | 85 |
+| B | 70 | 310 | 140 |
+:::
+```
+
+The renderer rejects invalid numbers, malformed rows, reversed ranges, negative Sankey flows, cycles, overlapping treemap paths, and invalid calendar dates. Visual charts accept up to 1,000 rows and 20,000 cells. Dense plots scroll within the figure on phones, with labels kept at their native size. The same scroll region is keyboard-focusable; Table/Both views and CSV export provide exact values without relying on hover.
+
+| Type | Data and options |
+|---|---|
+| Heatmap | First column is the row label; every remaining column is numeric. Includes a colour scale. |
+| Scatter / bubble | First column labels each point. `x` and `y` select exact header names (default: second and third columns). Bubble `size` defaults to the fourth column and controls circle **area**; it must be nonnegative. |
+| Waterfall | First two columns are label and value. Optional `Kind` is `change` (default), `total`, or `subtotal`. A change adds to the running total; a total/subtotal sets it to the supplied absolute value. Green means increase and red means decrease. |
+| Timeline chart | First column labels each row; `Start` is required, `End` is optional. Dates use valid `YYYY-MM-DD` calendar dates. Empty or absent End means a milestone. |
+| Sankey | Required `Source`, `Target`, `Value` columns. Acyclic flows use a shared proportional width scale and distinct node ports. Negative flows and all-zero datasets are rejected. |
+| Treemap | First column contains slash-separated paths; `Value` is required. Values are nonnegative with a positive total. Paths cannot be duplicated or overlap a parent and child. Uses alternating proportional slices. |
+| Range | First column labels each row; `Min` and `Max` are required. Optional `Median` must lie inside the range and appears as a dot. |
+
+Column names are case-sensitive. Unsupported options produce a diagnostic instead of being silently ignored. Sankey and treemap remain lightweight layouts rather than full layout-engine replacements.
 
 ## 🤖 For agents
 
@@ -431,7 +510,7 @@ Every colour, typeface and size is a CSS custom property. Override them after `d
 | `P` | Presenter view: a second window with the next slide, your notes and a timer, kept in step with the audience screen |
 | `L` · `D` | Laser pointer · draw on the slide (cleared on the next slide) |
 | `S` | Show the current slide's Markdown (view source) |
-| Click a diagram | Open it full screen: scroll or pinch to zoom, drag to move, `Esc` to close |
+| Click a diagram or chart | Open it full screen: scroll or pinch to zoom, drag to move, hover for values, `Esc` to close |
 | Click a link to a slide | Jumps there; the browser's Back button returns to the slide you were on |
 
 On phones, the default is slides. A compact row of **Previous**, **Next**, and **Menu** buttons stays available near the bottom. The menu contains **Slides / Article**, **Home**, and a section/slide picker. Opening it does not resize the content.

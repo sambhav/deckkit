@@ -1,6 +1,7 @@
 // Run with `node tests/browser.cjs` after installing Playwright and its Chromium.
 // Exported so the same checks can also run in a connected Playwright browser.
 const verifyLatest = require('./latest.cjs');
+const verifyVisualCharts = require('./visual-charts.cjs');
 async function verify(page, base) {
   const check = (ok, message) => { if (!ok) throw new Error(message); };
   const errors = [];
@@ -157,9 +158,10 @@ async function verify(page, base) {
   await page.goto(base + '/empty-reference.html');
   await page.waitForFunction(() => window.Deck && document.querySelector('.td-load-error'));
   check(await page.locator('.td-load-error').isVisible(), 'A failed standalone reference needs a visible error');
+  const visualCharts = await verifyVisualCharts(page, base);
   const latest = await verifyLatest(page, base);
   check(!errors.length, 'Browser errors: ' + errors.join(', '));
-  return { slides: count, widths: sizes.map(s => s[0]), latest, errors };
+  return { slides: count, widths: sizes.map(s => s[0]), visualCharts, latest, errors };
 }
 async function verifyMobileNavigation(page, base) {
   const check = (ok, message) => { if (!ok) throw new Error(message); };

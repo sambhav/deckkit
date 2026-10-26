@@ -1,5 +1,6 @@
 import { renderMarkdown, renderInline, slideChunks } from './markdown.js';
 import { parseCSV, chartDataset, csvDownload } from './data.js';
+import { visualTypes, visualChart } from './visual-charts.js';
 
 /* talkdown — slide decks written in Markdown (or HTML), presented on a 16:9 stage, read like an article on a phone.
  *
@@ -348,8 +349,6 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     const boxes = [...document.querySelectorAll('.w-diagram')], opt = root.dataset.diagrams;
     if (!boxes.length || opt === 'off') return;
     boxes.forEach(b => b.dataset.src = b.textContent);
-    document.addEventListener('click', e => { const b = e.target.closest('.w-diagram.drawn'); if (b && !b.closest('#zoom')) zoom(b); });
-    document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('.w-diagram.drawn')) { e.preventDefault(); e.stopPropagation(); zoom(e.target, true); } }, true);
     let n = 0, queued;
     const draw = async () => {
       const v = k => getComputedStyle(root).getPropertyValue(k).trim(), font = v('--sans');
@@ -394,13 +393,18 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
     window.mermaid ? ready() : load(opt || MERMAID, ready);
   }
 
-  /* a diagram opened full screen: wheel or pinch zooms around the pointer, drag pans, double-click zooms in or back out.
+  // diagrams and charts open full screen on a click, or on Enter when focused
+  const ZOOMABLE = '.w-diagram.drawn, .w-chart-box > .w-chart';
+  document.addEventListener('click', e => { const b = e.target.closest(ZOOMABLE); if (b && !b.closest('#zoom') && !getSelection().toString()) zoom(b); });
+  document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches?.(ZOOMABLE)) { e.preventDefault(); e.stopPropagation(); zoom(e.target, true); } }, true);
+
+  /* a diagram or chart opened full screen: wheel or pinch zooms around the pointer, drag pans, double-click zooms in or back out.
      The SVG itself moves into the viewer (Mermaid's styles and arrowheads are keyed to its ids) and back on close. */
-  let zoomBox, zoomByKey;
+  let zoomBox, zoomByKey, zoomMark;
   function zoom(b, byKey) {
     let z = $('zoom');
     if (!z) {
-      document.body.insertAdjacentHTML('beforeend', `<div id="zoom" role="dialog" aria-modal="true" aria-label="Diagram"><div class="z-stage"><div class="z-layer w-diagram drawn"></div></div>
+      document.body.insertAdjacentHTML('beforeend', `<div id="zoom" role="dialog" aria-modal="true" aria-label="Diagram"><p class="z-title"></p><div class="z-stage"><div class="z-layer w-diagram drawn"></div></div>
         <div class="z-bar"><button data-z="out" aria-label="Zoom out" title="Zoom out (−)">${svg('minus')}</button><span class="z-pct" aria-live="polite"></span><button data-z="in" aria-label="Zoom in" title="Zoom in (+)">${svg('plus')}</button><button data-z="fit" aria-label="Fit to screen" title="Fit (0)">${svg('fit')}</button><i></i><button data-z="close" aria-label="Close" title="Close (Esc)">${svg('close')}</button></div>
         <p class="z-hint">Scroll or pinch to zoom · drag to move</p></div>`);
       z = $('zoom');
@@ -446,10 +450,17 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
       };
       z.addEventListener('keydown', e => { if (e.key === 'Tab') { const bs = [...z.querySelectorAll('button')], i = bs.indexOf(document.activeElement); e.preventDefault(); bs[(i + (e.shiftKey ? -1 : 1) + bs.length) % bs.length].focus(); } });
     }
-    const g = b.querySelector('svg'); if (!g) return;
-    zoomBox = b; zoomByKey = byKey;
-    b.style.minHeight = b.offsetHeight + 'px';
-    z.querySelector('.z-layer').replaceChildren(g);
+    // a diagram lends its SVG (Mermaid's styles and arrowheads are keyed to its ids); a chart lends itself
+    const chart = b.matches('.w-chart'), g = chart ? b : b.querySelector('svg'); if (!g) return;
+    zoomBox = b; zoomByKey = byKey; zoomMark = document.createComment('zoomed');
+    (chart ? b.parentElement : b).style.minHeight = (chart ? b.parentElement : b).offsetHeight + 'px';
+    g.before(zoomMark);
+    const name = chart ? b.parentElement.querySelector('figcaption')?.textContent.trim() : '';
+    z.querySelector('.z-title').textContent = name;
+    z.setAttribute('aria-label', name || (chart ? 'Chart' : 'Diagram'));
+    const layer = z.querySelector('.z-layer');
+    layer.className = 'z-layer ' + (chart ? 'z-chart' : 'w-diagram drawn');
+    layer.replaceChildren(g);
     z.reset(); z.measure();
     z.classList.add('on');
     z.querySelector('[data-z=close]').focus({ preventScroll: true });
@@ -457,9 +468,9 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
   function unzoom() {
     const z = $('zoom'), b = zoomBox; if (!z?.classList.contains('on')) return;
     z.classList.remove('on'); zoomBox = null;
-    const g = z.querySelector('.z-layer svg');
-    if (g && !b.querySelector('svg')) b.append(g); else g?.remove();     // a theme change redrew it while open: keep the new one
-    b.style.minHeight = '';
+    const g = z.querySelector('.z-layer').firstElementChild;
+    if (zoomMark.isConnected) zoomMark.replaceWith(g); else g?.remove();     // a theme change redrew it while open: keep the new one
+    (b.matches('.w-chart') ? b.parentElement : b).style.minHeight = '';
     // hand focus back only to keyboard users, so Space and Enter keep stepping the deck after a click
     if (zoomByKey) b.focus({ preventScroll: true }); else document.activeElement?.blur();
   }
@@ -542,11 +553,11 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
         headers = [...(table.tHead?.rows[0]?.cells || [])].map(cell => cell.textContent);
         rows = [...(table.tBodies[0]?.rows || [])].map(row => [...row.cells].map(cell => cell.textContent));
       } else throw new Error('A chart needs a CSV code block or a table');
-      if (!['bar', 'hbar', 'line', 'donut'].includes(kind)) throw new Error('Unknown chart type: ' + kind);
+      if (!['bar', 'hbar', 'line', 'donut', ...visualTypes].includes(kind)) throw new Error('Unknown chart type: ' + kind);
       if (!['auto', 'chart', 'table', 'both'].includes(initial)) throw new Error('Unknown chart view: ' + initial);
-      const unknown = [...source.attributes].find(a => a.name.startsWith('data-') && !['data-type','data-chart','data-view','data-chart-view','data-title','data-series'].includes(a.name));
+      const unknown = [...source.attributes].find(a => a.name.startsWith('data-') && !['data-type','data-chart','data-view','data-chart-view','data-title', ...(visualTypes.includes(kind) ? [] : ['data-series']), ...(['scatter','bubble'].includes(kind) ? ['data-x','data-y'] : []), ...(kind === 'bubble' ? ['data-size'] : [])].includes(a.name));
       if (unknown) throw new Error('Unknown chart option: ' + unknown.name.slice(5));
-      model = chartDataset(headers, rows, kind, source.dataset.series, old);
+      model = visualTypes.includes(kind) ? { visual: visualChart(headers, rows, kind, { ...source.dataset, title }) } : chartDataset(headers, rows, kind, source.dataset.series, old);
     } catch (e) { error = e.message; }
     const box = document.createElement('figure'); box.className = 'w-chart-box';
     if (source.id) box.id = source.id;
@@ -573,7 +584,14 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
       document.body.append(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
     const w = document.createElement('div'); w.className = `w w-chart w-${kind}`; w.setAttribute('role', 'img'); w.setAttribute('aria-labelledby', `${id}-title`);
-    if (model) {
+    Object.assign(w, { tabIndex: 0, title: 'Open full screen' });
+    if (model?.visual) {
+      w.classList.add('w-visual-chart');
+      w.setAttribute('role', 'region');
+      w.setAttribute('aria-label', title + ' chart, scroll to explore, Enter to open full screen');
+      w.innerHTML = model.visual;
+      box.append(w);
+    } else if (model) {
       const labels = model.labels.map(v => esc(String(v)));
       const series = model.series.map(s => ({ name: esc(s.name), shown: rows.map(r => esc(String(r[s.index]))), v: s.values }));
       const values = series.flatMap(s => s.v), lo = Math.min(0, ...values), hi = Math.max(0, ...values);

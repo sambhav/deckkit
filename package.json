@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.cjs",
-    "test": "node --test tests/parser.test.cjs",
+    "test": "node --test tests/*.test.cjs",
     "test:browser": "node tests/run-browser.cjs",
     "test:single-file": "node tests/single-file.cjs"
   },

@@ -500,15 +500,19 @@ td.mk-only, th.mk-only { text-align: center; }
 :is([data-view=read], [data-tall]) .w-with-source { grid-template-columns: 1fr; gap: 16px; }
 .w-diagram:not(.drawn) { display: block; }
 /* a drawn diagram opens full screen on click: a zoom cursor and, on hover, an expand mark in its corner */
-.w-diagram.drawn { position: relative; cursor: zoom-in; border-radius: 10px; outline-offset: 6px; }
-.w-diagram.drawn::after { content: ""; position: absolute; top: 0; right: 0; width: 30px; height: 30px; border-radius: 8px; opacity: 0; transition: opacity .2s;
+:is(.w-diagram.drawn, .w-chart-box > .w-chart) { position: relative; cursor: zoom-in; border-radius: 10px; outline-offset: 6px; }
+:is(.w-diagram.drawn, .w-chart-box > .w-chart)::after { content: ""; position: absolute; top: 0; right: 0; width: 30px; height: 30px; border-radius: 8px; opacity: 0; transition: opacity .2s;
   background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 2.5h4.5V7M7 15.5H2.5V11M15.5 2.5l-5 5M2.5 15.5l5-5'/%3E%3C/svg%3E") center / 16px no-repeat; border: 1px solid var(--line); }
-.w-diagram.drawn:is(:hover, :focus-visible)::after { opacity: 1; }
+:is(.w-diagram.drawn, .w-chart-box > .w-chart):is(:hover, :focus-visible)::after { opacity: 1; }
 #zoom { position: fixed; inset: 0; z-index: 60; background: var(--bg);
   opacity: 0; visibility: hidden; transition: opacity .2s, visibility 0s .2s; color: var(--fg); font-family: var(--sans); }
 #zoom.on { opacity: 1; visibility: visible; transition: opacity .2s; }
 #zoom .z-stage { position: absolute; inset: 0; overflow: hidden; touch-action: none; }
-#zoom .z-layer::after { display: none; }
+#zoom .z-layer::after, #zoom .w-chart::after { display: none; }
+#zoom .z-layer.z-chart { display: grid; place-items: center; }
+#zoom .z-chart > .w-chart { width: min(1200px, 100%); max-height: none; overflow: visible; font-size: 18px; --chart-h: min(52vh, 480px); cursor: zoom-in; }
+#zoom .z-chart .w-visual-svg { width: 100%; min-width: 0; max-width: none; height: auto; max-height: calc(100vh - 200px); }
+#zoom.zoomed .z-chart > .w-chart { cursor: grab; }
 #zoom .z-layer { position: absolute; inset: 0; display: block; cursor: auto; padding: 64px 56px 104px; transform-origin: 0 0; }
 #zoom .z-layer svg { width: 100%; height: 100%; max-width: none !important; max-height: none; cursor: zoom-in; }
 #zoom.zoomed .z-stage, #zoom.zoomed .z-layer svg { cursor: grab; }
@@ -521,9 +525,11 @@ td.mk-only, th.mk-only { text-align: center; }
 #zoom .z-bar i { width: 1px; height: 20px; margin: 0 6px; background: var(--line); }
 #zoom .z-pct { min-width: 52px; text-align: center; font: 13px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
 #zoom .z-hint { position: absolute; top: 22px; left: 0; right: 0; margin: 0; text-align: center; font: 13px var(--mono); color: var(--muted); pointer-events: none; transition: opacity .3s; }
-#zoom.zoomed .z-hint { opacity: 0; }
+#zoom.zoomed :is(.z-hint, .z-title) { opacity: 0; }
+#zoom .z-title { position: absolute; top: 48px; left: 0; right: 0; z-index: 1; margin: 0; text-align: center; font: 600 22px/1.2 var(--display); color: var(--fg); pointer-events: none; transition: opacity .3s; }
+#zoom .z-title:empty { display: none; }
 @media (max-width: 600px) { #zoom .z-layer { padding: 56px 12px 96px; } }
-@media print { .w-diagram.drawn::after { display: none; } }
+@media print { :is(.w-diagram.drawn, .w-chart-box > .w-chart)::after { display: none; } }
 /* Mermaid sizes boxes by measuring labels at 16px off-slide; keep slide typography out so they render exactly as measured */
 .w-diagram.drawn svg :is(p, span, div, li) { font-size: 18px !important; line-height: 1.5 !important; letter-spacing: normal !important; margin: 0 !important; padding: 0; color: inherit; max-width: none; }
 /* stats: big numbers */
@@ -558,6 +564,7 @@ td.mk-only, th.mk-only { text-align: center; }
 }
 @media (max-width: 760px) {
   [data-view=read] #bar .ib { width: 44px; height: 44px; }
+  @media (max-width: 380px) { [data-view=read] #srcBtn { display: none; } }   /* five 44px buttons leave no room for the title */
   :is([data-view=read], [data-tall=fluid]) { --t-body: 17.5px; --t-lede: 20px; --t-h3: 20px; --t-section-sub: 20px; --t-statement-sub: 20px; --t-card: 14px; --t-small: 14px; --t-leading: 1.6; }
 }
 :is([data-view=read], [data-tall=fluid]) .md .cols { grid-auto-flow: row; gap: 16px; }
@@ -622,6 +629,18 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
   background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23888' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E") right 9px center / 11px no-repeat; }
 .w-chart-tools select:focus-visible, .w-chart-tools button:focus-visible, .w-chart-table:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .w-chart-box .w-chart { --chart-h: 230px; }
+/* Preserve readable SVG text; dense charts scroll inside the figure on phones. */
+.w-visual-chart { max-width: 100%; max-height: 400px; overflow: auto; overscroll-behavior: contain; }
+.w-visual-svg { display: block; width: 100%; min-width: var(--visual-width); max-width: var(--visual-max-width); height: auto; margin-inline: auto; font-family: var(--sans); }
+.w-visual-chart:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* on the stage a native chart scales to the room under the heading, centred; narrow screens keep the scroll above */
+:root:not([data-view=read]):not([data-tall]) .w-visual-chart:not(:has(.w-visual-tall)) { max-height: none; overflow: visible; }
+:root:not([data-view=read]):not([data-tall]) .w-visual-svg:not(.w-visual-tall) { min-width: 0; max-width: calc(var(--visual-width) * 1.5); max-height: var(--visual-h, 420px); }   /* grow to the room, up to 1.5x */
+/* a timeline chart shares its class with the ::: timeline widget; keep the widget's grid and rule off it */
+.w-chart.w-timeline { display: flow-root; padding-top: 0; }
+.w-chart.w-timeline::before { content: none; }
+:root:not([data-view=read]):not([data-tall]) .w-chart-box[data-chart-view=both] .w-visual-svg { --visual-h: 360px; }
+:is([data-view=read], [data-tall]) .w-chart-tools :is(select, button) { min-height: 44px; }
 .w-chart-table { max-width: 100%; max-height: 340px; overflow: auto; overscroll-behavior: contain; font-size: var(--t-small); }
 .w-chart-table table { border-collapse: collapse; width: 100%; font-size: inherit; }
 .md .w-chart-table table { display: table; }
@@ -661,9 +680,9 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 .w-bar .w-x { position: absolute; top: 100%; left: -15%; right: -15%; margin-top: .75em; text-align: center; }
 .w-bar .w-grp:first-child .w-x { left: 0; }
 .w-bar .w-grp:last-child .w-x { right: 0; }
-.w-rows { display: grid; grid-template-columns: max-content 1fr; gap: .8em 1.2em; align-items: center; }
+.w-rows { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr); gap: .8em 1.2em; align-items: center; }
 .w-row { display: contents; }
-.w-hbar .w-x { color: var(--fg); }
+.w-hbar .w-x { color: var(--fg); max-width: 14em; overflow-wrap: anywhere; }
 .w-track { display: grid; gap: 4px; padding-right: 5em; }
 .w-hbar .w-b { height: 1.6em; width: max(4px, var(--v)); border-radius: 2px 6px 6px 2px; }
 .w-hbar .w-b b { left: 100%; top: 50%; transform: translate(.55em, -50%); }
@@ -925,7 +944,8 @@ aside.article { display: none; }
 @media print {
   .w-chart-tools { display: none !important; }
   .w-chart-box > .w-chart, .w-chart-box > .w-chart-table { display: block !important; }
-  .w-chart-table { max-height: none; overflow: visible; }
+  .w-chart-table, .w-visual-chart { max-height: none; overflow: visible; }
+  .w-visual-svg { min-width: 0; }
   html, body { background: #fff; overflow: visible; height: auto; }
   #stage { position: static; transform: none !important; }
   .slide { display: block !important; position: relative; page-break-after: always; animation: none; }

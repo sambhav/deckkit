@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="paper" data-theme-dark="clean" data-theme-picker>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Talkdown Widget Gallery</title>
+<meta name="description" content="Live examples of Talkdown's Markdown-powered visual and interactive widgets.">
+<script src="latest.js"></script>
+<style>
+.gallery-nav{display:flex;gap:14px;align-items:center;white-space:nowrap;font:500 14px system-ui}
+@media (max-width:420px){.gallery-nav a+a{display:none}}
+.gallery-nav a{color:var(--accent-ink);text-decoration:none}
+.gallery-nav a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div id="bar"><div class="title">talkdown · widget gallery</div><nav class="gallery-nav" aria-label="Gallery navigation"><a href="./">Main demo</a><a href="https://github.com/sambhav/talkdown">GitHub</a></nav></div>
+<script type="text/markdown">
+layout: title
+id: gallery
+---
+# Widget gallery
+
+Live examples of Talkdown's Markdown-powered widgets.
+
+[Main demo](./) · [Documentation](https://github.com/sambhav/talkdown#-widgets)
+
+::: notes
+Every example in this gallery is authored in Markdown. Press S to inspect and copy the source of a slide, or R to read everything as an article. The main demo introduces Talkdown and explains the presentation experience.
+:::
+
+---
+kicker: Gallery
+id: index
+---
+## Explore by category
+
+- [Visual charts](#visual)
+- [Interactive content](#interactive)
+- [Code and diagrams](#technical)
+- [Presentation components](#content)
+
+Each example is live. Press S for its Markdown source.
+
+---
+section: Visual charts
+id: visual
+---
+## Heatmap
+
+::: chart type=heatmap title="Requests by day and hour"
+| Day | 09:00 | 10:00 | 11:00 | 12:00 |
+|---|---:|---:|---:|---:|
+| Mon | 12 | 22 | 45 | 57 |
+| Tue | 16 | 31 | 58 | 80 |
+| Wed | 11 | 27 | 42 | 61 |
+| Thu | 18 | 36 | 56 | 79 |
+:::
+
+---
+## Scatter
+
+::: chart type=scatter x="Latency" y="Throughput" title="Latency vs throughput"
+| System | Latency | Throughput |
+|---|---:|---:|
+| A | 80 | 950 |
+| B | 110 | 820 |
+| C | 150 | 690 |
+| D | 190 | 560 |
+:::
+
+---
+## Bubble
+
+::: chart type=bubble x="Latency" y="Throughput" size="Users" title="Service utilisation"
+| System | Latency | Throughput | Users |
+|---|---:|---:|---:|
+| A | 80 | 950 | 20 |
+| B | 110 | 820 | 50 |
+| C | 150 | 690 | 35 |
+:::
+
+---
+## Waterfall
+
+::: chart type=waterfall title="Latency improvements (ms)"
+| Stage | Value | Kind |
+|---|---:|---|
+| Initial | 500 | total |
+| Cache | -200 | change |
+| Batching | -150 | change |
+| Network | -80 | change |
+| Final | 70 | total |
+:::
+
+---
+## Timeline chart
+
+::: chart type=timeline title="Release roadmap"
+| Task | Start | End |
+|---|---|---|
+| Design | 2026-10-01 | 2026-10-31 |
+| Implementation | 2026-10-20 | 2026-12-05 |
+| Testing | 2026-12-01 | 2026-12-31 |
+| Release | 2027-01-05 | |
+:::
+
+---
+## Sankey
+
+::: chart type=sankey title="Agent request routing"
+| Source | Target | Value |
+|---|---|---:|
+| Requests | Tools | 600 |
+| Requests | RAG | 300 |
+| Requests | Other | 100 |
+| Tools | Success | 540 |
+| Tools | Failure | 60 |
+:::
+
+---
+## Treemap
+
+::: chart type=treemap title="Infrastructure spend"
+| Path | Value |
+|---|---:|
+| Compute / GPU | 400 |
+| Compute / CPU | 200 |
+| Storage / Object | 150 |
+| Storage / Database | 100 |
+| Network / Egress | 150 |
+:::
+
+---
+## Range
+
+::: chart type=range title="Latency distribution (ms)"
+| System | Min | Max | Median |
+|---|---:|---:|---:|
+| A | 30 | 180 | 85 |
+| B | 70 | 310 | 140 |
+| C | 45 | 230 | 110 |
+:::
+
+---
+## Bar chart
+
+::: chart type=bar title="Requests by service"
+| Service | Requests |
+|---|---:|
+| Gateway | 120 |
+| Search | 85 |
+| Agents | 160 |
+:::
+
+---
+## Horizontal bar chart
+
+::: chart type=hbar title="Requests by service"
+| Service | Requests |
+|---|---:|
+| Gateway | 120 |
+| Search | 85 |
+| Agents | 160 |
+:::
+
+---
+## Line chart
+
+::: chart type=line title="Weekly throughput"
+| Week | Gateway | Agents |
+|---|---:|---:|
+| W1 | 40 | 25 |
+| W2 | 55 | 36 |
+| W3 | 65 | 52 |
+| W4 | 80 | 72 |
+:::
+
+---
+## Donut chart
+
+::: chart type=donut title="Traffic share" series="Share"
+| Channel | Share |
+|---|---:|
+| API | 60 |
+| Web | 25 |
+| Mobile | 15 |
+:::
+
+---
+section: Interactive content
+id: interactive
+---
+## Tabs
+
+::: tabs
+### Overview
+One source, multiple views.
+### Details
+Tabs keep the slide focused.
+### Trade-offs
+Use them when an audience benefits from switching context.
+:::
+
+---
+## Accordion
+
+::: accordion
+### Why use it?
+Reveal longer explanations without overcrowding the slide.
+### How does it work?
+Open a section by clicking, or use the presentation step controls.
+### Article view
+Readers can explore the same content.
+:::
+
+---
+## Flip cards
+
+::: flip
+### Question
+What does a cache do?
+### Answer
+It keeps frequently accessed data close to the caller.
+:::
+
+---
+## Walkthrough
+
+::: steps
+### Request
+The caller sends a request.
+### Check
+The gateway validates identity.
+### Execute
+The agent invokes an authorised tool.
+### Return
+The result is returned to the caller.
+:::
+
+---
+section: Code and diagrams
+id: technical
+---
+## Syntax-highlighted code
+
+```javascript
+async function request(url) {
+  const response = await fetch(url);
+  if (!response.ok) throw Error('Request failed');
+  return response.json();
+}
+```
+
+---
+## Terminal
+
+```terminal
+$ npm run build
+Building Talkdown...
+Done.
+$ npm test
+Tests complete.
+```
+
+---
+## Mermaid diagram
+
+```mermaid
+flowchart LR
+  A[Markdown] --> B[Talkdown]
+  B --> C[Slides]
+  B --> D[Article]
+```
+
+---
+section: Presentation components
+id: content
+---
+## Stats
+
+::: stats
+### 23
+Themes
+### 2
+Reading modes
+### 0
+Author build steps
+:::
+
+---
+## Feature cards
+
+::: features
+### :zap: Fast
+Write Markdown.
+### :palette: Themed
+Change the whole deck.
+### :book-open: Readable
+Share as an article.
+:::
+
+---
+## Explained table
+
+| Feature | Why it matters |
+|---|---|
+| Markdown | Easy to edit |
+| Widgets | Consistent visual output |
+| Static hosting | Simple publishing |
+{.explain}
+
+---
+## Checklist
+
+- [x] Write Markdown
+- [x] Choose a theme
+- [x] Add a widget
+- [ ] Publish the presentation
+
+> [!TIP]
+> Press S on any slide to see the exact source.
+
+---
+## Pull quote
+
+> The best presentation is one people can still read afterwards.
+
+---
+## Maths
+
+A familiar equation: $E = mc^2$.
+
+---
+layout: center
+---
+# Ready to build?
+
+[Main demo](./) · [README](https://github.com/sambhav/talkdown) · [Start a deck](https://github.com/sambhav/talkdown#-quick-start)
+
+::: notes
+This gallery showcases the common Markdown-native widgets. The main demo also covers image and video slides, recordings, custom HTML, layouts, source inspection, and other presentation features.
+:::
+</script>
+</body>
+</html>
