@@ -254,6 +254,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Device frames** | `::: browser url="https://example.com"`, `::: window title="Terminal"` or `::: phone` around an image, code or Markdown; theme colours, with all content visible in the article |
 | **Video** | `![title](youtube, vimeo or .mp4 link)` embeds a player |
 | **Accordion** | `::: accordion`, then a `###` heading per item; ↓ opens them in turn |
+| **Glossary** | `::: glossary` with one plain `Term: Definition` per line. Articles annotate the first whole-word use per slide and end with expanded definitions; slide frontmatter `glossary: inline` opts the stage in. Hover, focus or tap terms |
 | **Speaker card** | `::: speaker` around an optional photo, one `### Name`, role and Markdown links. A compact author box in the article |
 | **Link cards** | `::: links` around `- [Title](URL) Description` items: a grid of further-reading cards with the domain; one column on phones and no metadata requests |
 | **Feature cards** | `::: features`, then a `###` heading per card. An `:icon:` or image at the start of the heading becomes its icon. Up to three per row; set `--n` on `.w-features` for more |
