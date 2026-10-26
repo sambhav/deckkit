@@ -21,7 +21,7 @@ test('browser test server returns missing-file errors without crashing', async (
     assert.equal((await fetch(base + '/missing-file.md')).status, 404);
     const response = await fetch(base + '/deck.js');
     assert.equal(response.status, 200);
-    assert.match(await response.text(), /talkdown 0.3/);
+    assert.match(await response.text(), /talkdown 0.4/);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
 
