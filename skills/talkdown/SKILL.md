@@ -121,6 +121,7 @@ Stateful widgets step with ↓ and expand in the article; charts follow their `v
 
 - Chat: `::: chat` with `**user:** Text`, `**assistant:** Text`, `**system:** Text` or ``**tool** `command` → result`` on separate lines. Blank lines, lists and fences continue the preceding message. ↓ reveals one message per step; articles show all messages with expandable tool calls. Keep slide transcripts short. No options.
 - Image gallery: `::: gallery` around `![Caption](image.png)` lines. No options. ↓ highlights each image; click or Enter opens a lightbox, ← → browse, Escape closes and restores focus. Article view shows a responsive grid with every alt-text caption.
+- Timer: `::: timer 10m` around exercise or break instructions. Use ordered integer `h`, `m`, `s` units (`30s`, `1h30m`), 1 second–24 hours. ↓ or Start begins; Pause/Resume and Reset work with keyboard/touch. Presenter windows share the countdown; article shows duration text only. No options.
 
 - Board: `::: board`, a `### Column` heading per column and a Markdown list per column (each top-level item is a card). ↓ reveals each column; article view shows every card, stacking columns on phones. Keep slides to 2–4 short columns; use a new slide for more. No options.
 
