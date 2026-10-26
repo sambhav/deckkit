@@ -1203,3 +1203,19 @@ aside.article { display: none; }
 .w-kbd { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: .15em; max-width: 100%; vertical-align: baseline; }
 .w-kbd kbd { min-width: 0; overflow-wrap: anywhere; font-size: .78em; color: var(--fg); padding: .08em .35em; border-radius: .25em; }
 .w-kbd-plus { color: var(--muted); font-size: .8em; }
+/* ::: chat — editable transcripts with native, keyboard-operable tool disclosure. */
+.w-chat { display: flex; flex-direction: column; gap: calc(var(--t-gap) * .5); min-width: 0; }
+.w-chat-message { padding: calc(var(--t-gap) * .65) var(--t-gap); border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--fg); overflow-wrap: anywhere; min-width: 0; }
+.w-chat-message[hidden] { display: none; }
+.w-chat-message[data-role=user] { background: var(--accent-soft); }
+.w-chat-role, .w-chat-tool > summary { font-size: var(--t-small); font-weight: 700; color: var(--fg); }
+.w-chat-role { margin-bottom: calc(var(--t-gap) * .2); }
+.md .w-chat-body > p { font-size: var(--t-card); line-height: 1.45; margin: 0; }
+.md .w-chat-body > * + * { margin-top: calc(var(--t-gap) * .35); }
+.w-chat-body > :first-child { margin-top: 0; }
+.w-chat-body > :last-child { margin-bottom: 0; }
+.w-chat-body pre { max-width: 100%; }
+.w-chat-tool > summary { cursor: pointer; min-height: 32px; align-content: center; }
+.w-chat-tool > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.w-chat-tool[open] > summary { margin-bottom: calc(var(--t-gap) * .35); }
+[data-view=read] .w-chat-message { padding: var(--t-gap); }
