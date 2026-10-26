@@ -147,6 +147,7 @@ Q2,340
 - Stats: `::: stats` around `- **42%** faster first response`.
 - Callout: `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]`.
 - Pull quote: a `>` quote whose last line is `> — Name`.
+- Image comparison: `::: compare` around exactly two `![Caption](image.png)` images, before then after. No options. Drag the divider or focus the range and use arrows / Home / End; ↓ reveals 0%, 50%, 100%. Articles show both images and captions side by side, stacked on phones. Use images with matching dimensions for an aligned wipe.
 - Flip card: `::: flip`; the `###` is the front, the rest the back.
 - Diagram: a ` ```mermaid ` fence (add `{source}` to show the text beside it). Readers can click it to open it full screen and zoom, so dense diagrams are fine.
 - Device frames: `::: browser url="https://example.com/settings"`, `::: window title="Terminal"` or `::: phone` around an image, code or Markdown. URL/title are optional captions, not live embeds; full content expands in the article.
