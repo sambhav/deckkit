@@ -6,6 +6,7 @@ import { parseCSV, chartDataset, csvDownload } from './data.js';
 import { gallery } from './gallery.js';
 import { visualTypes, visualChart } from './visual-charts.js';
 import { beforeAfter } from './before-after.js';
+import { environmentDifferences } from './envdiff.js';
 
 /* talkdown — slide decks written in Markdown (or HTML), presented on a 16:9 stage, read like an article on a phone.
  *
@@ -49,6 +50,7 @@ import { beforeAfter } from './before-after.js';
  *   ::: timer 10m                     countdown started with ↓ or Start; pause/reset controls, duration text in articles
  *   ::: meter value=72 max=100 label="Done" unit=% / [1.2M]{count}   animated on ↓, final values in read view
  *   `spark:9,8,8,6,5,5`                inline SVG trend in prose or tables; accessible values, same in both views
+ *   ::: envdiff                         a normal table: key then environment columns; ↓ or toggle shows differing rows only
  *   ::: stats                           big numbers: "- **42%** faster first response"
  *   > [!NOTE] / [!TIP] / [!WARNING]     callouts
  *   ```mermaid                          diagrams (Mermaid, fetched only if the deck has one; <html data-diagrams="off"> to skip);
@@ -222,6 +224,7 @@ import { beforeAfter } from './before-after.js';
     c.querySelectorAll('.w-explore').forEach(activateExplorable);
     c.querySelectorAll('.timer').forEach(countdown);
     c.querySelectorAll('.w-meter, .w-countup').forEach(meter);
+    c.querySelectorAll('div.envdiff').forEach(envdiff);
     c.querySelectorAll('blockquote').forEach(callout);
     c.querySelectorAll('blockquote:not(.callout)').forEach(quote);
     c.querySelectorAll('div.chart, figure[data-chart]').forEach(chart);
@@ -814,6 +817,47 @@ import { beforeAfter } from './before-after.js';
     handlers.slide.push(update);
     new MutationObserver(update).observe(root, { attributes: true, attributeFilter: ['data-view'] });
     motion.addEventListener('change', update);
+  }
+
+  // Keep the original table nodes as both the enhancement and the fallback.
+  function envdiff(box) {
+    const table = box.querySelector(':scope > table');
+    let changed;
+    try {
+      if (box.children.length !== 1 || !table || [...box.attributes].some(a => a.name.startsWith('data-'))) throw new Error('envdiff needs one Markdown table and takes no options.');
+      changed = environmentDifferences(
+        [...(table.tHead?.rows[0]?.cells || [])].map(c => c.textContent),
+        [...(table.tBodies[0]?.rows || [])].map(r => [...r.cells].map(c => c.textContent))
+      );
+    } catch (e) {
+      const error = document.createElement('p'); error.className = 'td-error'; error.setAttribute('role', 'alert'); error.textContent = e.message;
+      box.prepend(error); return;
+    }
+    box.classList.add('w', 'w-envdiff');
+    const rows = [...table.tBodies[0].rows];
+    [...table.tHead.rows[0].cells].forEach(cell => cell.scope = 'col');
+    rows.forEach((row, i) => {
+      row.classList.toggle('envdiff-same', !changed[i]);
+      [...row.cells].slice(1).forEach(cell => { if (changed[i]) cell.classList.add('envdiff-changed'); });
+      const key = row.cells[0], heading = document.createElement('th');
+      heading.scope = 'row'; heading.append(...key.childNodes); key.replaceWith(heading);
+    });
+    const scroll = document.createElement('div'); scroll.className = 'w-envdiff-scroll'; scroll.tabIndex = 0;
+    scroll.setAttribute('role', 'region'); scroll.setAttribute('aria-label', 'Environment configuration comparison');
+    table.before(scroll); scroll.append(table);
+    const tools = document.createElement('div'); tools.className = 'w-envdiff-tools';
+    const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Differences only';
+    const id = 'td-envdiff-' + (++widgetId); scroll.id = id; button.setAttribute('aria-controls', id);
+    const status = document.createElement('span'); status.setAttribute('role', 'status');
+    tools.append(button, status); box.prepend(tools);
+    const st = steps(box, 2, i => {
+      box.dataset.onlyDifferences = String(!!i); button.setAttribute('aria-pressed', String(!!i));
+      status.textContent = i ? `${changed.filter(Boolean).length} of ${rows.length} rows differ` : `${rows.length} configuration rows`;
+    });
+    button.addEventListener('click', () => { st.go(st.i ? 0 : 1); fit(); });
+    // Let native button activation finish without Space / Enter navigating the deck.
+    button.addEventListener('keydown', e => { if ([' ', 'Enter'].includes(e.key)) e.stopPropagation(); });
+    button.addEventListener('keyup', e => { if ([' ', 'Enter'].includes(e.key)) e.stopPropagation(); });
   }
 
   function stats(box) {
@@ -1905,7 +1949,7 @@ import { beforeAfter } from './before-after.js';
       if (done(s)) setAt(s, 0); else stepsOf(s).some(st => st.next());
     }));
     // a clicked button keeps focus, so Space / Enter would press it again; hand the keys back to the deck
-    document.addEventListener('click', e => { const b = e.target.closest('#stage button'); if (b && !b.matches('.glossary-button') && !b.closest('.w-quiz, .w-timer-controls, .w-log')) b.blur(); });
+    document.addEventListener('click', e => { const b = e.target.closest('#stage button'); if (b && !b.matches('.glossary-button') && !b.closest('.w-quiz, .w-timer-controls, .w-log, .w-envdiff')) b.blur(); });
     // [text](#id) links to the slide with that id; [text](?theme=rose#id) and ?mode=dark restyle this page in place,
     // so the slide and step you're on stay put
     document.addEventListener('click', e => {
