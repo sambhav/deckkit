@@ -1,0 +1,64 @@
+name: Component previews
+on:
+  pull_request:
+    paths:
+      - gallery.html
+      - .github/workflows/component-previews.yml
+permissions:
+  contents: write
+concurrency:
+  group: component-previews-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - name: Audit and capture new gallery components
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          node <<'NODE'
+          const { execFileSync } = require('node:child_process');
+          const diff = execFileSync('git', ['diff', '--unified=0', process.env.BASE_SHA, 'HEAD', '--', 'gallery.html'], { encoding: 'utf8' });
+          const ids = [...new Set([...diff.matchAll(/^\+id:\s*(w-[a-z0-9-]+)\s*$/gm)].map(m => m[1]))];
+          if (!ids.length) console.log('No new component slides in this pull request.');
+          for (const id of ids) execFileSync(process.execPath, ['scripts/qa.cjs', '--slide', id], { stdio: 'inherit' });
+          NODE
+      - uses: actions/checkout@v4
+        if: success() && github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          ref: previews
+          path: .preview-store
+      - name: Publish reviewed component screenshots
+        if: success() && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          test -d playwright-output/qa || exit 0
+          mkdir -p ".preview-store/pr-$PR_NUMBER"
+          cp -R playwright-output/qa/. ".preview-store/pr-$PR_NUMBER/"
+          cd .preview-store
+          git config user.name sambhav
+          git config user.email sambhavs.email@gmail.com
+          git add "pr-$PR_NUMBER"
+          git diff --cached --quiet && exit 0
+          git commit -m "Previews for PR #$PR_NUMBER"
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin previews
+            if git push origin HEAD:previews; then exit 0; fi
+          done
+          exit 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: component-previews
+          path: playwright-output/qa/
+          if-no-files-found: ignore
+          retention-days: 7

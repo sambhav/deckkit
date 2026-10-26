@@ -29,6 +29,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
  *   ```lang {annotate} + a 1. 2. list   "# (1)" / "// (1)" line-end comments become numbered pins; ↓ highlights each line and its note
  *   ::: flip                            ### front, the rest is the back
  *   ::: timeline                        ### milestones; ↓ walks them; vertical on phones and in read view
+ *   ::: board                           ### columns with lists of cards; ↓ reveals each column, all shown in read view
  *   ::: stats                           big numbers: "- **42%** faster first response"
  *   > [!NOTE] / [!TIP] / [!WARNING]     callouts
  *   ```mermaid                          diagrams (Mermaid, fetched only if the deck has one; <html data-diagrams="off"> to skip);
@@ -183,6 +184,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
     // Inner widgets must be transformed before an outer pane moves their nodes.
     [...c.querySelectorAll('.tabs, .toggle, .steps')].reverse().forEach(panes);
     c.querySelectorAll('.timeline').forEach(timeline);
+    c.querySelectorAll('.board').forEach(board);
     c.querySelectorAll('.stats').forEach(stats);
     c.querySelectorAll('blockquote').forEach(callout);
     c.querySelectorAll('blockquote:not(.callout)').forEach(quote);
@@ -553,6 +555,31 @@ import { visualTypes, visualChart } from './visual-charts.js';
     w.style.setProperty('--n', lis.length);
     const st = steps(w, lis.length, i => lis.forEach((li, j) => { li.classList.toggle('on', j === i); li.classList.toggle('done', j < i); }));
     lis.forEach((li, j) => li.addEventListener('click', () => st.go(j)));
+  }
+
+  // ::: board — a roadmap of heading-led columns; list items become cards, without losing nested Markdown.
+  function board(box) {
+    const groups = byHeading(box);
+    if (!groups.length || groups.some(g => g[0].tagName !== 'H3' || !g[0].textContent.trim() || g.slice(1).some(el => !el.matches('ul, ol')))) {
+      box.insertAdjacentHTML('beforebegin', '<p class="td-error" role="alert">Board needs ### column headings and lists of cards.</p>');
+      box.classList.remove('board'); return;
+    }
+    const w = document.createElement('div'); w.className = 'w w-board';
+    w.style.setProperty('--n', Math.min(4, groups.length));
+    for (const [head, ...lists] of groups) {
+      const col = document.createElement('section'); col.className = 'w-board-column';
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'w-board-title';
+      button.textContent = head.textContent; head.replaceChildren(button);
+      col.append(head, ...lists); w.append(col);
+    }
+    box.replaceWith(w);
+    const cols = [...w.children];
+    const st = steps(w, cols.length, i => cols.forEach((col, j) => {
+      col.classList.toggle('shown', j <= i); col.classList.toggle('on', j === i);
+      const button = col.querySelector('.w-board-title');
+      button.disabled = reading(); button.setAttribute('aria-pressed', j === i);
+    }), { read: 'end' });
+    cols.forEach((col, i) => col.querySelector('.w-board-title').addEventListener('click', () => st.go(i)));
   }
 
   // ::: stats — each list item or paragraph leads with its number in bold: "**42%** faster first response"
