@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "js": {
+    "path": "dist/deck.78233a4e00677e94.js",
+    "integrity": "sha256-eCM6TgBnfpQ8WzmJKgkaBxKdK3KGlzAhwaR8GpIIABg="
+  },
+  "css": {
+    "path": "dist/deck.1a15ac747120de99.css",
+    "integrity": "sha256-GhWsdHEg3pnTszaae6cy4H058V/o58J3CXh8iMVRM9o="
+  }
+}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="talkdown">
+  <rect width="128" height="128" rx="30" fill="#F1B000"/>
+  <path d="M30 28h68a10 10 0 0 1 10 10v40a10 10 0 0 1-10 10H54l-16 14v-14h-8a10 10 0 0 1-10-10V38a10 10 0 0 1 10-10z" fill="#FAF6EE" stroke="#161514" stroke-width="5" stroke-linejoin="round"/>
+  <rect x="34" y="44" width="30" height="7" rx="3.5" fill="#161514"/>
+  <rect x="34" y="59" width="22" height="6" rx="3" fill="#161514" opacity=".4"/>
+  <path d="M86 44v24m-9-9l9 9 9-9" fill="none" stroke="#161514" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

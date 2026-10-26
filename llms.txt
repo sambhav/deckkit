@@ -1,0 +1,19 @@
+# talkdown
+
+> talkdown is a small, no-install slide engine and Markdown format built for agents. A deck is one HTML file with Markdown in a `<script type="text/markdown">` block, loaded through https://sambhav.dev/talkdown/latest.js for automatic runtime updates, or direct deck.css/deck.js links for offline or pinned decks. Slides are the default on desktop and mobile. Article view turns shared speaker notes into prose; phones have visible Previous/Next buttons that move through steps and then slides, without extra inline navigation bars, and a menu containing Slides / Article, Home, and a section/slide picker. Native scrolling and browser gestures remain enabled; there is no custom swipe or edge-tap navigation. A `?view=read#section-id` link opens the article at a named section. The runtime supplies layout and interaction, keeping the authored source compact and editable by hand. Built-in components share the selected theme, and custom HTML and JavaScript can join the deck's navigation. Readers can click a Mermaid diagram to open it full screen and zoom. A `<div id="bar">` in the page (a `.title` plus links) replaces the default top bar.
+
+For new decks, prefer `::: notes` / `::: say` / `::: read` and explicit `::: chart` containers. Use one HTML file by default; referenced Markdown is optional over HTTP. The public root `deck.js` and `deck.css` URLs remain the supported runtime links.
+
+## Agent instructions
+
+- [talkdown skill](https://sambhav.dev/talkdown/skills/talkdown/SKILL.md): how to write a deck: boilerplate, syntax, widgets, themes, rules, example. Read this first.
+- [talkdown skill (jsDelivr)](https://cdn.jsdelivr.net/gh/sambhav/talkdown@main/skills/talkdown/SKILL.md): same file, via CDN.
+
+## Docs and examples
+
+- [README](https://github.com/sambhav/talkdown/blob/main/README.md): setup instructions, authoring recommendations, syntax, widgets and themes.
+- [Live demo](https://sambhav.dev/talkdown/): a short presentation about why the format exists, followed by live component examples and an authoring tour.
+- [Starter deck](https://sambhav.dev/talkdown/examples/starter.html): a minimal template to copy.
+
+
+The stable latest.js loader checks an uncached latest.json manifest on each visit and loads a matched content-hashed JS/CSS pair. Custom scripts use Talkdown.onReady(Deck => { ... }). New builds update the manifest, so consuming articles do not need version bumps.
