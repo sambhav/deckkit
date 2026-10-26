@@ -1,3 +1,4 @@
+import { hotspotMarkup } from './hotspots.js';
 import MarkdownIt from 'markdown-it';
 
 const escape = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -408,6 +409,10 @@ function compile(tokens, env) {
         if (/^endpoint(?:\s|$)/.test(token.content)) { html += endpoint(token.content, body, env); i = end; continue; }
         const { name, options, classes } = directive(token.content);
         if (name === 'flow' || name === 'stack') { html += flowStack(name, body, options, classes, env); }
+        else if (name === 'hotspots') {
+          try { html += hotspotMarkup(body, options, classes, { inline: ts => md.renderer.renderInline(ts, md.options, env), escape }); }
+          catch (error) { html += `<p class="td-error" role="alert">hotspots: ${escape(error.message)}</p>` + compile(body, env); }
+        }
         else if (name === 'links') { html += linkCards(body, options, classes, env); }
         else if (['notes', 'say', 'read'].includes(name) && env.collectNotes) {
           const content = compile(body, { ...env, collectNotes: false });
