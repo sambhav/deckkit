@@ -288,6 +288,32 @@ export function directive(text) {
   return { name, options, classes };
 }
 
+// ::: links keeps ordinary Markdown as its fallback; all card text is authored, never fetched.
+function linkCards(tokens, options, classes, env) {
+  const fail = message => `<p class="td-error" role="alert">links: ${escape(message)}</p>${compile(tokens, env)}`;
+  if (Object.keys(options).length || classes.length) return fail('no options are supported; use a bulleted list of links.');
+  if (tokens[0]?.type !== 'bullet_list_open' || tokens.at(-1)?.type !== 'bullet_list_close') return fail('expected a bulleted list of [Title](URL) descriptions.');
+  const cards = [];
+  for (let i = 1; i < tokens.length - 1; i += 5) {
+    if (tokens.slice(i, i + 5).map(t => t.type).join(',') !== 'list_item_open,paragraph_open,inline,paragraph_close,list_item_close') return fail('each item must be one paragraph, starting with [Title](URL).');
+    const inline = tokens[i + 2].children, end = inline.findIndex(t => t.type === 'link_close');
+    if (inline[0]?.type !== 'link_open' || end < 2 || inline.filter(t => t.type === 'link_open').length !== 1 || inline.some(t => ['html_inline', 'image'].includes(t.type))) return fail('each item must start with one text link; put plain text or inline formatting after it.');
+    const href = inline[0].attrGet('href');
+    let url;
+    try { url = new URL(href, 'https://talkdown.invalid/'); } catch { return fail('the link URL is invalid.'); }
+    if (!['http:', 'https:'].includes(url.protocol)) return fail('use an HTTP(S) URL, a relative page URL or a #section link.');
+    const label = md.renderer.renderInline(inline.slice(1, end), md.options, env);
+    if (!inline.slice(1, end).some(t => t.content.trim())) return fail('every link needs a title.');
+    const description = md.renderer.renderInline(inline.slice(end + 1), md.options, env).trim();
+    const domain = /^(?:https?:)?\/\//i.test(href) ? url.hostname : 'This site';
+    const external = /^(?:https?:)?\/\//i.test(href) ? ' target="_blank" rel="noopener"' : '';
+    const title = inline[0].attrGet('title');
+    cards.push(`<li class="w-link-item"><a class="w-link-card" href="${escape(href)}"${external}${title ? ` title="${escape(title)}"` : ''}><span class="w-link-domain">${escape(domain)}</span><span class="w-link-title">${label}</span>${description ? `<span class="w-link-description">${description}</span>` : ''}</a></li>`);
+  }
+  if (!cards.length) return fail('add at least one [Title](URL) list item.');
+  return `<ul class="w w-links">${cards.join('')}</ul>`;
+}
+
 function compile(tokens, env) {
   let html = '', buffer = [], columns = false;
   const flush = () => { html += md.renderer.render(buffer, md.options, env); buffer = []; };
@@ -302,7 +328,8 @@ function compile(tokens, env) {
       const body = tokens.slice(i + 1, end);
       try {
         const { name, options, classes } = directive(token.content);
-        if (['notes', 'say', 'read'].includes(name) && env.collectNotes) {
+        if (name === 'links') { html += linkCards(body, options, classes, env); }
+        else if (['notes', 'say', 'read'].includes(name) && env.collectNotes) {
           const content = compile(body, { ...env, collectNotes: false });
           if (name !== 'read') env.notes.push(content); if (name !== 'say') env.article.push(content);
         } else {

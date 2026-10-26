@@ -1,6 +1,7 @@
 // Run with `node tests/browser.cjs` against a served checkout; it drives the installed Google Chrome.
 // Exported so the same checks can also run in a connected Playwright browser.
 const verifyLatest = require('./latest.cjs');
+const verifyLinkCards = require('./link-cards.cjs');
 const verifyVisualCharts = require('./visual-charts.cjs');
 const verifyBoard = require('./board.cjs');
 async function verify(page, base) {
@@ -19,7 +20,7 @@ async function verify(page, base) {
     await tab.emulateMedia({ reducedMotion: 'reduce' });
     try { return await suite(tab, base); } finally { await tab.close(); }
   };
-  const suites = Promise.all([verifyMobileNavigation, verifyNativeScrolling, verifyVisualCharts, verifyLatest, verifyBoard].map(sibling));
+  const suites = Promise.all([verifyMobileNavigation, verifyNativeScrolling, verifyVisualCharts, verifyLatest, verifyBoard, verifyLinkCards].map(sibling));
   suites.catch(() => {});   // awaited below; this only stops an early failure here from going unhandled
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(base + '/?view=present');
