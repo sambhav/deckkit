@@ -990,6 +990,17 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 .w-agenda a:hover b { color: var(--accent-ink); }
 :is([data-view=read], [data-tall]) .w-agenda ol { grid-auto-flow: row; grid-template-rows: none; }
 
+/* ::: ask — QR in slides, a plain destination link in articles */
+.w-ask { display: flex; flex-direction: column; align-items: center; gap: .6em; max-width: 100%; }
+.w-ask .w-qr-code { width: min(260px, 100%); box-sizing: border-box; }
+.w-ask a { display: inline-flex; flex-direction: column; align-items: center; max-width: 100%; min-height: 32px; padding: .2em; overflow-wrap: anywhere; }
+.w-ask-label { font-weight: 600; }
+.w-ask-url { font: .65em var(--mono); color: var(--muted); }
+.w-ask a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+[data-view=read] .w-ask { display: block; }
+[data-view=read] .w-ask .w-qr-code, [data-view=read] .w-ask-url { display: none; }
+[data-view=read] .w-ask a { display: inline-block; }
+
 /* ::: qr */
 .w-qr { display: inline-flex; flex-direction: column; align-items: center; gap: .6em; }
 .w-qr-code { width: 168px; padding: 12px; background: #fff; border-radius: 14px; }
