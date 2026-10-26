@@ -1219,3 +1219,14 @@ aside.article { display: none; }
 .w-chat-tool > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .w-chat-tool[open] > summary { margin-bottom: calc(var(--t-gap) * .35); }
 [data-view=read] .w-chat-message { padding: var(--t-gap); }
+/* Glossary terms: stage annotations are opt-in; articles include the complete list. */
+.w-glossary[hidden] { display: none; }
+.w-glossary { margin: 0; }
+.w-glossary dt { font-weight: 700; margin-top: .65em; overflow-wrap: anywhere; }
+.w-glossary dd { margin: .15em 0 .65em; color: var(--fg); overflow-wrap: anywhere; }
+.glossary-button { display: none; font: inherit; color: inherit; background: transparent; border: 0; padding: 0 .08em; min-height: 32px; min-width: 32px; cursor: help; text-decoration: underline dotted; text-underline-offset: .18em; }
+[data-view=read] .glossary-button, [data-view=present] [data-glossary=inline] .glossary-button { display: inline; }
+[data-view=read] .glossary-plain, [data-view=present] [data-glossary=inline] .glossary-plain { display: none; }
+.glossary-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: var(--radius); }
+.glossary-tooltip { position: fixed; z-index: 10000; box-sizing: border-box; max-width: min(28rem, calc(100vw - 16px)); padding: .65em .85em; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--fg); font-size: 1rem; line-height: 1.5; overflow-wrap: anywhere; pointer-events: none; }
+.glossary-tooltip[hidden] { display: none; }
