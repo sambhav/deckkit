@@ -10,7 +10,7 @@ Markdown an agent can write and you can edit · Themed interactive components ·
 
 [**Live demo**](https://sambhav.dev/talkdown/) &nbsp;·&nbsp; [**Widget gallery**](https://sambhav.dev/talkdown/gallery.html) &nbsp;·&nbsp; [Why](#why-talkdown) &nbsp;·&nbsp; [Quick start](#-quick-start) &nbsp;·&nbsp; [For agents](#-for-agents) &nbsp;·&nbsp; [Syntax](#-writing-slides) &nbsp;·&nbsp; [Widgets](#-widgets) &nbsp;·&nbsp; [Themes](#-themes) &nbsp;·&nbsp; [API](#-api)
 
-![version](https://img.shields.io/badge/version-0.3.0-F1B000?style=flat-square) ![status](https://img.shields.io/badge/status-pre--release-555?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-3C9A5F?style=flat-square) ![build](https://img.shields.io/badge/build_step-none-2B63F5?style=flat-square) ![size](https://img.shields.io/badge/files-2-E8428E?style=flat-square)
+![version](https://img.shields.io/badge/version-0.4.0-F1B000?style=flat-square) ![status](https://img.shields.io/badge/status-pre--release-555?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-3C9A5F?style=flat-square) ![build](https://img.shields.io/badge/build_step-none-2B63F5?style=flat-square) ![size](https://img.shields.io/badge/files-2-E8428E?style=flat-square)
 
 <br>
 
@@ -361,7 +361,7 @@ Widgets use a few lines of Markdown. Stateful widgets take part in ↑ ↓ navig
 | **Stats** | `::: stats` around a list like `- **42%** faster first response` |
 | **Callouts** | `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]` |
 | **Diagrams** | ` ```mermaid `: flowcharts, networks, sequence, architecture, state, charts and more. Add `{source}` to show the text beside it. Readers can click a diagram to open it full screen and zoom |
-| **Charts** | `::: chart type=line` around a table or fenced CSV. Plot, table and download share one dataset. Legacy `{.chart}` table attributes still work |
+| **Charts** | `::: chart type=line` around a table or fenced CSV: `bar`, `hbar`, `line`, `donut`, `heatmap`, `scatter`, `bubble`, `waterfall`, `timeline`, `sankey`, `treemap`, `range`. Plot, table and download share one dataset; click a chart to open it full screen. See them all in the [widget gallery](https://sambhav.dev/talkdown/gallery.html). Legacy `{.chart}` table attributes still work |
 | **Pull quotes** | A `>` quote whose last line starts with `—` becomes a large quote with that attribution |
 | **Checklists** | `- [x] done` and `- [ ] to do` |
 | **Footnotes** | `text[^1]` and a `[^1]: source` line anywhere on the slide; set small at its foot |
@@ -652,7 +652,7 @@ Releasing is automatic. When the checks pass on `main`, CI builds the runtime an
 
 For browser checks, run `npx playwright install chromium`, then `npm run test:single-file` and `npm run test:browser`. The browser suite covers the full demo, phone layouts, CSV and Markdown table equivalence, view switching, downloads, invalid data, native HTML charts, notes and keyboard controls.
 
-talkdown is pre-release (0.3.0), so the syntax may still change before 1.0.
+talkdown is pre-release (0.4.0), so the syntax may still change before 1.0.
 
 
 ## License
