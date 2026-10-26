@@ -130,6 +130,7 @@ Stateful widgets step with ↓ and expand in the article; charts follow their `v
 - Flow / stack: `::: flow` or `::: stack` around a bulleted list, one box per item. `::: flow vertical` points down. Slide frontmatter `build: true` reveals every box on ↓; `{.step}` marks individual items. Article view shows all boxes; narrow screens stack flows vertically. No options besides `flow vertical`.
 - Changelog: `::: changelog`, `### v0.4.0 · 2026-10-25` per release and `#### Added` / `#### Fixed` group labels, followed by Markdown notes. No options; dates must be valid `YYYY-MM-DD`. One release per ↓ step; article view shows all with links. Give the slide an `id:` to keep release links stable when slides move.
 
+- Prompt / output: `::: prompt model="any-model" temperature=0`, then exactly `### Prompt` and `### Output`, both with content. Optional `model` is a nonempty label; optional `temperature` is a finite non-negative number. Nested Markdown/code is preserved; use `####` for subheadings. ↓ or Reveal output shows the full output immediately; the article stacks both cards.
 - Tabs: `::: tabs` then a `### Heading` per tab. `::: toggle`, `::: steps` (walkthrough), `::: accordion`, `::: timeline`, `::: features` (cards) use the same shape.
 ```md
 ::: tabs

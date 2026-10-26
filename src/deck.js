@@ -36,6 +36,7 @@ import { environmentDifferences } from './envdiff.js';
  *   ::: compare                         two images; draggable wipe, ↓ reveals 0 / 50 / 100%; article shows both
  *   ::: explorable                      [qps=1000]{range=100..10000} values and {qps*40/1000} arithmetic
  *   ::: quiz                            ### question, task-list choices (one [x]); ↓ reveals answer and explanation
+ *   ::: prompt model="any-model" temperature=0   ### Prompt / ### Output; ↓ reveals the output
  *   ::: flip                            ### front, the rest is the back
  *   ::: flow / ::: stack               bulleted boxes; flow vertical changes direction; build: true or {.step} reveals items
  *   ::: changelog                       ### version · YYYY-MM-DD releases, #### group labels; one release per step, all in articles
@@ -239,6 +240,7 @@ import { environmentDifferences } from './envdiff.js';
     c.querySelectorAll('pre.code').forEach(copyable);
     c.querySelectorAll('.compare').forEach(box => beforeAfter(box, steps));
     c.querySelectorAll('.quiz').forEach(quiz);
+    c.querySelectorAll('.w-prompt').forEach(prompt);
     c.querySelectorAll('.flip').forEach(flip);
     c.querySelectorAll('.accordion').forEach(accordion);
     c.querySelectorAll('.features').forEach(features);
@@ -1163,6 +1165,28 @@ import { environmentDifferences } from './envdiff.js';
     w.addEventListener('click', play);
     handlers.slide.push(s => { if (s.contains(w)) play(); else run++; });
     w.play = play;
+  }
+
+  // ::: prompt — one reveal, with the complete pair visible in the article.
+  function prompt(w) {
+    const output = w.querySelector(':scope > .w-prompt-output');
+    if (!output) return;
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'w-prompt-reveal';
+    output.id ||= `td-prompt-${++widgetId}`;
+    button.setAttribute('aria-controls', output.id);
+    w.insertBefore(button, output);
+    const st = steps(w, 2, i => {
+      output.hidden = !reading() && i === 0;
+      button.hidden = reading();
+      button.textContent = i ? 'Hide output' : 'Reveal output';
+      button.setAttribute('aria-expanded', String(reading() || i === 1));
+    }, { read: 'end' });
+    button.addEventListener('click', () => st.go(st.i ? 0 : 1));
+    // Native button activation stays local; the deck also listens for Space.
+    w.addEventListener('keydown', e => {
+      if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('button, a, input, select, textarea, summary')) e.stopPropagation();
+    });
   }
 
   // Choices use native buttons, so keyboard and touch share the same action.

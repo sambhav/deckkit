@@ -1375,3 +1375,14 @@ aside.article { display: none; }
 .w-envdiff[data-only-differences=true] .envdiff-same { display: none; }
 [data-view=read] .w-envdiff-tools { display: none; }
 [data-view=read] .w-envdiff[data-only-differences=true] .envdiff-same { display: table-row; }
+
+/* ::: prompt — both cards stay in reading order; only the output is stepped. */
+.md .w-prompt { display: grid; gap: var(--t-gap); min-width: 0; margin-bottom: 0; }
+.w-prompt > section { min-width: 0; padding: var(--t-gap); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow-wrap: anywhere; }
+.w-prompt > section > h3 { margin: 0 0 .6em; color: var(--muted); font-size: var(--t-card); }
+.w-prompt > section > :last-child { margin-bottom: 0; }
+.md .w-prompt-params { margin: 0; justify-self: start; padding: .25em .65em; border: 1px solid var(--line); border-radius: var(--radius); background: var(--accent-soft); color: var(--fg); font: 500 var(--t-card)/1.4 var(--mono); overflow-wrap: anywhere; max-width: 100%; box-sizing: border-box; }
+.w-prompt-reveal { justify-self: start; min-height: 44px; padding: .4em .8em; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); color: var(--fg); font: inherit; font-size: var(--t-card); cursor: pointer; }
+.w-prompt-reveal:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.w-prompt > [hidden] { display: none; }
+.md .w-prompt pre.code { white-space: pre-wrap; overflow-wrap: anywhere; }
