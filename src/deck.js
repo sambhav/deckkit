@@ -1,6 +1,7 @@
 import { activateExplorable } from './explorable.js';
 import { renderMarkdown, renderInline, slideChunks } from './markdown.js';
 import { glossary } from './glossary.js';
+import { timerRemaining } from './timer.js';
 import { parseCSV, chartDataset, csvDownload } from './data.js';
 import { gallery } from './gallery.js';
 import { visualTypes, visualChart } from './visual-charts.js';
@@ -45,6 +46,7 @@ import { beforeAfter } from './before-after.js';
  *   ::: speaker                         optional photo, ### name, role and Markdown links; compact author box in read view
  *   ::: links                           a list of [Title](URL) descriptions becomes further-reading cards; no network fetches
  *   ::: hotspots                        image + - [12%, 30%] Label; ↓ selects each numbered pin; article shows a legend
+ *   ::: timer 10m                     countdown started with ↓ or Start; pause/reset controls, duration text in articles
  *   ::: stats                           big numbers: "- **42%** faster first response"
  *   > [!NOTE] / [!TIP] / [!WARNING]     callouts
  *   ```mermaid                          diagrams (Mermaid, fetched only if the deck has one; <html data-diagrams="off"> to skip);
@@ -199,6 +201,7 @@ import { beforeAfter } from './before-after.js';
 
   /* ================= widgets, built from Markdown ================= */
   // Each one is a stepper (↑ ↓ walk it), and each degrades to plain, readable content in read view.
+  const timers = [];
   function widgets(c) {
     // Markdown attributes are attached by the tokenizer. Leave authored empty
     // HTML elements intact: they can be captions or JavaScript mount points.
@@ -213,6 +216,7 @@ import { beforeAfter } from './before-after.js';
     c.querySelectorAll('.stats').forEach(stats);
     c.querySelectorAll('.w-hotspots').forEach(hotspots);
     c.querySelectorAll('.w-explore').forEach(activateExplorable);
+    c.querySelectorAll('.timer').forEach(countdown);
     c.querySelectorAll('blockquote').forEach(callout);
     c.querySelectorAll('blockquote:not(.callout)').forEach(quote);
     c.querySelectorAll('div.chart, figure[data-chart]').forEach(chart);
@@ -233,6 +237,51 @@ import { beforeAfter } from './before-after.js';
     c.querySelectorAll('.w-cast').forEach(cast);
     c.querySelectorAll('.qr').forEach(b => { b.className = 'w w-qr'; b.dataset.url = b.textContent.trim(); b.textContent = ''; });
     c.querySelectorAll('.agenda').forEach(b => b.className = 'w w-agenda');
+  }
+
+  function countdown(box) {
+    const duration = Number(box.dataset.duration), id = timers.length;
+    if (!Number.isFinite(duration) || duration <= 0 || duration > 86400000) return;
+    box.classList.replace('timer', 'w-timer'); box.classList.add('w');
+    const panel = document.createElement('div'); panel.className = 'w-timer-panel';
+    panel.innerHTML = '<div class="w-timer-clock" role="timer" aria-label="Time remaining"></div><p class="w-timer-status" role="status"></p><div class="w-timer-controls"><button type="button">Start</button><button type="button">Reset</button></div>';
+    box.prepend(panel);
+    const [toggle, reset] = panel.querySelectorAll('button');
+    // Preserve native button activation and keep deck navigation out of these controls.
+    panel.addEventListener('keydown', e => { if ([' ', 'Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End'].includes(e.key)) e.stopPropagation(); });
+    const clock = panel.querySelector('.w-timer-clock'), status = panel.querySelector('.w-timer-status');
+    let state = { remaining: duration, deadline: null }, tick;
+    const render = () => {
+      clearTimeout(tick);
+      const remaining = timerRemaining(state), seconds = Math.ceil(remaining / 1000);
+      clock.textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+      box.classList.toggle('is-finished', remaining === 0);
+      toggle.textContent = state.deadline === null ? (remaining === duration ? 'Start' : 'Resume') : 'Pause';
+      toggle.disabled = remaining === 0;
+      const message = remaining === 0 ? 'Time is up' : state.deadline !== null ? 'Running' : remaining === duration ? 'Ready' : 'Paused';
+      if (status.textContent !== message) status.textContent = message;
+      // Article mode has no ticking clock, including in the accessibility tree.
+      if (!reading() && !document.hidden && box.closest('.slide')?.classList.contains('active') && state.deadline !== null && remaining > 0) tick = setTimeout(render, 200);
+    };
+    const send = () => { if (channel && !remote && !reading()) channel.postMessage({ timer: id, state }); };
+    const start = () => { if (!reading() && state.deadline === null && state.remaining > 0) { state = { ...state, deadline: Date.now() + state.remaining }; render(); send(); } };
+    let lastStep = 0;
+    steps(box, 2, k => { if (k !== lastStep && !reading()) { if (k) start(); else { state = { remaining: duration, deadline: null }; render(); send(); } } lastStep = k; });
+    toggle.onclick = () => {
+      if (reading()) return;
+      if (state.deadline === null) start();
+      else { state = { remaining: timerRemaining(state), deadline: null }; render(); send(); }
+    };
+    reset.onclick = () => { if (reading()) return; state = { remaining: duration, deadline: null }; render(); send(); };
+    timers.push({ snapshot: () => state, apply(next) {
+      if (!next || !Number.isFinite(next.remaining) || next.remaining < 0 || next.remaining > duration || !(next.deadline === null || Number.isFinite(next.deadline))) return;
+      state = { remaining: next.remaining, deadline: next.deadline }; render();
+    } });
+    handlers.slide.push(render);
+    document.addEventListener('visibilitychange', render);
+    addEventListener('pagehide', () => clearTimeout(tick));
+    addEventListener('pageshow', render);
+    render();
   }
 
   // a container's children, split into groups at each ### heading
@@ -1713,9 +1762,13 @@ import { beforeAfter } from './before-after.js';
     if (!window.BroadcastChannel) return;
     channel = new BroadcastChannel('talkdown:' + location.pathname);
     channel.onmessage = ({ data }) => {
+      if (data.timerRequest) { if (!reading()) channel.postMessage({ timerStates: timers.map(t => t.snapshot()) }); return; }
+      if (Array.isArray(data.timerStates)) { data.timerStates.forEach((state, i) => timers[i]?.apply(state)); return; }
+      if (Number.isInteger(data.timer)) { timers[data.timer]?.apply(data.state); return; }
       if (reading() || (data.i === cur && data.k === at(slide()))) return;
       remote = true; go(data.i, data.k); remote = false;
     };
+    channel.postMessage({ timerRequest: true });
   }
   function broadcast() { if (channel && !remote && started && !reading()) channel.postMessage({ i: cur, k: at(slide()) }); }
   function presenterView() {
@@ -1776,7 +1829,7 @@ import { beforeAfter } from './before-after.js';
       if (done(s)) setAt(s, 0); else stepsOf(s).some(st => st.next());
     }));
     // a clicked button keeps focus, so Space / Enter would press it again; hand the keys back to the deck
-    document.addEventListener('click', e => { const b = e.target.closest('#stage button'); if (b && !b.matches('.glossary-button') && !b.closest('.w-quiz')) b.blur(); });
+    document.addEventListener('click', e => { const b = e.target.closest('#stage button'); if (b && !b.matches('.glossary-button') && !b.closest('.w-quiz, .w-timer-controls')) b.blur(); });
     // [text](#id) links to the slide with that id; [text](?theme=rose#id) and ?mode=dark restyle this page in place,
     // so the slide and step you're on stay put
     document.addEventListener('click', e => {

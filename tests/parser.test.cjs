@@ -354,3 +354,17 @@ test('invalid galleries diagnose input and retain readable fallback', () => {
   assert.match(html, /alt="Alt caption"/);
   assert.doesNotMatch(html, /td-error/);
 });
+test('timer durations remain readable and preserve Markdown instructions', () => {
+  const html = md('::: timer 1h30m5s\nTry **pairs**.\n:::');
+  assert.match(html, /data-duration="5405000"/);
+  assert.match(html, /Duration: 1 hour 30 minutes 5 seconds/);
+  assert.match(html, /<strong>pairs<\/strong>/);
+  assert.doesNotMatch(html, /td-error/);
+});
+test('bad timers fail visibly and preserve the exercise fallback', () => {
+  for (const value of ['', '0s', '25h', '2m1h', '1.5m', '-5s', '10m foo', 'duration=10m', '999999999999999999h']) {
+    const html = md('::: timer ' + value + '\nKeep **this**.\n:::');
+    assert.match(html, /role="alert"/);
+    assert.match(html, /Keep <strong>this<\/strong>/);
+  }
+});

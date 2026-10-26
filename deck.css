@@ -1294,3 +1294,17 @@ aside.article { display: none; }
 @media (max-width: 600px) { [data-view=read] .w-gallery { grid-template-columns: 1fr; } }
 
 :is(.w-gallery, .w-gallery-lightbox) img[hidden] { display: none; }
+/* Workshop countdown: article readers see the authored duration and exercise. */
+.w-timer { padding: var(--t-gap); border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.w-timer-panel { text-align: center; }
+.w-timer-clock { font-size: clamp(2em, 8vw, 4em); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; color: var(--accent-ink); }
+.w-timer-status, .w-timer-duration { color: var(--muted); font-size: var(--t-card); }
+.w-timer-controls { display: flex; justify-content: center; flex-wrap: wrap; gap: .5em; margin-block: .6em; }
+.w-timer-controls button { min-width: 5em; min-height: 44px; padding: .4em .8em; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); color: var(--fg); font: inherit; cursor: pointer; }
+.w-timer-controls button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.w-timer-controls button:disabled { cursor: default; }
+.w-timer.is-finished .w-timer-clock { animation: timer-finish 1.2s ease-in-out 3; }
+@keyframes timer-finish { 50% { opacity: .6; } }
+@media (prefers-reduced-motion: reduce) { .w-timer.is-finished .w-timer-clock { animation: none; } }
+[data-view=read] .w-timer-panel { display: none; }
+[data-view=read] .w-timer { background: var(--bg); }
