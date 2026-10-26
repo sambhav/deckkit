@@ -532,6 +532,30 @@ import { visualTypes, visualChart } from './visual-charts.js';
     q.insertAdjacentHTML('beforeend', `<footer>${m[3]}</footer>`);
   }
 
+  // Heatmap scale for this theme (see the heatmap in visual-charts.js): mixes where the text colour reads form the low half;
+  // if they stop short, the high half starts where the on-accent (or background) ink reads and runs to full accent.
+  function heatScale() {
+    if (!document.querySelector('.w-heatmap')) return;
+    const probe = document.createElement('i'); document.body.append(probe);
+    // mixing with transparent makes the browser report any theme colour (hex, oklch, lab…) in sRGB
+    const rgb = c => { probe.style.color = `color-mix(in srgb, ${c} 100%, transparent)`; const s = getComputedStyle(probe).color, m = s.match(/[\d.]+/g)?.map(Number) || [0, 0, 0];
+      return s.startsWith('color(srgb') ? m.slice(0, 3).map(v => v * 255) : m.slice(0, 3); };
+    const lum = c => c.map(x => { x /= 255; return x <= .03928 ? x / 12.92 : ((x + .055) / 1.055) ** 2.4; }).reduce((a, x, i) => a + x * [.2126, .7152, .0722][i], 0);
+    const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
+    const steps = Array.from({ length: 35 }, (_, i) => 15 + i * 2.5), cell = steps.map(x => rgb(`color-mix(in srgb, var(--accent) ${x}%, var(--surface))`));
+    const reads = (ink, i) => ratio(ink, cell[i]) >= 4.6;
+    const fg = rgb('var(--fg)'), low = steps.findIndex((_, i) => !reads(fg, i)), lowEnd = Math.min(90, low < 0 ? 90 : steps[Math.max(0, low - 1)]);
+    let set = { mid: (15 + lowEnd) / 2, high: (15 + lowEnd) / 2, top: lowEnd, ink: 'var(--fg)' };   // one ink, capped
+    if (lowEnd < 75) for (const ink of ['var(--on-accent)', 'var(--bg)']) {
+      const c = rgb(ink); let from = steps.length;
+      while (from > 0 && reads(c, from - 1)) from--;   // the high half: every mix from here to full accent reads under this ink
+      if (steps[from] <= 85) { set = { mid: lowEnd, high: steps[from], top: 100, ink }; break; }
+    }
+    if (set.top <= 15) set = { mid: 52, high: 52, top: 90, ink: 'var(--on-accent)' };   // a theme no ink reads on: keep the scale informative
+    for (const [k, v] of Object.entries(set)) root.style.setProperty('--heat-' + k, typeof v === 'number' ? v + '%' : v);
+    probe.remove();
+  }
+
   // ::: chart or <figure data-chart>: column one holds the labels, every other column is a series. Drawn in HTML and CSS
   // (the line in SVG), so text stays crisp and reflows on phones; the table stays behind for screen readers.
   const niceMax = m => { if (m <= 0) return 1; const e = 10 ** Math.floor(Math.log10(m)), f = m / e; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * e; };
@@ -824,7 +848,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
     }
     if (cur !== from || step != null) setAt(s, step ?? (cur === from - 1 ? Infinity : 0));
     if (cur !== from || force) { list.forEach(item => item.classList.toggle('active', item === s)); announce(); }
-    sync();
+    sync(); squeezeSoon();
   }
   function next() { if (reading() || !stepsOf(slide()).some(st => st.next())) go(cur + 1); }
   function prev() { if (reading() || ![...stepsOf(slide())].reverse().some(st => st.prev())) go(cur - 1); }
@@ -1014,6 +1038,46 @@ import { visualTypes, visualChart } from './visual-charts.js';
     // a fixed 16:9 slide spans the width under a native header, its own bar tucked behind it
     const k = root.clientWidth / W, bar = $('bar').offsetHeight;
     place(st, head, (H - bar) * k, -bar * k, k);
+  }
+
+  // A Markdown slide whose blocks paint past the stage (a theme with larger type, a late KaTeX or Mermaid render) has them
+  // scaled down just enough to fit, never below 80%. Slides that fit are untouched; phones and read view scroll instead.
+  let squeezing = 0, watch = null, watched = null;
+  const squeezeSoon = () => { cancelAnimationFrame(squeezing); squeezing = requestAnimationFrame(squeeze); };
+  // late renders (maths, diagrams, code) resize blocks: re-fit then, but not for the observer's first report or our own zoom
+  const sizes = new WeakMap();
+  const resized = entries => {
+    let changed = false;
+    for (const e of entries) {
+      const now = `${Math.round(e.contentRect.width)}x${Math.round(e.contentRect.height)}`, was = sizes.get(e.target);
+      if (was && was !== now) changed = true;
+      sizes.set(e.target, now);
+    }
+    if (changed) squeezeSoon();
+  };
+  function squeeze() {
+    const s = slide(), c = s?.querySelector('.content');
+    slides().forEach(x => x.style.removeProperty('--squeeze'));
+    if (s !== watched) { watch?.disconnect(); watched = s; if (c) [...c.children].forEach(e => watch?.observe(e)); }
+    if (!c || reading() || root.dataset.tall || !s.classList.contains('md') || !c.children.length) return;
+    const cs = getComputedStyle(c), top = parseFloat(cs.paddingTop), room = c.clientHeight - top - parseFloat(cs.paddingBottom) / 2;   // may use half the bottom padding, clear of the controls
+    for (let k = 1, i = 0; i < 4; i++) {
+      const box = c.getBoundingClientRect(), scale = box.height / c.offsetHeight || 1;
+      const rects = [...c.children].map(e => e.getBoundingClientRect()).filter(r => r.height);
+      const lo = (Math.min(...rects.map(r => r.top)) - box.top) / scale, hi = (Math.max(...rects.map(r => r.bottom)) - box.top) / scale;
+      if (hi <= c.clientHeight + 1 && lo >= -1) return;   // nothing painted outside the slide
+      const next = Math.max(.8, k * room / (hi - lo));
+      if (next >= k - .005) return;
+      s.style.setProperty('--squeeze', (k = next).toFixed(3));
+    }
+  }
+
+  // the presenter's next-slide preview is a copy: give it the same fit as the slide would get live
+  function fitClone(c) {
+    const box = c.querySelector('.content'); if (!box || !c.classList.contains('md')) return;
+    const room = box.clientHeight - parseFloat(getComputedStyle(box).paddingTop) - parseFloat(getComputedStyle(box).paddingBottom) / 2;
+    const need = Math.max(0, ...[...box.children].map(e => e.offsetTop + e.offsetHeight)) - parseFloat(getComputedStyle(box).paddingTop);
+    if (need > room && room > 0) c.style.setProperty('--squeeze', Math.max(.8, room / need).toFixed(3));
   }
 
   // portrait: the slide sits under the header, centred above the dock, or at the top with its notes below
@@ -1381,7 +1445,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
       const nx = slides()[i + 1], box = $('pNext');
       box.innerHTML = '';
       box.style.setProperty('--k', box.clientWidth / W);
-      if (nx) { const c = nx.cloneNode(true); c.classList.add('active'); c.removeAttribute('id'); c.querySelectorAll('[id]').forEach(e => e.removeAttribute('id')); box.append(c); }
+      if (nx) { const c = nx.cloneNode(true); c.classList.add('active'); c.removeAttribute('id'); c.querySelectorAll('[id]').forEach(e => e.removeAttribute('id')); box.append(c); fitClone(c); }
       else box.innerHTML = '<p class="p-end">End of the deck</p>';
       $('pNotes').innerHTML = s.querySelector('.notes')?.innerHTML || '<p class="p-end">No notes for this slide.</p>';
       $('pCount').textContent = `${i + 1} / ${slides().length}`;
@@ -1445,9 +1509,15 @@ import { visualTypes, visualChart } from './visual-charts.js';
     addEventListener('hashchange', followUrl);
     addEventListener('popstate', followUrl);   // Back and Forward after a link jump
     let resizing = false;
-    addEventListener('resize', () => { if (!resizing) { resizing = true; requestAnimationFrame(() => { resizing = false; fit(); }); } });
+    addEventListener('resize', () => { if (!resizing) { resizing = true; requestAnimationFrame(() => { resizing = false; fit(); squeeze(); }); } });
+    watch = typeof ResizeObserver === 'function' ? new ResizeObserver(resized) : null;
+    new MutationObserver(squeezeSoon).observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-mode', 'data-view'] });
+    document.fonts?.addEventListener('loadingdone', squeezeSoon);
     addEventListener('scroll', () => { if (!scrolling) { scrolling = true; requestAnimationFrame(onScroll); } }, { passive: true });
     document.dispatchEvent(new CustomEvent('talkdown:setup', { detail: window.Deck }));
+    heatScale();
+    new MutationObserver(heatScale).observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-mode'] });
+    addEventListener('load', heatScale);   // in case the stylesheet arrived after the deck was built
     handlers.ready.forEach(f => f());
     started = true;
     const [sl, sp] = fromHash();

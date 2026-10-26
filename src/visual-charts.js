@@ -35,6 +35,14 @@ export function visualChart(headers, rows, type, options = {}) {
   const line = (x1, y1, x2, y2, color = 'var(--line)') => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}"/>`;
   const palette = ['var(--chart-1, var(--accent))', 'var(--chart-2, var(--blue))', 'var(--chart-3, var(--green))', 'var(--chart-4, var(--orange))', 'var(--chart-5, var(--red))', 'var(--chart-6, var(--muted))'];
   const extent = values => values.reduce(([lo, hi], v) => [Math.min(lo, v), Math.max(hi, v)], [Infinity, -Infinity]);
+  // round axis bounds: the smallest 1/2/2.5/5 × 10^n step that covers lo..hi in at most six intervals → [start, end, intervals]
+  const nice = (lo, hi) => {
+    if (!(hi > lo) || !Number.isFinite(hi - lo)) return [lo, hi, 4];   // domain() reports a range too large to plot
+    for (let e = 10 ** Math.floor(Math.log10((hi - lo) / 6)); ; e *= 10) for (const f of [1, 2, 2.5, 5]) {
+      const step = f * e, start = Math.floor(lo / step + 1e-9) * step, end = Math.ceil(hi / step - 1e-9) * step, n = Math.round((end - start) / step);
+      if (n <= 6) return [start, end, Math.max(1, n)];
+    }
+  };
   const domain = (lo, hi) => {
     if (lo === hi) { const pad = Math.abs(lo) * .1 || 1; lo -= pad; hi += pad; }
     if (!Number.isFinite(hi - lo)) throw Error('Numeric range is too large to plot');
@@ -42,23 +50,28 @@ export function visualChart(headers, rows, type, options = {}) {
   };
   const scale = (lo, hi, a, b) => v => a + (v - lo) / (hi - lo) * (b - a);
   let out = '', width = 680, height = 340;
-  const xAxis = (lo, hi, left, right, y, format = fmt) => {
+  const xAxis = (lo, hi, left, right, y, format = fmt, n = 4) => {
     const px = scale(lo, hi, left, right);
     out += line(left, y, right, y, 'var(--muted)');
-    for (let i = 0; i <= 4; i++) {
-      const v = lo + (hi - lo) * i / 4, x = px(v);
+    for (let i = 0; i <= n; i++) {
+      const v = lo + (hi - lo) * i / n, x = px(v);
       out += line(x, y, x, y + 5) + label(x, y + 23, format(v), 'middle', 16);
     }
   };
-  const yAxis = (lo, hi, left, right, top, bottom) => {
+  const yAxis = (lo, hi, left, right, top, bottom, n = 4) => {
     const py = scale(lo, hi, bottom, top);
-    for (let i = 0; i <= 4; i++) {
-      const v = lo + (hi - lo) * i / 4, y = py(v);
+    for (let i = 0; i <= n; i++) {
+      const v = lo + (hi - lo) * i / n, y = py(v);
       out += line(left, y, right, y) + label(left - 10, y + 5, fmt(v), 'end', 12);
     }
   };
 
   if (type === 'heatmap') {
+    // Two halves, set per theme by the runtime so every value keeps 4.5:1: the low half runs from 15% accent to --heat-mid
+    // under the text colour, the high half from --heat-high to --heat-top under --heat-ink (skipping mid tones neither ink reads on)
+    const heat = t => t <= .5
+      ? `color-mix(in srgb, var(--accent) calc(15% + (var(--heat-mid, 52%) - 15%) * ${(t * 2).toFixed(3)}), var(--surface))`
+      : `color-mix(in srgb, var(--accent) calc(var(--heat-high, 52%) + (var(--heat-top, 90%) - var(--heat-high, 52%)) * ${(t * 2 - 1).toFixed(3)}), var(--surface))`;
     // total="Score" keeps a totals column out of the colour scale and prints it at the right
     const ti = options.total == null ? -1 : column(options.total);
     if (ti === 0) throw Error('The total column cannot be the label column');
@@ -83,24 +96,27 @@ export function visualChart(headers, rows, type, options = {}) {
       out += label(left - 12, y + 22, r[0], 'end', Math.floor(left / 8) - 1);
       numeric.forEach((j, k) => {
         const v = number(r, j), t = hi === lo ? .5 : (v - lo) / (hi - lo);
-        const color = `color-mix(in srgb, var(--accent) ${Math.round(15 + 75 * t)}%, var(--surface))`;
+        const color = heat(t);
         out += rect(left + k * cw, y, cw - 3, ch - 3, color, `${r[0]}, ${names[j]}: ${v}`);
-        // the value in the cell, in a colour that reads on it
-        out += `<text x="${left + k * cw + (cw - 3) / 2}" y="${y + ch / 2 + 3}" text-anchor="middle" font-size="13" font-weight="600" fill="${t >= .6 ? 'var(--on-accent)' : 'var(--fg)'}" pointer-events="none">${esc(fmt(v))}</text>`;
+        // the value in the cell, in the ink of its half of the scale
+        out += `<text x="${left + k * cw + (cw - 3) / 2}" y="${y + ch / 2 + 3}" text-anchor="middle" font-size="13" font-weight="600" fill="${t <= .5 ? 'var(--fg)' : 'var(--heat-ink)'}" pointer-events="none">${esc(fmt(v))}</text>`;
       });
       if (ti > 0) out += `<text x="${left + numeric.length * cw + 12}" y="${y + ch / 2 + 4}" font-size="15" font-weight="700" fill="currentColor"><title>${esc(r[0])}, ${esc(names[ti])}: ${number(r, ti)}</title>${esc(fmt(number(r, ti)))}</text>`;
     });
     const y = height - 42;
-    for (let i = 0; i < 5; i++) out += rect(left + i * 30, y, 30, 12, `color-mix(in srgb, var(--accent) ${15 + i * 75 / 4}%, var(--surface))`, fmt(lo + (hi - lo) * i / 4));
+    for (let i = 0; i < 5; i++) out += rect(left + i * 30, y, 30, 12, heat(i / 4), fmt(lo + (hi - lo) * i / 4));
     out += label(left, y + 32, fmt(lo), 'start') + label(left + 150, y + 32, fmt(hi), 'end');
   } else if (type === 'scatter' || type === 'bubble') {
     const xi = column(options.x, 1), yi = column(options.y, 2);
     const si = type === 'bubble' ? column(options.size, 3) : -1;
     const points = rows.map(r => ({ name: r[0], x: number(r, xi), y: number(r, yi), size: si < 0 ? 1 : number(r, si) }));
     if (points.some(p => p.size < 0)) throw Error('Bubble sizes must be nonnegative');
-    const [xmin, xmax] = domain(...extent(points.map(p => p.x))), [ymin, ymax] = domain(...extent(points.map(p => p.y)));
+    // pad by about one marker so points at the extremes do not sit on the axes and cover their labels
+    // non-negative data never gets a negative axis
+    const pad = ([lo, hi], k) => nice(lo >= 0 ? Math.max(0, lo - (hi - lo) * k) : lo - (hi - lo) * k, hi + (hi - lo) * k), k = si < 0 ? .03 : .07;
+    const [xmin, xmax, xn] = pad(domain(...extent(points.map(p => p.x))), k), [ymin, ymax, yn] = pad(domain(...extent(points.map(p => p.y))), k);
     const smax = Math.max(...points.map(p => p.size)), px = scale(xmin, xmax, 100, 620), py = scale(ymin, ymax, 260, 55);
-    yAxis(ymin, ymax, 100, 620, 55, 260); xAxis(xmin, xmax, 100, 620, 260);
+    yAxis(ymin, ymax, 100, 620, 55, 260, yn); xAxis(xmin, xmax, 100, 620, 260, fmt, xn);
     // Radius is sqrt(value): area, rather than radius, encodes the size column.
     points.forEach(p => { out += `<circle cx="${px(p.x)}" cy="${py(p.y)}" r="${si < 0 ? 6 : smax ? 22 * Math.sqrt(p.size / smax) : 0}" fill="var(--accent)" fill-opacity=".65" stroke="var(--fg)" stroke-width=".5"><title>${esc(p.name)}: ${esc(names[xi])} ${p.x}, ${esc(names[yi])} ${p.y}${si < 0 ? '' : ', ' + esc(names[si]) + ' ' + p.size}</title></circle>`; });
     out += label(360, 324, names[xi], 'middle', 55) + label(100, 24, names[yi], 'start', 30);
