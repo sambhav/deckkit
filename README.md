@@ -233,6 +233,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Tabs** | `::: tabs`, then a `###` heading per tab. `::: toggle` is the same, styled as a switch |
 | **Walkthrough** | `::: steps`, then a `###` heading per step. Adds a counter, progress dots and Next |
 | **Explained table** | `{.explain}` after a table. The last column becomes the detail for the selected row |
+| **Sparklines** | A code span containing `spark:9,8,8,6,5,5` draws an inline trend in prose or tables. Finite numbers only; the accessible label lists every value |
 | **Marks** | ✓ ◐ ✗ at the start of a cell become icons in the theme's green, accent and red |
 | **Stepped code** | ` ```python {steps: 1-2 \| 3-4} ` lights up each group of lines in turn |
 | **Annotated code** | ` ```python {annotate} ` turns `# (1)` line-end comments into numbered pins, explained by the `1.` `2.` list right after the block; ↓ walks them |
