@@ -1,5 +1,6 @@
 import { hotspotMarkup } from './hotspots.js';
 import MarkdownIt from 'markdown-it';
+import { quadrant } from './quadrant.js';
 
 const escape = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 // Typographer keeps smart quotes; 'replacements' would also turn (c) into © and +- into ±,
@@ -427,6 +428,10 @@ function compile(tokens, env) {
           }
           if (invalid || images.length !== 2) html += '<p class="td-error" role="alert">Compare needs exactly two Markdown images with alt text, before then after; it takes no options.</p>' + compile(body, env);
           else html += '<div class="compare">' + images.map(t => '<figure>' + md.renderer.renderInline([t], md.options, env) + '<figcaption>' + (t.attrGet('title') ? md.renderInline(t.attrGet('title')) : escape(t.content)) + '</figcaption></figure>').join('') + '</div>';
+        }
+        else if (name === 'quadrant') {
+          try { html += quadrant(body, options, classes); }
+          catch (error) { html += `<p class="td-error" role="alert">${escape(error.message)}</p>` + compile(body, env); }
         }
         else if (name === 'links') { html += linkCards(body, options, classes, env); }
         else if (['notes', 'say', 'read'].includes(name) && env.collectNotes) {

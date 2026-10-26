@@ -218,6 +218,8 @@ Image and recording paths are relative to the HTML file.
 
 ## Widgets
 
+Quadrant matrices: `::: quadrant x="Effort" y="Impact"`, four `###` headings (top-left, top-right, bottom-left, bottom-right), then optional `- Label [0.2, 0.8]` points on normalized 0–1 axes. ↓ reveals points; article view groups every point by quadrant.
+
 <img src="docs/widgets.png" alt="Tabs, a chart, stepped code and a Mermaid diagram" width="900">
 
 Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and show everything in the article.
