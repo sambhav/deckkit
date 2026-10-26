@@ -1,4 +1,4 @@
-/* talkdown 0.3 — bundled runtime; edit src/deck.js, then npm run build. */
+/* talkdown 0.4 — bundled runtime; edit src/deck.js, then npm run build. */
 /* markdown-it
 Copyright (c) 2014 Vitaly Puzrin, Alex Kocharin.
 

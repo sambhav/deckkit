@@ -124,7 +124,7 @@ The article.
 :::
 ```
 - Explained table: `{.explain}` on the line after a table; the last column is the detail for the selected row. Cells starting `✓ ◐ ✗` become marks.
-- Chart: `::: chart` around a table or a ` ```csv ` block; column one = labels, other columns = plain numbers (units go in `title`). Options: `type=bar|hbar|line|donut`, `view=auto|chart|table|both`, `title="…"`, `series="Column"` (donuts need one series). Readers can inspect the data and download CSV; never duplicate the dataset to make a separate table.
+- Chart: `::: chart` around a table or a ` ```csv ` block; column one = labels, other columns = plain numbers (units go in `title`). Options: `type=bar|hbar|line|donut` (or one of the native SVG types below), `view=auto|chart|table|both`, `title="…"`, `series="Column"` (donuts need one series). Readers can inspect the data, download CSV and click a chart to open it full screen; never duplicate the dataset to make a separate table.
 ````md
 ::: chart type=line title="Users per quarter"
 ```csv
