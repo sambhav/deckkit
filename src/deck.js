@@ -532,6 +532,28 @@ import { visualTypes, visualChart } from './visual-charts.js';
     q.insertAdjacentHTML('beforeend', `<footer>${m[3]}</footer>`);
   }
 
+  // Heatmap scale for this theme (see the heatmap in visual-charts.js): mixes where the text colour reads form the low half;
+  // if they stop short, the high half starts where the on-accent (or background) ink reads and runs to full accent.
+  function heatScale() {
+    if (!document.querySelector('.w-heatmap')) return;
+    const probe = document.createElement('i'); document.body.append(probe);
+    const rgb = c => { probe.style.color = c; const s = getComputedStyle(probe).color, m = s.match(/[\d.]+/g)?.map(Number) || [0, 0, 0];
+      return s.startsWith('color(srgb') ? m.slice(0, 3).map(v => v * 255) : m.slice(0, 3); };
+    const lum = c => c.map(x => { x /= 255; return x <= .03928 ? x / 12.92 : ((x + .055) / 1.055) ** 2.4; }).reduce((a, x, i) => a + x * [.2126, .7152, .0722][i], 0);
+    const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
+    const steps = Array.from({ length: 35 }, (_, i) => 15 + i * 2.5), cell = steps.map(x => rgb(`color-mix(in srgb, var(--accent) ${x}%, var(--surface))`));
+    const reads = (ink, i) => ratio(ink, cell[i]) >= 4.6;
+    const fg = rgb('var(--fg)'), low = steps.findIndex((_, i) => !reads(fg, i)), lowEnd = Math.min(90, low < 0 ? 90 : steps[Math.max(0, low - 1)]);
+    let set = { mid: (15 + lowEnd) / 2, high: (15 + lowEnd) / 2, top: lowEnd, ink: 'var(--fg)' };   // one ink, capped
+    if (lowEnd < 75) for (const ink of ['var(--on-accent)', 'var(--bg)']) {
+      const c = rgb(ink); let from = steps.length;
+      while (from > 0 && reads(c, from - 1)) from--;   // the high half: every mix from here to full accent reads under this ink
+      if (steps[from] <= 85) { set = { mid: lowEnd, high: steps[from], top: 100, ink }; break; }
+    }
+    for (const [k, v] of Object.entries(set)) root.style.setProperty('--heat-' + k, typeof v === 'number' ? v + '%' : v);
+    probe.remove();
+  }
+
   // ::: chart or <figure data-chart>: column one holds the labels, every other column is a series. Drawn in HTML and CSS
   // (the line in SVG), so text stays crisp and reflows on phones; the table stays behind for screen readers.
   const niceMax = m => { if (m <= 0) return 1; const e = 10 ** Math.floor(Math.log10(m)), f = m / e; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * e; };
@@ -824,7 +846,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
     }
     if (cur !== from || step != null) setAt(s, step ?? (cur === from - 1 ? Infinity : 0));
     if (cur !== from || force) { list.forEach(item => item.classList.toggle('active', item === s)); announce(); }
-    sync();
+    sync(); squeezeSoon();
   }
   function next() { if (reading() || !stepsOf(slide()).some(st => st.next())) go(cur + 1); }
   function prev() { if (reading() || ![...stepsOf(slide())].reverse().some(st => st.prev())) go(cur - 1); }
@@ -1014,6 +1036,28 @@ import { visualTypes, visualChart } from './visual-charts.js';
     // a fixed 16:9 slide spans the width under a native header, its own bar tucked behind it
     const k = root.clientWidth / W, bar = $('bar').offsetHeight;
     place(st, head, (H - bar) * k, -bar * k, k);
+  }
+
+  // A Markdown slide whose blocks paint past the stage (a theme with larger type, a late KaTeX or Mermaid render) has them
+  // scaled down just enough to fit, never below 80%. Slides that fit are untouched; phones and read view scroll instead.
+  let squeezing = 0, watch = null;
+  const squeezeSoon = () => { cancelAnimationFrame(squeezing); squeezing = requestAnimationFrame(squeeze); };
+  function squeeze() {
+    const s = slide(), c = s?.querySelector('.content');
+    slides().forEach(x => x.style.removeProperty('--squeeze'));
+    watch?.disconnect();
+    if (!c || reading() || root.dataset.tall || !s.classList.contains('md') || !c.children.length) return;
+    [...c.children].forEach(e => watch?.observe(e));
+    const cs = getComputedStyle(c), top = parseFloat(cs.paddingTop), room = c.clientHeight - top - parseFloat(cs.paddingBottom) / 2;   // may use half the bottom padding, clear of the controls
+    for (let k = 1, i = 0; i < 4; i++) {
+      const box = c.getBoundingClientRect(), scale = box.height / c.offsetHeight || 1;
+      const rects = [...c.children].map(e => e.getBoundingClientRect()).filter(r => r.height);
+      const lo = (Math.min(...rects.map(r => r.top)) - box.top) / scale, hi = (Math.max(...rects.map(r => r.bottom)) - box.top) / scale;
+      if (hi <= c.clientHeight + 1 && lo >= -1) return;   // nothing painted outside the slide
+      const next = Math.max(.8, k * room / (hi - lo));
+      if (next >= k - .005) return;
+      s.style.setProperty('--squeeze', (k = next).toFixed(3));
+    }
   }
 
   // portrait: the slide sits under the header, centred above the dock, or at the top with its notes below
@@ -1445,9 +1489,15 @@ import { visualTypes, visualChart } from './visual-charts.js';
     addEventListener('hashchange', followUrl);
     addEventListener('popstate', followUrl);   // Back and Forward after a link jump
     let resizing = false;
-    addEventListener('resize', () => { if (!resizing) { resizing = true; requestAnimationFrame(() => { resizing = false; fit(); }); } });
+    addEventListener('resize', () => { if (!resizing) { resizing = true; requestAnimationFrame(() => { resizing = false; fit(); squeeze(); }); } });
+    watch = typeof ResizeObserver === 'function' ? new ResizeObserver(squeezeSoon) : null;   // late renders: maths, diagrams, code
+    new MutationObserver(squeezeSoon).observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-mode', 'data-view'] });
+    document.fonts?.addEventListener('loadingdone', squeezeSoon);
     addEventListener('scroll', () => { if (!scrolling) { scrolling = true; requestAnimationFrame(onScroll); } }, { passive: true });
     document.dispatchEvent(new CustomEvent('talkdown:setup', { detail: window.Deck }));
+    heatScale();
+    new MutationObserver(heatScale).observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-mode'] });
+    addEventListener('load', heatScale);   // in case the stylesheet arrived after the deck was built
     handlers.ready.forEach(f => f());
     started = true;
     const [sl, sp] = fromHash();

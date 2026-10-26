@@ -29,6 +29,8 @@ jobs:
       - run: npm run build
       - run: npm test
       - run: npm run test:browser
+      # contrast, fit and touch targets on every slide of the gallery and demo: every theme, mode and device class
+      - run: npm run qa
       # Copy the site and the freshly built runtime onto the gh-pages branch. Hashed dist/ files
       # are only ever added there, so cached manifests and pinned decks keep working.
       - if: env.PUBLISH == 'true'
