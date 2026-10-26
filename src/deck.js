@@ -1121,7 +1121,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
     document.body.insertAdjacentHTML('beforeend', `
       <div id="notes"><h4 id="notesTitle">SPEAKER NOTES</h4><div class="tk" id="notesTk"></div><div id="notesBody"></div></div>
       <div id="overview"></div>
-      <div id="mhead"><b>${esc(bar.querySelector('.title')?.textContent || document.title)}</b><span id="mSec"></span><i id="mProg"></i></div>
+      <div id="mhead"><b>${esc(bar.querySelector('.title')?.textContent || document.title)}</b><span id="mSec"></span><div id="mLinks"></div><i id="mProg"></i></div>
       <div id="mNotes"></div>
       <nav id="dock" aria-label="Presentation navigation">
         <button id="dBack" aria-label="Previous" title="Previous">‹</button><button id="dForward" aria-label="Next" title="Next">›</button>
@@ -1140,6 +1140,16 @@ import { visualTypes, visualChart } from './visual-charts.js';
         <p><kbd>P</kbd> presenter view · <kbd>L</kbd> laser pointer · <kbd>D</kbd> draw on the slide</p>
       </div></div>
       <div id="src"><div class="kcard"><div class="sh"><h3>Markdown source</h3><button id="srcCopy" class="w-copy" aria-label="Copy the Markdown"></button></div><pre class="code"><code></code></pre></div></div>`);
+
+    // Preserve author links in the separate portrait header as well.
+    for (const link of bar.querySelectorAll(':scope > a')) {
+      const copy = link.cloneNode(true);
+      copy.removeAttribute('id');
+      copy.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+      if (!copy.hasAttribute('aria-label')) copy.setAttribute('aria-label', link.textContent.trim() || link.title);
+      $('mLinks').append(copy);
+    }
+    $('mLinks').hidden = !$('mLinks').children.length;
 
     $('srcBtn').onclick = toggleSource;
     $('srcCopy').onclick = copySource;
@@ -1452,4 +1462,5 @@ import { visualTypes, visualChart } from './visual-charts.js';
     key(k, f) { customKeys[k] = f; },
   };
 })();
+
 

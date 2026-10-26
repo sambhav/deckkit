@@ -22,6 +22,15 @@ async function verify(page, base) {
     await document.fonts.ready;
   });
   const count = await page.evaluate(() => Deck.slides.length);
+  const checkStarLink = async header => {
+    const link = page.locator(header + ' a[href="https://github.com/sambhav/talkdown"]');
+    check(await link.isVisible(), 'GitHub star link must be visible in ' + header);
+    check(await link.getAttribute('aria-label') === 'Star Talkdown on GitHub', 'Star link needs an accessible name');
+    check(await link.evaluate(el => {
+      const rect = el.getBoundingClientRect();
+      return rect.x >= 0 && rect.right <= innerWidth && rect.height >= 44;
+    }), 'Mobile star link must fit the viewport and provide a 44px touch target');
+  };
   const desktopOverflow = await page.evaluate(() => Deck.slides.flatMap((s, i) => {
     Deck.go(i, 999);
     const c = s.querySelector('.content');
@@ -32,6 +41,10 @@ async function verify(page, base) {
   for (const [width, height] of sizes) {
     await page.setViewportSize({ width, height });
     await page.evaluate(() => new Promise(requestAnimationFrame));
+    await checkStarLink('#mhead');
+    await page.evaluate(() => Deck.setView('read'));
+    await checkStarLink('#bar');
+    await page.evaluate(() => Deck.setView('present'));
     const clipped = await page.evaluate(() => Deck.slides.flatMap((s, i) => {
       Deck.go(i, 999);
       const c = s.querySelector('.content');
@@ -330,4 +343,5 @@ if (require.main === module) {
     finally { await browser.close(); }
   })().catch(error => { console.error(error); process.exitCode = 1; });
 }
+
 
