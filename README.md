@@ -219,6 +219,7 @@ Image and recording paths are relative to the HTML file.
 ## Widgets
 
 Quadrant matrices: `::: quadrant x="Effort" y="Impact"`, four `###` headings (top-left, top-right, bottom-left, bottom-right), then optional `- Label [0.2, 0.8]` points on normalized 0–1 axes. ↓ reveals points; article view groups every point by quadrant.
+Stepped derivations use `$$ {steps}` followed by TeX rows separated by `\\` and a closing `$$`. Align with `&`, and add explanations with `\text{…}`. ↓ or **Next equation** reveals one line at a time; article view shows the complete aligned derivation. KaTeX loads only when needed, with readable TeX when disabled or unavailable.
 
 <img src="docs/widgets.png" alt="Tabs, a chart, stepped code and a Mermaid diagram" width="900">
 

@@ -833,6 +833,23 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 /* maths (KaTeX) */
 .md .math-block { font-size: calc(var(--t-body) * 1.15); overflow-x: auto; }
 .md .math .katex { font-size: 1.05em; }
+/* Keep hidden rows in layout so alignment and height stay steady while stepping. */
+.md .w-derive { min-width: 0; max-width: 100%; font-size: var(--t-body); }
+.w-derive-scroll { max-width: 100%; overflow-x: auto; }
+.md .w-derive table { display: table; width: max-content; min-width: 0; margin: 0 auto; border: 0; border-collapse: separate; border-spacing: 0 .35em; font-size: inherit; }
+.md .w-derive td { border: 0; padding: .25em .18em; color: inherit; background: none; white-space: nowrap; text-align: left; }
+.md .w-derive td:nth-child(odd) { text-align: right; }
+.md .w-derive tr { color: var(--fg); background: none; }
+.md .w-derive tr.current { color: var(--accent-ink); background: var(--accent-soft); }
+.w-derive tr.unrevealed { visibility: hidden; }
+.w-derive .katex-display { margin: 0; }
+.w-derive-controls { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .8em; margin-top: .7em; font-size: .65em; color: var(--muted); }
+.w-derive-controls button { min-height: 32px; padding: .35em .7em; font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; }
+.w-derive-controls button:disabled { color: var(--muted); cursor: default; }
+.w-derive :focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 3px; }
+[data-view=read] .w-derive-controls { display: none; }
+[data-view=read] .md .w-derive tr.current { color: var(--fg); background: none; }
+
 
 /* image slides: image: url sets a background; layout: image puts the text over it on a dark scrim */
 .slide.has-image { background: var(--image) center / cover no-repeat, var(--bg) !important; }   /* over any theme texture */
