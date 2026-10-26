@@ -234,6 +234,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **HTTP exchange** | A ` ```http ` fence: request line and headers, a blank line, then `HTTP/1.1 200 OK` and the response. ↓ reveals the response; the article stacks both messages |
 | **Copy buttons** | Every code block gets a **Copy** button, shown on hover and always on touch screens |
 | **Flip cards** | `::: flip`: the `###` heading is the front, the rest is the back |
+| **Flow / stack** | `::: flow` or `::: stack` around a bulleted list. `::: flow vertical` points down; `build: true` or `{.step}` reveals boxes on ↓. Article view shows all boxes |
 | **Timeline** | `::: timeline`, then a `###` heading per milestone. Vertical on phones |
 | **Stats** | `::: stats` around a list like `- **42%** faster first response` |
 | **Callouts** | `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]` |
