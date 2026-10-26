@@ -56,6 +56,7 @@ import { beforeAfter } from './before-after.js';
  *   ```http                             request then a blank line and HTTP status; ↓ reveals the response; article shows both
  *   ![title](demo.cast) or ```cast     plays an asciinema recording (a file needs the page served over http; a ```cast block plays anywhere); ![](youtube / vimeo / .mp4 link) embeds a video
  *   ::: accordion / ::: features        ### items that open one per ↓ / a grid of cards (a leading :icon: or image is the card's icon)
+ *   [[Ctrl+Shift+P]] / [[Mod+K]]       inline keycaps; Mod is Command on Apple platforms and Control elsewhere
  *   :rocket:                            a Lucide icon in the theme's colours (any name from lucide.dev/icons)
  *   ::: browser url="…" / ::: window title="…" / ::: phone   CSS device frames around images, code or Markdown
  *   ::: agenda / ::: qr                 a contents slide linking every section / a QR code of the deck's link (or the URL inside)
