@@ -2,6 +2,8 @@ import { hotspotMarkup } from './hotspots.js';
 import MarkdownIt from 'markdown-it';
 import { quadrant } from './quadrant.js';
 
+import { shortcut } from './keyboard-shortcuts.js';
+
 const escape = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 // Typographer keeps smart quotes; 'replacements' would also turn (c) into © and +- into ±,
 // so talkdown_typography below restores only the ellipsis and dashes the old parser made.
@@ -80,6 +82,14 @@ md.core.ruler.after('inline', 'talkdown_typography', state => {
     if (token.type !== 'inline') continue;
     for (const child of token.children) if (child.type === 'text') child.content = child.content.replace(/\.\.\./g, '…').replace(/ -- /g, ' – ').replace(/---/g, '—');
   }
+});
+
+// Run before links: shortcut brackets are unambiguous even beside Markdown links.
+md.inline.ruler.before('link', 'talkdown_shortcut', (state, silent) => {
+  const match = state.src.slice(state.pos).match(/^\[\[([^\]\n]*)\]\]/);
+  if (!match) return false;
+  if (!silent) { const token = state.push('html_inline', '', 0); token.content = shortcut(match[1]); }
+  state.pos += match[0].length; return true;
 });
 
 // Talkdown's small inline additions sit on top of the standard Markdown lexer.
