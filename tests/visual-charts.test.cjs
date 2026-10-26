@@ -72,3 +72,14 @@ test('constant domains, dense rows and hostile labels keep usable output', async
   assert.doesNotMatch(svg, /<script>|<img/); assert.match(svg, /&lt;img/);
   assert.throws(() => visualChart(['N','X','Y'], [['A','-1e308','0'], ['B','1e308','1']], 'scatter'), /too large/);
 });
+
+test('heatmap cells show values, bracketed header text sits on a second line, and total= stays out of the scale', async () => {
+  const { visualChart } = await load();
+  const svg = visualChart(['Bank', 'Login (15%)', 'Fines (6%)', 'Score'], [['A', '5', '1', '91'], ['B', '2', '4', '44']], 'heatmap', { total: 'Score' });
+  assert.match(svg, />Login<\/text>/);
+  assert.match(svg, /fill="var\(--muted\)" font-size="12">15%<\/text>/);
+  assert.match(svg, /font-weight="600"[^>]*>5<\/text>/);
+  assert.match(svg, /font-weight="700"[^>]*><title>A, Score: 91<\/title>91<\/text>/);
+  assert.doesNotMatch(svg, /<rect[^>]*><title>A, Score/);
+  assert.throws(() => visualChart(['Bank', 'V'], [['A', '1']], 'heatmap', { total: 'Bank' }), /label column/);
+});

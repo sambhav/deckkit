@@ -19,9 +19,8 @@
   // Until the runtime paints, cover the page in the reader's mode: their saved choice or the author's, else the system's.
   // (mirrors the mode lookup at the top of src/deck.js, which has not loaded yet)
   const dark = (() => {
-    const q = new URLSearchParams(location.search), t = q.get('theme');
-    let mode = q.get('mode') || (/^(light|dark)$/.test(t) ? t : null);
-    try { mode = mode || JSON.parse(localStorage.getItem('talkdown:mode') || localStorage.getItem('talkdown:theme')); } catch {}
+    let mode = new URLSearchParams(location.search).get('mode');
+    try { mode = mode || JSON.parse(localStorage.getItem('talkdown:mode')); } catch {}
     mode = /^(light|dark)$/.test(mode) ? mode : root.dataset.mode;
     return mode ? mode === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
   })();

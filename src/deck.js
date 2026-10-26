@@ -33,8 +33,8 @@ import { visualTypes, visualChart } from './visual-charts.js';
  *   ```mermaid                          diagrams (Mermaid, fetched only if the deck has one; <html data-diagrams="off"> to skip);
  *                                       ```mermaid {source} sets the source beside the diagram; a click opens it full screen to zoom
  *   [text](#id)                         link to the slide whose frontmatter says id: …
- *   a table then {.chart}               a bar chart; {.chart .hbar}, {.chart .line} or {.chart .donut} for the others.
- *                                       First column: labels; each other column: a series (↓ adds them one by one)
+ *   ::: chart type=line                 a chart around a table or ```csv block: bar, hbar, line, donut, heatmap, scatter, bubble,
+ *                                       waterfall, timeline, sankey, treemap, range. First column: labels; others: series
  *   > quote, then a "— Name" line       a pull quote with its attribution
  *   - [x] done / - [ ] to do            a checklist
  *   text[^1] and a "[^1]: source" line  footnotes, set small at the foot of the slide
@@ -45,7 +45,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
  *   ::: accordion / ::: features        ### items that open one per ↓ / a grid of cards (a leading :icon: or image is the card's icon)
  *   :rocket:                            a Lucide icon in the theme's colours (any name from lucide.dev/icons)
  *   ::: agenda / ::: qr                 a contents slide linking every section / a QR code of the deck's link (or the URL inside)
- * Two formats from one deck: <!-- notes --> are spoken and read; <!-- say: … --> spoken only; <!-- read: … --> read only.
+ * Two formats from one deck: ::: notes are spoken and read; ::: say spoken only; ::: read read only.
  *   ::: present-only / ::: read-only for slide content; frontmatter read: hide | text and present: hide for whole slides.
  * Presenting: P presenter view (next slide, notes, timer, in a second window) · L laser pointer · D draw on the slide
  *   ::: present-only / ::: read-only   content for one view only (or {.present-only} / {.read-only} on a block)
@@ -63,10 +63,9 @@ import { visualTypes, visualChart } from './visual-charts.js';
   const q = new URLSearchParams(location.search);
   const portrait = matchMedia('(orientation: portrait) and (max-width: 900px)');   // present view becomes slide-over-notes
   // data-mode: light or dark (the viewer's choice, remembered). data-theme: the look, set by the author.
-  // ?theme=light|dark is still read as a mode, for old links.
-  const lookOf = p => { const t = p.get('theme'), m = /^(light|dark)$/.test(t); return { mode: p.get('mode') || (m ? t : null), look: t && !m ? t : null }; };
+  const lookOf = p => ({ mode: p.get('mode'), look: p.get('theme') });
   const qLook = lookOf(q);
-  root.dataset.mode = qLook.mode || store.get('mode', store.get('theme', root.dataset.mode || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')));   // else the author's <html data-mode>, else the system's
+  root.dataset.mode = qLook.mode || store.get('mode', root.dataset.mode || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));   // else the author's <html data-mode>, else the system's
   const picker = root.hasAttribute('data-theme-picker');
   if (q.has('presenter')) root.dataset.presenter = '';
   const chosen = qLook.look || (picker && store.get('look', null));
@@ -184,7 +183,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
     c.querySelectorAll('.stats').forEach(stats);
     c.querySelectorAll('blockquote').forEach(callout);
     c.querySelectorAll('blockquote:not(.callout)').forEach(quote);
-    c.querySelectorAll('div.chart, figure[data-chart], table.chart').forEach(chart);
+    c.querySelectorAll('div.chart, figure[data-chart]').forEach(chart);
     c.querySelectorAll('table.explain').forEach(explain);
     c.querySelectorAll('td, th').forEach(marks);
     c.querySelectorAll('pre[data-steps]').forEach(codeSteps);
@@ -533,17 +532,15 @@ import { visualTypes, visualChart } from './visual-charts.js';
     q.insertAdjacentHTML('beforeend', `<footer>${m[3]}</footer>`);
   }
 
-  // a table then {.chart}: column one holds the labels, every other column is a series. Drawn in HTML and CSS
+  // ::: chart or <figure data-chart>: column one holds the labels, every other column is a series. Drawn in HTML and CSS
   // (the line in SVG), so text stays crisp and reflows on phones; the table stays behind for screen readers.
   const niceMax = m => { if (m <= 0) return 1; const e = 10 ** Math.floor(Math.log10(m)), f = m / e; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * e; };
   let chartId = 0;
   function chart(source) {
     if (!source.parentElement || source.closest('.w-chart-box')) return;
-    if (source.matches('table') && source.parentElement.closest('div.chart, figure[data-chart]')) return;
-    const old = source.matches('table'), table = old ? source : source.querySelector(':scope > table');
-    const csv = old ? null : source.querySelector(':scope > pre[data-lang="csv"]');
+    const table = source.querySelector(':scope > table'), csv = source.querySelector(':scope > pre[data-lang="csv"]');
     let headers = [], rows = [], error = '', model;
-    const kind = source.dataset.type || source.dataset.chart || ['hbar', 'line', 'donut'].find(k => source.classList.contains(k)) || 'bar';
+    const kind = source.dataset.type || source.dataset.chart || 'bar';
     const initial = source.dataset.view || source.dataset.chartView || 'auto';
     const title = source.dataset.title || source.querySelector(':scope > figcaption')?.textContent || table?.caption?.textContent || 'Chart data';
     try {
@@ -555,9 +552,9 @@ import { visualTypes, visualChart } from './visual-charts.js';
       } else throw new Error('A chart needs a CSV code block or a table');
       if (!['bar', 'hbar', 'line', 'donut', ...visualTypes].includes(kind)) throw new Error('Unknown chart type: ' + kind);
       if (!['auto', 'chart', 'table', 'both'].includes(initial)) throw new Error('Unknown chart view: ' + initial);
-      const unknown = [...source.attributes].find(a => a.name.startsWith('data-') && !['data-type','data-chart','data-view','data-chart-view','data-title', ...(visualTypes.includes(kind) ? [] : ['data-series']), ...(['scatter','bubble'].includes(kind) ? ['data-x','data-y'] : []), ...(kind === 'bubble' ? ['data-size'] : [])].includes(a.name));
+      const unknown = [...source.attributes].find(a => a.name.startsWith('data-') && !['data-type','data-chart','data-view','data-chart-view','data-title', ...(visualTypes.includes(kind) ? [] : ['data-series']), ...(['scatter','bubble'].includes(kind) ? ['data-x','data-y'] : []), ...(kind === 'bubble' ? ['data-size'] : []), ...(kind === 'heatmap' ? ['data-total'] : [])].includes(a.name));
       if (unknown) throw new Error('Unknown chart option: ' + unknown.name.slice(5));
-      model = visualTypes.includes(kind) ? { visual: visualChart(headers, rows, kind, { ...source.dataset, title }) } : chartDataset(headers, rows, kind, source.dataset.series, old);
+      model = visualTypes.includes(kind) ? { visual: visualChart(headers, rows, kind, { ...source.dataset, title }) } : chartDataset(headers, rows, kind, source.dataset.series);
     } catch (e) { error = e.message; }
     const box = document.createElement('figure'); box.className = 'w-chart-box';
     if (source.id) box.id = source.id;

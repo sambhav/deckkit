@@ -55,7 +55,7 @@ async function verify(page, base) {
   await verifyMobileNavigation(page, base);
   await verifyNativeScrolling(page, base);
   const fixture = [
-    '## Syntax fixtures', '', '<!-- Notes with `inline code`', '---', 'still notes -->', '',
+    '## Syntax fixtures', '', '<!-- a plain comment', '---', 'does not split the slide -->', '', '::: notes', 'Notes with `inline code`', ':::', '',
     'Real footnote[^real]', '', '[^real]: A `code` footnote.', '',
     '````md', '```', '<!-- not notes -->', '[^demo]: keep in code', '---', '|||', ':::', '````', '',
     '::: tabs', '### Outer one', '::: tabs', '### Inner one', 'First', '### Inner two', 'Second', ':::',

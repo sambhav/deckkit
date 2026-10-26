@@ -32,12 +32,11 @@ To keep content in a separate file, use `<script type="text/markdown" data-src="
 
 ## Recommended defaults
 
-- For published decks that should follow updates, use the stable `latest.js` loader in the boilerplate. It checks uncached release metadata and loads matching content-hashed JS/CSS on every visit. No per-deck version bump or author build is needed. Wrap custom JavaScript in `Talkdown.onReady(Deck => { ... })` because loading is asynchronous. For offline decks use local `deck.js` and `deck.css`; for reproducibility pin a matching asset pair from a release manifest. Do not promise immediate updates from cached jsDelivr `@main` links.
-- Prefer `::: notes`, `::: say`, and `::: read` blocks in new content. Keep shared notes as readable prose and keep delivery cues out of the article.
+- Load the runtime with `latest.js` as in the boilerplate: it always loads the current release. Wrap custom JavaScript in `Talkdown.onReady(Deck => { ... })` because loading is asynchronous. For offline decks link local `deck.js` and `deck.css`; to freeze a deck, link the exact pair named in a release's `latest.json`.
+- Write notes in `::: notes`, `::: say` and `::: read` blocks. Keep shared notes as readable prose and keep delivery cues out of the article.
 - Use `::: chart` with one dataset. Choose a Markdown table for small hand-edited data; choose fenced CSV for spreadsheet exports, quoted commas, or multiline cells.
 - Omit chart `view` or use `view=auto` for plot-on-stage and plot-plus-table-in-article. Use `view=both` only when exact values belong on the slide and fit comfortably.
 - Use bar/hbar for categories, line for ordered trends, and donut for shares of one nonnegative series. Put units in the caption and keep numeric cells plain. Set `series="Column"` when selecting a donut series.
-- Keep ordinary `{.step}`, `{.explain}`, and `{.class #id}` attributes. They are not legacy syntax.
 - Keep single-file authoring distinct from offline packaging: CDN assets and optional fonts/diagrams/media need a connection or local/self-hosted copies.
 
 ## Slides
@@ -156,11 +155,7 @@ Set on `<html>`: `data-theme="rose"`. Themes: clean (default), paper, slate, led
 5. Start with a `layout: title` slide, use `layout: section` slides for chapters, end with a `layout: center` slide.
 6. Keep the file small. To edit, change the Markdown in place; do not regenerate the whole deck.
 7. Escape literal closing script tags as `<\/script>` in embedded Markdown. A referenced `.md` source does not need that HTML raw-text escape.
-8. Check desktop present view, phone-width read view, notes, chart data/download, and source copying before delivery. Fix visible diagnostics; do not switch to legacy charts to bypass numeric validation.
-
-## Existing decks
-
-Preserve comment notes (`<!-- ... -->`, including `say:` / `read:`) and `{.chart}` / `{.chart .line}` tables when maintaining old decks. These remain supported for compatibility, including legacy formatted numbers and first-series donuts. For newly written content, use note blocks and explicit `::: chart` containers with plain numeric data. Do not rewrite valid old decks solely to modernize their syntax.
+8. Check desktop present view, phone-width read view, notes, chart data/download, and source copying before delivery. Fix any error shown on a slide.
 
 ## Complete example
 
@@ -244,7 +239,7 @@ layout: center
 
 Use `::: chart type=heatmap|scatter|bubble|waterfall|timeline|sankey|treemap|range` around one Markdown table or fenced CSV block. Keep units in headers/titles and numeric cells plain. These share `view=auto|chart|table|both`, `title`, and CSV export with the other charts. Dense plots scroll on phones; keep examples small and verify both views.
 
-- Heatmap: first column labels rows, all others are numeric.
+- Heatmap: first column labels rows, all others are numeric; cells show their values. `total="Score"` prints that column as totals on the right, outside the colour scale. A header like `Login (15%)` puts the bracketed part on a second line.
 - Scatter/bubble: first column labels points; `x="Header" y="Header"` default to the second/third columns. Bubble requires `size="Header"` (defaults to fourth column); circle area encodes nonnegative size. No `group` option.
 - Waterfall: label, value, optional `Kind` column (`change`, `total`, `subtotal`). Changes accumulate; total/subtotal sets the running total to the supplied absolute value.
 - Timeline chart: label, required `Start`, optional `End`; valid `YYYY-MM-DD` dates. Missing End is a milestone. This differs from the heading-based `::: timeline` widget.
