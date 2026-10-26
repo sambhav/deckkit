@@ -230,6 +230,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Marks** | ✓ ◐ ✗ at the start of a cell become icons in the theme's green, accent and red |
 | **Stepped code** | ` ```python {steps: 1-2 \| 3-4} ` lights up each group of lines in turn |
 | **Annotated code** | ` ```python {annotate} ` turns `# (1)` line-end comments into numbered pins, explained by the `1.` `2.` list right after the block; ↓ walks them |
+| **Diffs** | ` ```diff {steps: hunks} title="api.py" ` tints added and removed lines and highlights each `@@` hunk on ↓. `view=split` shows old beside new on the slide; **Copy** takes the new code |
 | **Copy buttons** | Every code block gets a **Copy** button, shown on hover and always on touch screens |
 | **Flip cards** | `::: flip`: the `###` heading is the front, the rest is the back |
 | **Timeline** | `::: timeline`, then a `###` heading per milestone. Vertical on phones |

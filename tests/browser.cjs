@@ -162,6 +162,29 @@ async function verify(page, base) {
   await first.locator('select').selectOption('auto');
   check(await first.locator('.w-chart-table').isVisible(), 'Auto view must expose data in the article');
   check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Chart data must not widen the phone page');
+  // ```diff: hunks step on ↓ and on click, Copy takes the new code, split falls back to unified in the article
+  const diffs = ['## Diff', '```diff {steps: hunks} title="a.py"', '@@ one', '-old', '+new', '@@ two', ' keep', '+more', '```',
+    '---', '## Split', '```diff view=split', '@@ x', '-a', '+b', '```'].join('\n');
+  await page.route('**/diffs.html*', r => r.fulfill({ contentType: 'text/html', body:
+    '<!doctype html><html data-fonts="off" data-highlight="off"><head><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + diffs + '</script></body></html>' }));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(base + '/diffs.html?view=present');
+  await page.waitForFunction(() => window.Deck?.slides.length === 2);
+  const lit = () => page.locator('.slide.active .w-diff .ln.on').allTextContents();
+  check((await lit()).length === 0, 'A stepped diff must start with no hunk highlighted');
+  await page.keyboard.press('ArrowDown');
+  check(JSON.stringify(await lit()) === JSON.stringify(['@@ one', '-old', '+new']), 'The first ↓ must highlight the first hunk');
+  await page.locator('.slide.active .d-add').last().click();
+  check(JSON.stringify(await lit()) === JSON.stringify(['@@ two', ' keep', '+more']), 'Clicking a line must jump to its hunk');
+  check(await page.evaluate(() => Deck.cur) === 0, 'Diff steps must stay on the slide');
+  await page.evaluate(() => { window.__copied = null; navigator.clipboard.writeText = t => { window.__copied = t; return Promise.resolve(); }; });
+  await page.locator('.slide.active .w-diff .w-copy').click({ force: true });
+  await page.waitForFunction(() => window.__copied != null);
+  check(await page.evaluate(() => window.__copied) === 'new\nkeep\nmore', 'Copy must take the new code only');
+  await page.evaluate(() => Deck.go(1));
+  check(await page.locator('.slide.active .w-diff-split').isVisible() && !(await page.locator('.slide.active .w-diff-uni').isVisible()), 'view=split must show the split view on the stage');
+  await page.evaluate(() => Deck.setView('read'));
+  check(!(await page.locator('.w-diff-split').first().isVisible()) && await page.locator('.w-diff[data-view=split] .w-diff-uni').isVisible(), 'The article must show the unified diff');
   // Exercise multiple asynchronous references.
   for (const assets of ['']) {
     const source = '## External\n\n```html\n<script>hello</script>\n```';
