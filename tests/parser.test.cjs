@@ -368,3 +368,26 @@ test('bad timers fail visibly and preserve the exercise fallback', () => {
     assert.match(html, /Keep <strong>this<\/strong>/);
   }
 });
+test('ask has an accessible HTTP(S) link before the optional QR renderer runs', () => {
+  const html = md('::: ask url="https://example.com/questions?topic=Q%26A&from=talk"\n:::');
+  assert.match(html, /class="w w-ask"/);
+  assert.match(html, /href="https:\/\/example.com\/questions\?topic=Q%26A&amp;from=talk"/);
+  assert.match(html, /<span class="w-ask-label">Ask a question<\/span>/);
+  assert.match(html, /aria-hidden="true">example.com/);
+  assert.doesNotMatch(html, /td-error|<svg/);
+  assert.match(md('::: ask url=\'https://example.com/"quoted"\'\n:::'), /href="https:\/\/example.com\/%22quoted%22"/);
+  assert.match(md('::: ask url="http://example.com/feedback"\n:::'), /class="w w-ask"/);
+});
+test('ask rejects unsafe, missing and malformed destinations with readable diagnostics', () => {
+  for (const url of ['', 'javascript:alert(1)', 'data:text/html,test', '//example.com', '/feedback', 'https:example.com', 'ftp://example.com', 'https://user:pass@example.com', 'https://example.com/white space', 'not-a-url']) {
+    const html = md('::: ask url="' + url + '"\n:::');
+    assert.match(html, /class="td-error" role="alert">ask:/, url);
+    assert.doesNotMatch(html, /href=|class="w w-ask"/, url);
+  }
+  assert.match(md('::: ask\n:::'), /ask: provide/);
+  assert.match(md('::: ask url="https://example.com" size=large\n:::'), /only the url option/);
+  assert.match(md('::: ask url="https://example.com" big\n:::'), /only the url option/);
+  const invalidBody = md('::: ask url="https://example.com"\n**Keep this**\n:::');
+  assert.match(invalidBody, /leave the block empty/);
+  assert.match(invalidBody, /<strong>Keep this<\/strong>/);
+});
