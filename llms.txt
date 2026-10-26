@@ -38,3 +38,4 @@ Explorable numbers use `::: explorable` around prose with `[qps=1000]{range=100.
 Knowledge checks use `::: quiz`: one `###` question, at least two task-list choices and exactly one `- [x]` answer. Leave a blank line before explanation prose. ↓ reveals the answer; article view includes the full explanation, interactive feedback and Reset. Nothing is stored or sent.
 Image gallery: `::: gallery` around Markdown images; stepped grid in slides, responsive grid and captioned lightbox in articles. See the skill for syntax.
 Stepped derivations use `$$ {steps}` with TeX rows separated by `\\` and alignment cells separated by `&`; `\text{…}` adds explanations. ↓ reveals each row and accents the current equation; article view shows all equations.
+Countdowns: `::: timer 10m` wraps exercise instructions; ↓ starts, buttons pause/reset, article shows duration text. See the talkdown skill for syntax.

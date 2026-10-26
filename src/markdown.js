@@ -7,6 +7,7 @@ import { shortcut } from './keyboard-shortcuts.js';
 import { chatTranscript } from './chat.js';
 import { parseGlossary } from './glossary.js';
 import { derivation } from './derive.js';
+import { timerDuration, timerLabel } from './timer.js';
 
 const escape = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 // Typographer keeps smart quotes; 'replacements' would also turn (c) into © and +- into ±,
@@ -492,6 +493,13 @@ function compile(tokens, env) {
         }
         else if (name === 'explorable') { html += explorable(body, options, classes, md, escape, env); }
         else if (name === 'quiz') { html += quiz(body, options, classes, env); }
+        else if (name === 'timer') {
+          const duration = classes.length === 1 && !Object.keys(options).length && timerDuration(classes[0]);
+          const content = compile(body, env);
+          html += duration
+            ? `<div class="timer" data-duration="${duration}"><p class="w-timer-duration">Duration: ${timerLabel(duration)}</p><div class="w-timer-body">${content}</div></div>`
+            : '<p class="td-error" role="alert">timer: use a duration such as 10m or 1h30m (1 second to 24 hours), with no options.</p>' + content;
+        }
         else if (name === 'links') { html += linkCards(body, options, classes, env); }
         else if (['notes', 'say', 'read'].includes(name) && env.collectNotes) {
           const content = compile(body, { ...env, collectNotes: false });
@@ -534,7 +542,7 @@ function compile(tokens, env) {
             ? deviceFrame(name, options, classes, content)
             : `<div class="${escape([name, ...classes].join(' '))}"${attrs}>${content}</div>`;
         }
-      } catch (error) { html += `<p class="td-error" role="alert">${escape(error.message)}</p>`; }
+      } catch (error) { html += `<p class="td-error" role="alert">${escape(error.message)}</p>`; if (/^timer\b/.test(token.content)) html += compile(body, env); }
       i = end;
     } else if (token.type === 'td_column') { flush(); html += columns ? '</div><div>' : '<div class="cols"><div>'; columns = true; }
     else if (token.type === 'td_slide') { flush(); html += '<hr>'; }
