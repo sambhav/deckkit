@@ -237,6 +237,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **HTTP exchange** | A ` ```http ` fence: request line and headers, a blank line, then `HTTP/1.1 200 OK` and the response. ↓ reveals the response; the article stacks both messages |
 | **Copy buttons** | Every code block gets a **Copy** button, shown on hover and always on touch screens |
 | **Before / after** | `::: compare` around two images with alt text; drag or use the range keys, ↓ reveals 0 / 50 / 100%; articles show both images |
+| **Quiz** | `::: quiz`: one `###` question, `- [ ]` choices and one `- [x]` answer. Add a blank line before explanation prose. ↓ reveals the answer; articles show the explanation and allow choices/reset. No answers are stored or sent. |
 | **Flip cards** | `::: flip`: the `###` heading is the front, the rest is the back |
 | **Flow / stack** | `::: flow` or `::: stack` around a bulleted list. `::: flow vertical` points down; `build: true` or `{.step}` reveals boxes on ↓. Article view shows all boxes |
 | **Timeline** | `::: timeline`, then a `###` heading per milestone. Vertical on phones |
