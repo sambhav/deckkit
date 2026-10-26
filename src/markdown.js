@@ -139,6 +139,34 @@ md.core.ruler.after('inline', 'talkdown_figures', state => {
     if (title) { const caption = new state.Token('html_inline', '', 0); caption.content = `<figcaption>${md.renderInline(title)}</figcaption>`; token.children.push(caption); }
   });
 });
+// ```lang {annotate}: a "# (1)" comment closing a line becomes pin 1, explained by item 1 of the numbered list right after
+// the block (the Material for MkDocs convention, so the Markdown still reads as code plus a list on GitHub).
+const PIN = /\s*(?:(?:#|\/\/|--|;+|%)\s*\((\d+)\)!?|\/\*\s*\((\d+)\)!?\s*\*\/|<!--\s*\((\d+)\)!?\s*-->)\s*$/;
+md.core.ruler.after('block', 'talkdown_annotate', state => {
+  const t = state.tokens;
+  for (let i = 0; i < t.length; i++) {
+    const fence = t[i];
+    if (fence.type !== 'fence' || !/\{\s*annotate\s*\}/.test(fence.info)) continue;
+    const pins = [], errors = [], lines = fence.content.replace(/\n$/, '').split('\n').map(line => {
+      const m = line.match(PIN); pins.push(m ? +(m[1] || m[2] || m[3]) : 0); return m ? line.slice(0, m.index) : line;
+    });
+    fence.content = lines.join('\n') + '\n'; fence.meta = { ...fence.meta, pins };
+    let end = i, first = 1, count = 0;
+    if (t[i + 1]?.type === 'ordered_list_open' && t[i + 1].level === fence.level) {
+      first = +(t[i + 1].attrGet('start') || 1);
+      for (end = i + 2; !(t[end].type === 'ordered_list_close' && t[end].level === fence.level); end++) if (t[end].type === 'list_item_open' && t[end].level === fence.level + 1) count++;
+      t[i + 1].attrJoin('class', 'w-notes');
+    } else errors.push('{annotate} needs a numbered list right after the code block, one item per (n) marker');
+    const used = new Set(pins.filter(Boolean));
+    if (!used.size) errors.push('{annotate} found no markers: end a line with a comment like # (1) or // (1)');
+    for (const n of [...used].sort((a, b) => a - b)) if (count && (n < first || n >= first + count)) errors.push(`Marker (${n}) has no note in the list after the code`);
+    if (used.size) for (let n = first; n < first + count; n++) if (!used.has(n)) errors.push(`Note ${n} has no (${n}) marker in the code`);
+    const html = content => Object.assign(new state.Token('html_block', '', 0), { content, block: true });
+    t.splice(end + 1, 0, html('</div>\n'));
+    t.splice(i, 0, html(errors.map(e => `<p class="td-error" role="alert">${escape(e)}</p>\n`).join('') + '<div class="w-annotate">\n'));
+    i = end + 2;
+  }
+});
 md.renderer.rules.fence = (tokens, i) => {
   const token = tokens[i], info = token.info.trim(), lang = info.match(/^[\w+-]+/)?.[0] || '';
   const source = token.content.replace(/\n$/, ''), code = escape(source);
@@ -146,8 +174,8 @@ md.renderer.rules.fence = (tokens, i) => {
   if (lang === 'terminal') return `<div class="w-term" data-lines="${escape(JSON.stringify(source ? source.split('\n') : []))}"></div>`;
   const diagram = `<div class="w-diagram"><pre class="code w-diagram-src">${code}</pre></div>`;
   if (lang === 'mermaid') return /\{\s*source\s*\}/.test(info) ? `<div class="w-with-source"><pre class="code"><code>${code}</code></pre>${diagram}</div>` : diagram;
-  const steps = info.match(/\{\s*steps:\s*([^}]*)\}/)?.[1];
-  return `<pre class="code"${lang ? ` data-lang="${lang}"` : ''}${steps ? ` data-steps="${escape(steps)}"` : ''}><code>${code}</code></pre>`;
+  const pins = token.meta?.pins, steps = !pins && info.match(/\{\s*steps:\s*([^}]*)\}/)?.[1];
+  return `<pre class="code"${lang ? ` data-lang="${lang}"` : ''}${steps ? ` data-steps="${escape(steps)}"` : ''}${pins ? ` data-pins="${pins.join(',')}"` : ''}><code>${code}</code></pre>`;
 };
 const linkOpen = md.renderer.rules.link_open;
 md.renderer.rules.link_open = (tokens, i, options, env, self) => {

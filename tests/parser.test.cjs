@@ -124,3 +124,19 @@ test('chart numbers are plain: no units, symbols or separators', async () => {
   assert.throws(() => chartDataset(['Q', 'V'], [['A', '1,200']]), /expected a finite number/);
   assert.throws(() => chartDataset(['Q', ...'abcdefg'], [['x', ...'1234567']], 'bar'), /up to six series/);
 });
+test('annotated code: line-end (n) comments become pins and the list after it becomes the notes', () => {
+  const html = md('```python {annotate}\nconn = connect(dsn)  # (1)\nwith conn.transaction():  # (2)!\n    write(rows)\n```\n1. Opens a connection.\n2. Commits together.');
+  assert.match(html, /^<div class="w-annotate"><pre class="code" data-lang="python" data-pins="1,2,0"><code>conn = connect\(dsn\)\nwith conn.transaction\(\):\n    write\(rows\)<\/code><\/pre><ol class="w-notes">/);
+  assert.match(html, /<li>Commits together.<\/li><\/ol><\/div>$/);
+  assert.match(md('```js {annotate}\na() // (1)\nb() /* (2) */\n```\n1. x\n2. y'), /data-pins="1,2"><code>a\(\)\nb\(\)<\/code>/);
+  assert.match(md('```html {annotate}\n<p> <!-- (1) -->\n```\n1. x'), /data-pins="1"><code>&lt;p&gt;<\/code>/);
+  assert.doesNotMatch(md('```js\na() // (1)\n```'), /data-pins|w-annotate/);   // only with {annotate}
+});
+test('annotated code reports missing notes, markers and lists', () => {
+  assert.match(md('```js {annotate}\na() // (1)\n```'), /role="alert">\{annotate\} needs a numbered list/);
+  assert.match(md('```js {annotate}\na()\n```\n1. x'), /role="alert">\{annotate\} found no markers/);
+  const html = md('```js {annotate}\na() // (1)\nb() // (3)\n```\n1. x\n2. y');
+  assert.match(html, /Marker \(3\) has no note/);
+  assert.match(html, /Note 2 has no \(2\) marker/);
+  assert.match(html, /<div class="w-annotate">/);   // the code still renders
+});

@@ -259,6 +259,27 @@ Tests complete.
 ```
 
 ---
+id: w-annotate
+---
+## Annotated code
+
+```python {annotate}
+def save(rows, dsn):
+    conn = pool.connect(dsn)          # (1)
+    with conn.transaction():          # (2)
+        for row in rows:
+            conn.execute(INSERT, row)
+    return len(rows)                  # (3)
+```
+1. Borrows one connection from the pool instead of opening a new one.
+2. Every insert inside commits together, or none of them do.
+3. The caller learns how many rows were written.
+
+::: notes
+Each ↓ lights one numbered line and its note; in the article the notes sit beside the code.
+:::
+
+---
 ## Mermaid diagram
 
 ```mermaid

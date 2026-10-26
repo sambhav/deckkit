@@ -229,6 +229,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Explained table** | `{.explain}` after a table. The last column becomes the detail for the selected row |
 | **Marks** | ✓ ◐ ✗ at the start of a cell become icons in the theme's green, accent and red |
 | **Stepped code** | ` ```python {steps: 1-2 \| 3-4} ` lights up each group of lines in turn |
+| **Annotated code** | ` ```python {annotate} ` turns `# (1)` line-end comments into numbered pins, explained by the `1.` `2.` list right after the block; ↓ walks them |
 | **Copy buttons** | Every code block gets a **Copy** button, shown on hover and always on touch screens |
 | **Flip cards** | `::: flip`: the `###` heading is the front, the rest is the back |
 | **Timeline** | `::: timeline`, then a `###` heading per milestone. Vertical on phones |

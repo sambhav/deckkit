@@ -74,12 +74,13 @@ async function verify(page, base) {
     '```terminal', '```', '',
     '```js {steps: 1-9999999999 | invalid | 4-2}', 'hello', '```', '',
     '::: flip', '### Front', 'Back', ':::', '',
+    '---', '## Annotated', '```js {annotate}', 'open() // (1)', 'run()', 'close() /* (2) */', '```', '1. Opens.', '2. Closes.', '',
     '---', '## End',
   ].join('\n');
   await page.route('**/regression.html*', r => r.fulfill({ contentType: 'text/html', body:
     '<!doctype html><html data-fonts="off" data-highlight="off" data-diagrams="off" data-icons="off"><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + fixture + '</script></body></html>' }));
   await page.goto(base + '/regression.html?view=present');
-  await page.waitForFunction(() => window.Deck?.slides.length === 2);
+  await page.waitForFunction(() => window.Deck?.slides.length === 3);
   check((await page.locator('pre code').first().textContent()).includes('[^demo]: keep in code'), 'Footnote definitions in fenced code must survive');
   check(!(await page.locator('.notes').first().textContent()).includes('not notes'), 'Code comments must not become notes');
   check((await page.locator('.notes').first().textContent()).includes('inline code'), 'Inline code inside notes must survive extraction');
@@ -96,6 +97,15 @@ async function verify(page, base) {
   check(await page.locator('.w-flip').getAttribute('aria-pressed') === 'true', 'Flip card must activate from keyboard');
   await page.keyboard.press('Space');
   check(await page.locator('.w-flip').getAttribute('aria-pressed') === 'false', 'Space must flip back without advancing slides');
+  await page.evaluate(() => Deck.go(1, 0));
+  const annotated = page.locator('.w-annotate');
+  check(await annotated.locator('.w-pin').count() === 2 && !(await annotated.locator('pre code').textContent()).includes('(1)'), 'Annotation markers must become pins');
+  await page.keyboard.press('ArrowDown');
+  check(await annotated.locator('.ln.on').textContent() === 'open()' && await annotated.locator('.w-notes > li.on').textContent() === 'Opens.', 'Down must light the first annotated line and its note');
+  await annotated.locator('.w-notes > li').nth(1).click();
+  check(await annotated.locator('.ln.on').textContent() === 'close()' && await page.evaluate(() => Deck.cur) === 1, 'Clicking a note must jump to its line');
+  await annotated.locator('.w-pin').first().click();
+  check(await annotated.locator('.w-notes > li.on').textContent() === 'Opens.', 'Clicking a pin must jump to its note');
   const csv = ['Label,Before,After', '"A, B",10,5', '"two', 'lines",20,10'].join('\n');
   const charts = [
     '## CSV', '::: chart type=line view=both title="Latency & time"', '```csv', csv, '```', ':::',
