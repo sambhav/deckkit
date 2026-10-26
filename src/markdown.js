@@ -3,6 +3,7 @@ import MarkdownIt from 'markdown-it';
 import { quadrant } from './quadrant.js';
 
 import { shortcut } from './keyboard-shortcuts.js';
+import { chatTranscript } from './chat.js';
 
 const escape = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 // Typographer keeps smart quotes; 'replacements' would also turn (c) into © and +- into ±,
@@ -443,6 +444,7 @@ function compile(tokens, env) {
           try { html += quadrant(body, options, classes); }
           catch (error) { html += `<p class="td-error" role="alert">${escape(error.message)}</p>` + compile(body, env); }
         }
+        else if (name === 'chat') { html += chatTranscript(body, { options, classes, escape, render: ts => compile(ts, env), renderInline: ts => md.renderer.renderInline(ts, md.options, env) }); }
         else if (name === 'links') { html += linkCards(body, options, classes, env); }
         else if (['notes', 'say', 'read'].includes(name) && env.collectNotes) {
           const content = compile(body, { ...env, collectNotes: false });

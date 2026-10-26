@@ -33,6 +33,7 @@ import { beforeAfter } from './before-after.js';
  *   ::: flow / ::: stack               bulleted boxes; flow vertical changes direction; build: true or {.step} reveals items
  *   ::: timeline                        ### milestones; ↓ walks them; vertical on phones and in read view
  *   ::: quadrant x="Effort" y="Impact"  four ### quadrant labels, then optional - Label [0.2, 0.8] points
+ *   ::: chat                            **user:** / **assistant:** / **tool** messages; ↓ reveals messages; tool rows expand
  *   ::: board                           ### columns with lists of cards; ↓ reveals each column, all shown in read view
  *   ::: speaker                         optional photo, ### name, role and Markdown links; compact author box in read view
  *   ::: links                           a list of [Title](URL) descriptions becomes further-reading cards; no network fetches
@@ -195,6 +196,7 @@ import { beforeAfter } from './before-after.js';
     // Inner widgets must be transformed before an outer pane moves their nodes.
     [...c.querySelectorAll('.tabs, .toggle, .steps')].reverse().forEach(panes);
     c.querySelectorAll('.timeline').forEach(timeline);
+    c.querySelectorAll('.w-chat').forEach(chat);
     c.querySelectorAll('.board').forEach(board);
     c.querySelectorAll('.w-quadrant').forEach(quadrantSteps);
     c.querySelectorAll('.stats').forEach(stats);
@@ -581,6 +583,17 @@ import { beforeAfter } from './before-after.js';
     w.style.setProperty('--n', lis.length);
     const st = steps(w, lis.length, i => lis.forEach((li, j) => { li.classList.toggle('on', j === i); li.classList.toggle('done', j < i); }));
     lis.forEach((li, j) => li.addEventListener('click', () => st.go(j)));
+  }
+
+  function chat(box) {
+    const messages = [...box.children];
+    box.querySelectorAll(':scope > details > summary').forEach(summary => summary.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') e.stopPropagation();
+    }));
+    steps(box, messages.length, i => messages.forEach((message, j) => {
+      message.hidden = j > i;
+      message.classList.toggle('current', j === i);
+    }), { read: 'end' });
   }
 
   // ::: board — a roadmap of heading-led columns; list items become cards, without losing nested Markdown.
