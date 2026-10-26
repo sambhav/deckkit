@@ -297,6 +297,24 @@ async function request(url) {
 ```
 
 ---
+id: w-log
+---
+## Follow the incident
+
+```log {steps: 3 | 4-5}
+12:00:01 INFO  deploy started
+12:00:02 INFO  accepting requests
+12:00:03 WARN  connection pool at 90%
+12:00:04 ERROR timeout on db-1
+12:00:05 INFO  retry routed to db-2
+12:00:06 INFO  requests recovered
+```
+
+::: notes
+Press down to follow the warning and recovery. The article marks all selected lines; Copy keeps the original log, including whitespace.
+:::
+
+---
 id: w-diff
 ---
 ## Diff, one hunk at a time
