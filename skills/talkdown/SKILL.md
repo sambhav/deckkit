@@ -115,6 +115,7 @@ Stateful widgets step with ↓ and expand in the article; charts follow their `v
 
 - Board: `::: board`, a `### Column` heading per column and a Markdown list per column (each top-level item is a card). ↓ reveals each column; article view shows every card, stacking columns on phones. Keep slides to 2–4 short columns; use a new slide for more. No options.
 
+- Flow / stack: `::: flow` or `::: stack` around a bulleted list, one box per item. `::: flow vertical` points down. Slide frontmatter `build: true` reveals every box on ↓; `{.step}` marks individual items. Article view shows all boxes; narrow screens stack flows vertically. No options besides `flow vertical`.
 - Tabs: `::: tabs` then a `### Heading` per tab. `::: toggle`, `::: steps` (walkthrough), `::: accordion`, `::: timeline`, `::: features` (cards) use the same shape.
 ```md
 ::: tabs

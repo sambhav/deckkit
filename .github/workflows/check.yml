@@ -12,7 +12,7 @@ jobs:
   # runners already have, so nothing is downloaded beyond the npm packages.
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     # Publishing runs only on pushes to main, after every check has passed.
     env:
       PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}

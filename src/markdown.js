@@ -334,6 +334,39 @@ function linkCards(tokens, options, classes, env) {
   return `<ul class="w w-links">${cards.join('')}</ul>`;
 }
 
+// Simple diagrams stay ordinary lists: no renderer or network dependency.
+function flowStack(name, tokens, options, classes, env) {
+  const fail = message => `<p class="td-error" role="alert">${name}: ${escape(message)}</p>${compile(tokens, env)}`;
+  if (Object.keys(options).length || classes.some(c => name !== 'flow' || c !== 'vertical')) return fail('use a bulleted list; only flow accepts the vertical flag.');
+  if (tokens[0]?.type !== 'bullet_list_open' || tokens.at(-1)?.type !== 'bullet_list_close') return fail('expected one non-empty bulleted list.');
+  let depth = 0, item = null, count = 0, hasText = false;
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (/^(bullet|ordered)_list_open$/.test(t.type)) depth++;
+    if (/^(bullet|ordered)_list_close$/.test(t.type)) {
+      depth--;
+      if (!depth && i !== tokens.length - 1) return fail('expected one bulleted list, without other blocks outside it.');
+    }
+    if (t.type === 'list_item_open' && depth === 1) { item = t; hasText = false; count++; }
+    if (item && t.type === 'inline' && t.content.trim()) hasText = true;
+    // A loose list attaches {.step} to its paragraph. Reveal its whole box instead.
+    if (item && t.type === 'paragraph_open' && t.attrGet('class')?.split(/\s+/).includes('step')) {
+      item.attrJoin('class', 'step');
+      const remaining = t.attrGet('class').split(/\s+/).filter(c => c !== 'step').join(' ');
+      if (remaining) t.attrSet('class', remaining); else t.attrs = t.attrs.filter(([key]) => key !== 'class');
+    }
+    if (t.type === 'list_item_close' && depth === 1) {
+      if (!hasText) return fail('every item needs a label.');
+      item = null;
+    }
+  }
+  if (!count || depth) return fail('expected one non-empty bulleted list.');
+  tokens[0].attrJoin('class', ['w', `w-${name}`, ...classes].join(' '));
+  tokens[0].attrSet('role', 'list');
+  tokens[0].attrSet('aria-label', name === 'flow' ? 'Process flow' : 'Layers, top to bottom');
+  return compile(tokens, env);
+}
+
 // Decorative device chrome is static: preserve all of the Markdown content in both views.
 function deviceFrame(name, options, classes, content) {
   const allowed = name === 'browser' ? ['url'] : name === 'window' ? ['title'] : [];
@@ -361,7 +394,8 @@ function compile(tokens, env) {
       const body = tokens.slice(i + 1, end);
       try {
         const { name, options, classes } = directive(token.content);
-        if (name === 'links') { html += linkCards(body, options, classes, env); }
+        if (name === 'flow' || name === 'stack') { html += flowStack(name, body, options, classes, env); }
+        else if (name === 'links') { html += linkCards(body, options, classes, env); }
         else if (['notes', 'say', 'read'].includes(name) && env.collectNotes) {
           const content = compile(body, { ...env, collectNotes: false });
           if (name !== 'read') env.notes.push(content); if (name !== 'say') env.article.push(content);
