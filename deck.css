@@ -874,6 +874,27 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 :is(.cols, [data-view=read], [data-tall]) .w-feature > * + :not(h3) { margin-top: .2em; }
 :is(.cols, [data-view=read], [data-tall]) .w-feature > .w-icon { grid-column: 1; grid-row: 1 / span 9; margin: 0; }
 
+/* ::: speaker: portrait and ordinary Markdown, compact in the article */
+.w-speaker { display: flex; align-items: center; gap: calc(var(--t-gap) * 1.5); padding: calc(var(--t-gap) * 1.4); border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.w-speaker-body { min-width: 0; flex: 1; }
+.md .w-speaker-photo { flex: 0 0 auto; width: calc(var(--t-body) * 5); margin: 0; }
+.md .w-speaker-photo img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 50%; }
+.md .w-speaker-photo figcaption { margin-top: .6em; font-size: calc(var(--t-body) * .55); line-height: 1.4; color: var(--muted); text-align: center; overflow-wrap: anywhere; }
+.md .w-speaker h3 { font-size: calc(var(--t-body) * 1.4); margin: 0; }
+.md .w-speaker-body > * + * { margin-top: .5em; }
+.md .w-speaker-body > p { color: var(--muted); font-size: calc(var(--t-body) * .85); line-height: 1.5; }
+.md .w-speaker ul { display: flex; flex-wrap: wrap; gap: .35em 1em; }
+.md .w-speaker ul > li { padding: 0; }
+.md .w-speaker ul > li::before { display: none; }
+.md .w-speaker a { display: inline-flex; align-items: center; gap: .25em; min-height: 32px; font-size: calc(var(--t-body) * .75); }
+[data-view=read] .w-speaker { gap: var(--t-gap); padding: var(--t-gap); }
+[data-view=read] .md .w-speaker-photo { width: calc(var(--t-body) * 3.5); }
+[data-view=read] .md .w-speaker h3 { font-size: calc(var(--t-body) * 1.1); }
+@media (max-width: 480px) {
+  [data-view=read] .w-speaker { align-items: flex-start; }
+  [data-view=read] .md .w-speaker-photo { width: calc(var(--t-body) * 2.6); }
+}
+
 /* ::: agenda */
 .w-agenda ol { list-style: none; display: grid; grid-auto-flow: column; grid-template-rows: repeat(3, auto); gap: .2em 2.4em; counter-reset: a; padding: 0; }
 .w-agenda ol > li { counter-increment: a; padding: 0 !important; }

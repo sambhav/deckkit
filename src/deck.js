@@ -30,6 +30,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
  *   ::: flip                            ### front, the rest is the back
  *   ::: timeline                        ### milestones; ↓ walks them; vertical on phones and in read view
  *   ::: board                           ### columns with lists of cards; ↓ reveals each column, all shown in read view
+ *   ::: speaker                         optional photo, ### name, role and Markdown links; compact author box in read view
  *   ::: stats                           big numbers: "- **42%** faster first response"
  *   > [!NOTE] / [!TIP] / [!WARNING]     callouts
  *   ```mermaid                          diagrams (Mermaid, fetched only if the deck has one; <html data-diagrams="off"> to skip);
@@ -200,6 +201,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
     c.querySelectorAll('.flip').forEach(flip);
     c.querySelectorAll('.accordion').forEach(accordion);
     c.querySelectorAll('.features').forEach(features);
+    c.querySelectorAll('.speaker').forEach(speaker);
     c.querySelectorAll('.w-term:not(.w-cast)').forEach(terminal);
     c.querySelectorAll('.w-cast').forEach(cast);
     c.querySelectorAll('.qr').forEach(b => { b.className = 'w w-qr'; b.dataset.url = b.textContent.trim(); b.textContent = ''; });
@@ -779,6 +781,28 @@ import { visualTypes, visualChart } from './visual-charts.js';
     }).join('');
     w.style.setProperty('--n-auto', Math.min(3, w.children.length));   // an author's --n overrides it
     box.replaceWith(w);
+  }
+
+  // ::: speaker — ordinary Markdown for a photo, name, role and links; no hidden content in either view.
+  function speaker(box) {
+    const headings = [...box.children].filter(el => el.tagName === 'H3');
+    if (headings.length !== 1 || !headings[0].textContent.trim()) {
+      const error = document.createElement('p'); error.className = 'td-error'; error.setAttribute('role', 'alert');
+      error.textContent = 'speaker: include exactly one ### heading for the name.';
+      box.prepend(error); return;   // leave the authored Markdown readable
+    }
+    const photo = [...box.children].find(el => el.matches('figure') && el.firstElementChild?.tagName === 'IMG');
+    box.classList.remove('speaker'); box.classList.add('w', 'w-speaker');
+    const body = document.createElement('div'); body.className = 'w-speaker-body';
+    if (photo) { photo.classList.add('w-speaker-photo'); box.prepend(photo); }
+    body.append(...[...box.childNodes].filter(node => node !== photo)); box.append(body);
+    for (const link of body.querySelectorAll('a[href]')) {
+      if (link.querySelector('.ico, svg, img')) continue;
+      const icon = document.createElement('i'); icon.className = 'ico'; icon.setAttribute('aria-hidden', 'true');
+      const url = link;
+      icon.dataset.icon = url.protocol === 'mailto:' ? 'mail' : /(^|\.)github\.com$/i.test(url.hostname) ? 'github' : 'link';
+      link.prepend(icon, document.createTextNode(' '));
+    }
   }
 
   /* terminals: ```terminal fences type each "$ command" on ↓ and print its output; ![](x.cast) plays an asciinema recording */
