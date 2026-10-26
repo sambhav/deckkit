@@ -565,6 +565,24 @@ layout: center
 ::: notes
 This gallery showcases the common Markdown-native widgets. The main demo also covers image and video slides, recordings, custom HTML, layouts, source inspection, and other presentation features.
 :::
+---
+id: w-endpoint
+---
+## API endpoint
+
+::: endpoint GET /v1/users/{id}
+Returns one user, including their display name and account status.
+
+| Param | Type | Notes |
+|---|---|---|
+| id | integer | Required path parameter |
+| fields | string | Optional comma-separated fields |
+:::
+
+::: notes
+The endpoint keeps its full description and parameter table visible. Read view adds a permalink on the path; press S to see its Markdown.
+:::
+
 </script>
 </body>
 </html>
