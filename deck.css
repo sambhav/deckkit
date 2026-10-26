@@ -1175,3 +1175,26 @@ aside.article { display: none; }
   .w-compare-control { flex-wrap: wrap; }
   .w-compare-control > span:first-child { flex-basis: 100%; }
 }
+
+/* Quadrant matrices use numbered markers so overlapping labels remain readable. */
+.w-quadrant { margin: 0 auto; width: 100%; max-width: 720px; color: var(--fg); }
+.w-quadrant-y, .w-quadrant-x { font-size: var(--t-small); font-weight: 600; }
+.w-quadrant-x { text-align: right; }
+.w-quadrant-plot { position: relative; margin: .3em 0; }
+.w-quadrant-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); aspect-ratio: 2.4; border: 1px solid var(--line); background: var(--surface); }
+.w-quadrant-cell { min-width: 0; padding: .45em .65em; border: 1px solid var(--line); font-size: var(--t-small); overflow-wrap: anywhere; }
+.w-quadrant-cell:nth-child(even) { text-align: right; }
+.w-quadrant-point { position: absolute; display: grid; place-items: center; transform: translate(-50%, -50%); width: 1.6em; height: 1.6em; border-radius: 50%; background: var(--accent); color: var(--on-accent); border: 2px solid var(--bg); font-size: 14px; font-weight: 700; }
+.md .w-quadrant-key { display: flex; flex-wrap: wrap; gap: .25em 1.6em; margin: .4em 0 0; padding: 0; font-size: var(--t-small); }
+.md .w-quadrant-key li { margin: 0; padding-left: 1.5em; font-size: inherit; overflow-wrap: anywhere; }
+.w-quadrant-key span { color: var(--muted); }
+.w-quadrant-groups { display: none; }
+[data-view=present] .w-quadrant [data-point]:not(.shown), [data-view=present] .w-quadrant:not(.has-points) [data-group]:not(.shown) { visibility: hidden; }
+[data-view=read] .w-quadrant-key { display: none; }
+[data-view=read] .w-quadrant-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--t-gap); margin-top: var(--t-gap); }
+.md .w-quadrant-groups h4 { margin: 0; font-size: var(--t-card); }
+.md .w-quadrant-groups ul { margin: .3em 0 0; font-size: var(--t-small); }
+@media (max-width: 600px) {
+  .w-quadrant-cell { font-size: var(--t-small); padding: .25em; }
+  [data-view=read] .w-quadrant-groups { grid-template-columns: 1fr; }
+}
