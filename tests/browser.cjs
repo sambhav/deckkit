@@ -19,7 +19,7 @@ async function verify(page, base) {
     await tab.emulateMedia({ reducedMotion: 'reduce' });
     try { return await suite(tab, base); } finally { await tab.close(); }
   };
-  const suites = Promise.all([verifyMobileNavigation, verifyNativeScrolling, verifyVisualCharts, verifyLatest, verifyBoard].map(sibling));
+  const suites = Promise.all([verifyMobileNavigation, verifyNativeScrolling, verifyVisualCharts, verifyLatest, verifyBoard, require('./speaker.cjs')].map(sibling));
   suites.catch(() => {});   // awaited below; this only stops an early failure here from going unhandled
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(base + '/?view=present');
