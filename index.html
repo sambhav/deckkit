@@ -440,7 +440,7 @@ Mention the two large renewals.
 - Use **say** for cues and **read** for article context
 
 ::: notes
-Use explicit note blocks for new decks: they contain ordinary Markdown and make each audience clear. Shared notes become the prose in the article. Older decks can keep HTML comment notes; they remain supported for compatibility.
+Use explicit note blocks for new decks: they contain ordinary Markdown and make each audience clear. Shared notes become the prose in the article.
 :::
 
 ---
@@ -1274,7 +1274,7 @@ Keep inline Markdown when you want one authored HTML file. Media paths in either
 :::
 
 ::: notes
-For a new published deck, use one HTML file containing inline Markdown and the stable latest.js loader; there is no author build. The loader checks a fresh manifest on each visit and loads matching, content-hashed JavaScript and CSS. The code on the left becomes the slide on the right. If the source is code-heavy or edited separately, a script tag with data-src can reference a Markdown file instead; serve that version over HTTP. For offline decks, keep using local deck.js and deck.css files. Open it in any modern browser. To publish it, put the folder anywhere that serves static files: GitHub Pages, a bucket, an intranet share.
+A deck is one HTML file with the Markdown inside it and one script tag. The latest.js script loads the current talkdown release each time the page opens, so there is nothing to install or update. The code on the left becomes the slide on the right. If the source is code-heavy or edited separately, a script tag with data-src can reference a Markdown file instead; serve that version over HTTP. For offline decks, keep using local deck.js and deck.css files. Open it in any modern browser. To publish it, put the folder anywhere that serves static files: GitHub Pages, a bucket, an intranet share.
 :::
 
 ---

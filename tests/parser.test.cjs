@@ -96,9 +96,10 @@ test('CSV download preserves raw numbers and escapes formula-like text', async (
 test('notes and slide boundaries use tokens instead of splitting code or containers', async () => {
   const { renderMarkdown, slideChunks } = await import('../src/markdown.js');
   const env = { collectNotes: true, notes: [], article: [], feet: [] };
-  const html = renderMarkdown('Text <!-- say: inline `note` -->\n\n::: read\nArticle **only**.\n:::\n\n[^x]: A `code` footnote.', env);
-  assert.doesNotMatch(html, /inline/);
-  assert.match(env.notes[0], /inline <code>note<\/code>/);
+  const html = renderMarkdown('Text\n\n::: say\nInline `note`.\n:::\n\n::: read\nArticle **only**.\n:::\n\n<!-- just a comment -->\n\n[^x]: A `code` footnote.', env);
+  assert.doesNotMatch(html, /Inline/);
+  assert.match(env.notes[0], /Inline <code>note<\/code>/);
+  assert.equal(env.notes.length, 1);
   assert.match(env.article[0], /<strong>only<\/strong>/);
   assert.match(env.feet[0], /<code>code<\/code>/);
   assert.equal(slideChunks('## One\n\n::: card\n---\n```md\n---\n```\n:::\n\n---\n## Two').length, 2);
@@ -117,10 +118,9 @@ test('typography keeps quotes, ellipses and dashes but not (c) or +-', async () 
   const { renderMarkdown } = await import('../src/markdown.js');
   assert.equal(renderMarkdown('Wait... a -- b "q" (c) a+-b').trim(), '<p>Wait… a – b “q” (c) a+-b</p>');
 });
-test('legacy {.chart} tables keep lenient numbers, first-column donuts and many series', async () => {
+test('chart numbers are plain: no units, symbols or separators', async () => {
   const { chartDataset } = await import('../src/data.js');
-  assert.deepEqual(chartDataset(['Q', 'V'], [['A', '42%'], ['B', '$1,200']], 'bar', undefined, true).series[0].values, [42, 1200]);
-  assert.equal(chartDataset(['Q', 'A', 'B'], [['x', '1', '2']], 'donut', undefined, true).series.length, 1);
-  assert.equal(chartDataset(['Q', ...'abcdefg'], [['x', ...'1234567']], 'bar', undefined, true).series.length, 7);
   assert.throws(() => chartDataset(['Q', 'V'], [['A', '42%']]), /expected a finite number/);
+  assert.throws(() => chartDataset(['Q', 'V'], [['A', '1,200']]), /expected a finite number/);
+  assert.throws(() => chartDataset(['Q', ...'abcdefg'], [['x', ...'1234567']], 'bar'), /up to six series/);
 });

@@ -59,20 +59,36 @@ export function visualChart(headers, rows, type, options = {}) {
   };
 
   if (type === 'heatmap') {
-    const numeric = names.slice(1).map((_, i) => i + 1);
+    // total="Score" keeps a totals column out of the colour scale and prints it at the right
+    const ti = options.total == null ? -1 : column(options.total);
+    if (ti === 0) throw Error('The total column cannot be the label column');
+    const numeric = names.slice(1).map((_, i) => i + 1).filter(i => i !== ti);
     const values = rows.flatMap(r => numeric.map(i => number(r, i)));
     const [lo, hi] = extent(values), ch = 34;
+    // "Stack (8%)" puts the part in brackets on a smaller second line
+    const split = name => { const m = String(name).match(/^(.*?)\s*\(([^()]+)\)$/); return m ? [m[1], m[2]] : [String(name), '']; };
+    const heads = names.map(split), sub = [...numeric, ti].some(i => i > 0 && heads[i][1]), top = sub ? 50 : 32;
     const left = Math.min(160, Math.max(50, ...rows.map(r => Array.from(String(r[0])).length * 8 + 14)));
-    const cw = Math.min(128, Math.max(64, ...numeric.map(i => names[i].length * 8 + 16)));
-    width = Math.max(340, left + numeric.length * cw + 10); height = 96 + rows.length * ch;
-    numeric.forEach((i, j) => { out += label(left + j * cw + cw / 2, 24, names[i], 'middle', Math.floor(cw / 8) - 1); });
+    const cw = Math.min(128, Math.max(64, ...numeric.map(i => Math.max(heads[i][0].length, heads[i][1].length) * 8 + 16)));
+    const totalW = ti < 0 ? 0 : Math.max(56, Math.max(heads[ti][0].length, heads[ti][1].length) * 8 + 16);
+    width = Math.max(340, left + numeric.length * cw + totalW + 10); height = top + 64 + rows.length * ch;
+    const head = (x, i, anchor = 'middle', max = Math.floor(cw / 8) - 1) => {
+      out += label(x, 24, heads[i][0], anchor, max);
+      if (heads[i][1]) out += `<text x="${x}" y="${41}" text-anchor="${anchor}" fill="var(--muted)" font-size="12">${esc(heads[i][1])}</text>`;
+    };
+    numeric.forEach((i, j) => head(left + j * cw + cw / 2, i));
+    if (ti > 0) head(left + numeric.length * cw + 12, ti, 'start', 12);
     rows.forEach((r, i) => {
-      out += label(left - 12, 54 + i * ch, r[0], 'end', Math.floor(left / 8) - 1);
+      const y = top + i * ch;
+      out += label(left - 12, y + 22, r[0], 'end', Math.floor(left / 8) - 1);
       numeric.forEach((j, k) => {
         const v = number(r, j), t = hi === lo ? .5 : (v - lo) / (hi - lo);
         const color = `color-mix(in srgb, var(--accent) ${Math.round(15 + 75 * t)}%, var(--surface))`;
-        out += rect(left + k * cw, 32 + i * ch, cw - 3, ch - 3, color, `${r[0]}, ${names[j]}: ${v}`);
+        out += rect(left + k * cw, y, cw - 3, ch - 3, color, `${r[0]}, ${names[j]}: ${v}`);
+        // the value in the cell, in a colour that reads on it
+        out += `<text x="${left + k * cw + (cw - 3) / 2}" y="${y + ch / 2 + 3}" text-anchor="middle" font-size="13" font-weight="600" fill="${t >= .6 ? 'var(--on-accent)' : 'var(--fg)'}" pointer-events="none">${esc(fmt(v))}</text>`;
       });
+      if (ti > 0) out += `<text x="${left + numeric.length * cw + 12}" y="${y + ch / 2 + 4}" font-size="15" font-weight="700" fill="currentColor"><title>${esc(r[0])}, ${esc(names[ti])}: ${number(r, ti)}</title>${esc(fmt(number(r, ti)))}</text>`;
     });
     const y = height - 42;
     for (let i = 0; i < 5; i++) out += rect(left + i * 30, y, 30, 12, `color-mix(in srgb, var(--accent) ${15 + i * 75 / 4}%, var(--surface))`, fmt(lo + (hi - lo) * i / 4));
@@ -227,5 +243,5 @@ export function visualChart(headers, rows, type, options = {}) {
   // Reject arithmetic overflow rather than emitting an invalid, misleading SVG.
   if (/(?:="|[ ,])(?:NaN|[+-]?Infinity)(?:[ ,"<])/.test(out)) throw Error('Numeric range is too large to plot');
   // taller than a slide has room for: keep the scroll at full size rather than shrinking the labels
-  return `<svg xmlns="http://www.w3.org/2000/svg" class="w-visual-svg${height > 420 ? ' w-visual-tall' : ''}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(options.title || type + ' chart')}" style="--visual-width:${width}px;--visual-max-width:${Math.max(width, Math.min(800, width * 400 / height))}px"><title>${esc(options.title || type + ' chart')}</title><desc>Scroll to explore dense charts. Use the View control for the data table or download CSV for exact values.</desc>${out}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="w-visual-svg${height > 640 ? ' w-visual-tall' : ''}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(options.title || type + ' chart')}" style="--visual-width:${width}px;--visual-max-width:${Math.max(width, Math.min(800, width * 400 / height))}px"><title>${esc(options.title || type + ' chart')}</title><desc>Scroll to explore dense charts. Use the View control for the data table or download CSV for exact values.</desc>${out}</svg>`;
 }

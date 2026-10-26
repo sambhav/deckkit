@@ -168,12 +168,6 @@ export function directive(text) {
   return { name, options, classes };
 }
 
-function collectComment(source, env) {
-  source.replace(/<!--([\s\S]*?)-->/g, (_, text) => {
-    const match = text.trim().match(/^(say|read):\s*([\s\S]*)$/i), kind = match?.[1].toLowerCase(), content = renderMarkdown(match ? match[2] : text.trim());
-    if (kind !== 'read') env.notes.push(content); if (kind !== 'say') env.article.push(content); return '';
-  });
-}
 function compile(tokens, env) {
   let html = '', buffer = [], columns = false;
   const flush = () => { html += md.renderer.render(buffer, md.options, env); buffer = []; };
@@ -204,16 +198,7 @@ function compile(tokens, env) {
       const foot = `<p><sup>${escape(token.meta.id)}</sup> ${md.renderInline(token.content)}</p>`;
       if (env.collectNotes) env.feet.push(foot); else { flush(); html += foot; }
     }
-    else if (token.type === 'html_block' && env.collectNotes && /^\s*<!--[\s\S]*-->\s*$/.test(token.content)) {
-      flush();
-      collectComment(token.content, env);
-    } else {
-      if (token.type === 'inline' && env.collectNotes) token.children = token.children.filter(child => {
-        if (child.type !== 'html_inline' || !/^<!--[\s\S]*-->$/.test(child.content)) return true;
-        collectComment(child.content, env); return false;
-      });
-      buffer.push(token);
-    }
+    else buffer.push(token);
   }
   flush(); if (columns) html += '</div></div>'; return html;
 }
