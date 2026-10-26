@@ -493,6 +493,17 @@ td.mk-only, th.mk-only { text-align: center; }
 :root:not([data-view=read]) .w-annotate.stepping pre.code .ln { opacity: .4; }
 :root:not([data-view=read]) .w-annotate.stepping pre.code .ln.on { opacity: 1; background: var(--accent-soft); border-left-color: var(--accent); }
 :is([data-tall]) .w-annotate { grid-template-columns: 1fr; }
+/* HTTP exchanges: paired messages on the stage, stacked in articles and tall layouts. */
+.md .w-http { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--t-gap); margin-inline: 0; margin-bottom: 0; }
+.w-http > section { min-width: 0; }
+.w-http header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .7em; margin-bottom: .65em; font: 600 var(--t-card)/1.35 var(--sans); color: var(--fg); }
+.w-http-badge { padding: .2em .55em; border: 1px solid var(--line); border-radius: var(--radius); font: 600 .85em/1.4 var(--mono); color: var(--fg); background: var(--accent-soft); overflow-wrap: anywhere; }
+.w-http[data-status=success] .w-http-response .w-http-badge { background: color-mix(in srgb, var(--green) 13%, var(--bg)); border-color: color-mix(in srgb, var(--green) 45%, var(--line)); }
+.w-http[data-status=error] .w-http-response .w-http-badge { background: color-mix(in srgb, var(--red) 13%, var(--bg)); border-color: color-mix(in srgb, var(--red) 45%, var(--line)); }
+.md .w-http pre.code { margin: 0; padding: 1em; white-space: pre-wrap; overflow-wrap: anywhere; font-size: calc(var(--t-code) * .9); }
+:root:not([data-view=read]) .md .w-http pre.code { max-height: calc(var(--t-code) * 13); }
+.w-http-response.pending { visibility: hidden; }
+:is([data-view=read], [data-tall]) .md .w-http { grid-template-columns: minmax(0, 1fr); }
 /* ```diff: +/- lines tinted with the theme's green and red; a split view sets old beside new on the stage */
 .md .w-diff { position: relative; margin-inline: 0; margin-bottom: 0; }
 .md .w-diff > figcaption { margin: 0 0 .5em; font: 500 calc(var(--t-code) * .85)/1.5 var(--mono); color: var(--muted); }
