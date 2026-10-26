@@ -306,6 +306,26 @@ function compile(tokens, env) {
           const content = compile(body, { ...env, collectNotes: false });
           if (name !== 'read') env.notes.push(content); if (name !== 'say') env.article.push(content);
         } else {
+          if (name === 'board') {
+            let columns = 0, invalid = Object.keys(options).length || classes.length;
+            for (let j = 0; j < body.length;) {
+              const t = body[j];
+              if (t.type === 'heading_open' && t.tag === 'h3') {
+                invalid ||= !body[j + 1]?.content.trim(); columns++; j += 3;
+              } else if (columns && /^(bullet|ordered)_list_open$/.test(t.type)) {
+                let depth = 1; j++;
+                while (j < body.length && depth) {
+                  if (/^(bullet|ordered)_list_open$/.test(body[j].type)) depth++;
+                  if (/^(bullet|ordered)_list_close$/.test(body[j].type)) depth--;
+                  j++;
+                }
+              } else { invalid = true; break; }
+            }
+            if (!columns || invalid) {
+              html += '<p class="td-error" role="alert">Board needs ### column headings and lists of cards; it takes no options.</p>' + compile(body, env);
+              i = end; continue;
+            }
+          }
           const attrs = Object.entries(options).map(([k, v]) => ` data-${k}="${escape(v)}"`).join('');
           html += `<div class="${escape([name, ...classes].join(' '))}"${attrs}>${compile(body, env)}</div>`;
         }

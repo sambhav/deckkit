@@ -13,6 +13,25 @@ const context = {
 vm.runInNewContext(fs.readFileSync(require.resolve('../deck.js'), 'utf8'), context);
 const md = s => context.window.Deck.markdown(s).trim().replace(/>\n</g, '><');
 
+test('boards keep heading-led lists, nested cards and code as readable Markdown', () => {
+  const html = md('::: board\n### Now\n- **Cache**\n  - Nested detail\n### Next\n1. Docs\n\n   ```js\n   launch()\n   ```\n### Later\n:::');
+  assert.match(html, /^<div class="board"><h3>Now<\/h3><ul>/);
+  assert.match(html, /<strong>Cache<\/strong>/);
+  assert.match(html, /Nested detail/);
+  assert.match(html, /<ol>/);
+  assert.match(html, /launch\(\)/);
+  assert.doesNotMatch(html, /td-error/);
+});
+
+test('invalid boards explain the syntax and preserve their fallback content', () => {
+  for (const body of ['', 'paragraph', '## Wrong heading\n- Card', '- No heading', '### \n- Card', '### Now\nParagraph']) {
+    const html = md('::: board\n' + body + '\n:::');
+    assert.match(html, /role="alert">Board needs ### column headings/);
+    if (body.includes('Paragraph')) assert.match(html, /Paragraph/);
+  }
+  assert.match(md('::: board reveal=cards\n### Now\n- Card\n:::'), /Board needs/);
+});
+
 test('browser test server returns missing-file errors without crashing', async () => {
   const server = require('./run-browser.cjs')();
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));

@@ -113,6 +113,8 @@ Notes can span lines. Timing cues like `[~60s]` are dropped from the article. Co
 
 Stateful widgets step with ↓ and expand in the article; charts follow their `view` setting.
 
+- Board: `::: board`, a `### Column` heading per column and a Markdown list per column (each top-level item is a card). ↓ reveals each column; article view shows every card, stacking columns on phones. Keep slides to 2–4 short columns; use a new slide for more. No options.
+
 - Tabs: `::: tabs` then a `### Heading` per tab. `::: toggle`, `::: steps` (walkthrough), `::: accordion`, `::: timeline`, `::: features` (cards) use the same shape.
 ```md
 ::: tabs

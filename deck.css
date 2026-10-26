@@ -831,6 +831,24 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 .w-acc-b p, .w-acc-b li { color: var(--muted); font-size: calc(var(--t-body) * .85); }
 [data-view=read] .w-acc-b { grid-template-rows: 1fr; } [data-view=read] .w-acc-h::after { display: none; }
 
+/* ::: board — lists stay semantic, with one card per top-level item. */
+.w-board { display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: var(--t-gap); align-items: start; }
+.w-board-column { min-width: 0; padding: var(--t-gap); background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--line); border-radius: var(--radius); overflow-wrap: anywhere; }
+.w-board-column.on { border-top-color: var(--accent); }
+.w-board-column > h3 { margin: 0 0 var(--t-gap); }
+.w-board-title { display: block; width: 100%; min-height: 44px; padding: 0; color: var(--fg); font: inherit; text-align: left; border: 0; background: none; }
+.w-board-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.md .w-board-column > :is(ul, ol) { margin: 0; padding: 0; list-style: none; }
+.md .w-board-column > :is(ul, ol) > li { margin: 0 0 calc(var(--t-gap) * .65); padding: calc(var(--t-gap) * .8); border: 1px solid var(--line); border-radius: calc(var(--radius) * .6); background: var(--bg); color: var(--fg); font-size: var(--t-card); line-height: 1.45; }
+.md .w-board-column > :is(ul, ol) > li::before { content: none; }
+.md .w-board-column > :is(ul, ol):last-child > li:last-child { margin-bottom: 0; }
+.md .w-board-column > :is(ul, ol) > li > p { font-size: inherit; }
+[data-view=present] .w-board-column:not(.shown) > :is(ul, ol) { visibility: hidden; }
+[data-view=read] .w-board-column { border-top-color: var(--line); }
+[data-view=read] .w-board-title { cursor: default; }
+:is(.cols, [data-tall]) .w-board { grid-template-columns: 1fr; }
+@media (max-width: 600px) { [data-view=read] .w-board { grid-template-columns: 1fr; } }
+
 /* ::: features */
 .w-features { display: grid; grid-template-columns: repeat(var(--n, var(--n-auto, 3)), minmax(0, 1fr)); gap: calc(var(--t-gap) * 1.2); }
 .w-feature { padding: .9em 1.1em 1em; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }

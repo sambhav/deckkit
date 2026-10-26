@@ -11,6 +11,8 @@ Write notes in `::: notes` / `::: say` / `::: read` blocks and charts in `::: ch
 
 ## Docs and examples
 
+- Roadmap boards: `::: board` with `###` column headings and Markdown lists of cards. ↓ reveals columns in slides; articles show every card, with columns stacked on phones. Syntax and examples are in the skill and widget gallery.
+
 - [README](https://github.com/sambhav/talkdown/blob/main/README.md): setup instructions, authoring recommendations, syntax, widgets and themes.
 - [Live demo](https://sambhav.dev/talkdown/): a short presentation about why the format exists, followed by live component examples and an authoring tour.
 - [Widget gallery](https://sambhav.dev/talkdown/gallery.html): every widget and chart type, live, with its Markdown.
