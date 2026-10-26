@@ -304,3 +304,28 @@ test('device frames fail visibly for empty content or unsupported options', () =
   assert.match(md('::: window url="wrong"\nKeep this\n:::'), /window: unsupported option/);
   assert.match(md('::: phone title="wrong"\nKeep this\n:::'), /phone: unsupported option/);
 });
+
+
+test('quiz keeps formatted choices, one answer and explanation as readable fallback', () => {
+  const html = md('::: quiz\n### Why?\n- [ ] **First**\n- [x] Second\n\nBecause the tail matters.\n:::');
+  assert.match(html, /class="quiz"/);
+  assert.match(html, /data-correct="false"><strong>First/);
+  assert.match(html, /data-correct="true">Second/);
+  assert.match(html, /<strong>Answer:<\/strong> Second/);
+  assert.match(html, /Because the tail matters/);
+  assert.doesNotMatch(html, /td-error/);
+});
+test('quiz diagnoses invalid questions and preserves their prose', () => {
+  const cases = ['', 'Keep this prose.', '## Wrong\n- [ ] A\n- [x] B', '### Q\n- [ ] A\n- [ ] B', '### Q\n- [x] A\n- [x] B', '### Q\n- [x] Only', '### Q\n- A\n- [x] B', '### Q\n- [ ] [Link](https://example.com)\n- [x] B', '### Q\n- [ ] A\n  - Nested\n- [x] B', '### Q\n- [ ] A\n- [x] B\n\n### Another'];
+  for (const source of cases) assert.match(md('::: quiz\n' + source + '\n:::'), /role="alert">quiz:/, source);
+  assert.match(md('::: quiz score=true\nKeep this prose.\n:::'), /takes no options.*Keep this prose/);
+});
+test('loose quiz task lists keep their markers and correct choice', () => {
+  assert.doesNotMatch(md('::: quiz\n### Q\n- [ ] A\n\n- [X] B\n\nExplanation.\n:::'), /td-error/);
+});
+
+test('quiz accepts the proposal explanation without a blank line', () => {
+  const html = md('::: quiz\n### Q\n- [ ] A\n- [x] B\nThe tail matters.\n:::');
+  assert.match(html, /data-correct="true">B<\/li>/);
+  assert.match(html, /class="quiz-answer">.*<p>The tail matters\.<\/p>/);
+});

@@ -222,15 +222,25 @@ async function interaction(browser) {
     await page.screenshot({ path: path.join(out, 'step-first.png') });
     if (n > 1) { await page.evaluate(id => Deck.go(Deck.slides.findIndex(s => s.dataset.id === id), 999), args.slide); await page.waitForTimeout(150); await page.screenshot({ path: path.join(out, 'step-last.png') }); }
     // keyboard focus is visible on the first focusable control inside the component
-    const focus = await page.evaluate(sel => {
-      const slide = Deck.slide, box = sel ? slide.querySelector(sel) : slide.querySelector('.content');
-      const el = box?.querySelector('button, a[href], [role=button], [role=tab], input, [tabindex]:not([tabindex="-1"])');
+    const focus = await page.evaluate(([id, sel]) => {
+      const slide = Deck.slides.find(s => s.dataset.id === id);
+      const box = sel ? slide?.querySelector(sel) : slide?.querySelector('.content');
+      // Glossary annotations and other controls may exist in the DOM but be
+      // hidden in this view. Only a visible, enabled control can receive focus.
+      const el = [...(box?.querySelectorAll('button, a[href], [role=button], [role=tab], input, [tabindex]:not([tabindex="-1"])') || [])]
+        .find(el => !el.matches(':disabled') && !el.closest('[inert], [hidden]') && el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }) && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().height > 0);
       if (!el) return null;
       el.focus({ focusVisible: true });
-      const cs = getComputedStyle(el);
-      return { ok: (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || cs.boxShadow !== 'none', tag: el.tagName };
-    }, args.selector || null);
-    if (focus && !focus.ok) fail('focus', `no visible focus style on ${focus.tag.toLowerCase()} inside the component`);
+      const cs = getComputedStyle(el), rect = el.getBoundingClientRect();
+      const describe = node => node && ({ tag: node.tagName, classes: node.getAttribute('class'), text: node.textContent.trim().slice(0, 80), slide: node.closest('.slide')?.dataset.id });
+      return {
+        ok: Deck.slide === slide && document.activeElement === el && ((cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || cs.boxShadow !== 'none'),
+        target: describe(el), active: describe(document.activeElement), currentSlide: Deck.slide?.dataset.id,
+        requestedSlide: id, disabled: el.matches(':disabled'), rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+        outline: `${cs.outlineWidth} ${cs.outlineStyle} ${cs.outlineColor}`, boxShadow: cs.boxShadow,
+      };
+    }, [args.slide, args.selector || null]);
+    if (focus && !focus.ok) fail('focus', 'control did not receive visible focus: ' + JSON.stringify(focus));
     for (const e of errors) fail('steps', 'error while stepping: ' + e);
     console.log(`steps: ${n}`);
   } finally { await ctx.close(); }
