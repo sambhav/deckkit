@@ -45,6 +45,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
  *   ```diff {steps: hunks}              +/- lines tinted; ↓ highlights each @@ hunk (or {steps: 1-2 | 3}); title="file" view=split;
  *                                       Copy takes the new code
  *   ```terminal                         "$ command" lines type out one per ↓, the rest is their output
+ *   ```http                             request then a blank line and HTTP status; ↓ reveals the response; article shows both
  *   ![title](demo.cast) or ```cast     plays an asciinema recording (a file needs the page served over http; a ```cast block plays anywhere); ![](youtube / vimeo / .mp4 link) embeds a video
  *   ::: accordion / ::: features        ### items that open one per ↓ / a grid of cards (a leading :icon: or image is the card's icon)
  *   :rocket:                            a Lucide icon in the theme's colours (any name from lucide.dev/icons)
@@ -194,6 +195,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
     c.querySelectorAll('pre[data-steps]').forEach(codeSteps);
     c.querySelectorAll('.w-annotate').forEach(annotate);
     c.querySelectorAll('.w-diff').forEach(diffBlock);
+    c.querySelectorAll('.w-http').forEach(httpExchange);
     c.querySelectorAll('pre.code').forEach(copyable);
     c.querySelectorAll('.flip').forEach(flip);
     c.querySelectorAll('.accordion').forEach(accordion);
@@ -318,6 +320,16 @@ import { visualTypes, visualChart } from './visual-charts.js';
       const l = e.target.closest('[data-line]'), k = l && !reading() ? groups.findIndex(g => g(l)) : -1;
       if (k >= 0) fig.stepper.go(k + 1);
     });
+  }
+  // HTTP exchanges start at the request; one ↓ reveals the response. Article view always shows both.
+  function httpExchange(fig) {
+    const response = fig.querySelector('.w-http-response');
+    steps(fig, 2, i => {
+      const pending = i === 0 && !reading();
+      response.classList.toggle('pending', pending);
+      response.setAttribute('aria-hidden', String(pending));
+      response.inert = pending;
+    }, { read: 'end' });
   }
   // "2, 4-6" -> {2, 4, 5, 6}
   const rangeSet = (g, max = 1e4) => new Set(g.split(',').flatMap(r => {

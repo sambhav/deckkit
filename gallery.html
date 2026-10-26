@@ -319,6 +319,25 @@ Each ↓ lights one numbered line and its note; in the article the notes sit bes
 :::
 
 ---
+id: w-http
+---
+## One API exchange
+
+```http
+GET /v1/users/7 HTTP/1.1
+Accept: application/json
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{"id": 7, "name": "Sam"}
+```
+
+::: notes
+The request goes first. Press ↓ to reveal the response; in the article both messages appear together, with their own Copy buttons.
+:::
+
+---
 ## Mermaid diagram
 
 ```mermaid
