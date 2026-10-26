@@ -1343,3 +1343,16 @@ aside.article { display: none; }
 .md pre.code.w-log .ln.on { background: var(--accent-soft); border-left-color: var(--accent); }
 .md pre.code.w-log:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 [data-view=read] .md pre.code.w-log { max-height: none; overflow: visible; }
+/* ::: envdiff — original table, with non-colour cues and a local scroll region. */
+.w-envdiff { min-width: 0; max-width: 100%; }
+.w-envdiff-tools { display: flex; flex-wrap: wrap; align-items: center; gap: .6em 1em; margin-bottom: .65em; font-size: calc(var(--t-body) * .7); color: var(--fg); }
+.w-envdiff-tools button { font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); min-height: 36px; padding: .4em .8em; cursor: pointer; }
+.w-envdiff-tools button[aria-pressed=true] { border-color: var(--fg); font-weight: 700; }
+.w-envdiff-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+.w-envdiff :is(button, .w-envdiff-scroll):focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 3px; }
+.md .w-envdiff table { width: 100%; margin: 0; font-size: calc(var(--t-body) * .76); }
+.md .w-envdiff :is(th, td) { min-width: 5em; color: var(--fg); background: var(--bg); white-space: nowrap; }
+.md .w-envdiff .envdiff-changed { background: var(--surface); font-weight: 700; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: .25em; }
+.w-envdiff[data-only-differences=true] .envdiff-same { display: none; }
+[data-view=read] .w-envdiff-tools { display: none; }
+[data-view=read] .w-envdiff[data-only-differences=true] .envdiff-same { display: table-row; }

@@ -410,3 +410,13 @@ test('inline counts work inside emphasis and lists but leave code and escapes li
   for (const bad of ['NaN', 'Infinity', '1,000', 'one', '']) assert.match(md('[' + bad + ']{count}'), /role="alert">count:/);
   assert.doesNotMatch(md('`[1.2M]{count}` \\[1.2M]{count}'), /w-countup/);
 });
+
+test('envdiff keeps a normal table and inline formatting as its readable fallback', () => {
+  const html = md('::: envdiff\n| Key | dev | prod |\n|---|---|---|\n| `POOL` | **5** | [200](#next) |\n| EMPTY | | enabled |\n:::');
+  assert.match(html, /class="envdiff"/);
+  assert.match(html, /<table>/);
+  assert.match(html, /<code>POOL<\/code>/);
+  assert.match(html, /<strong>5<\/strong>/);
+  assert.match(html, /<a href="#next">200<\/a>/);
+  assert.match(html, /<td><\/td>/);
+});
