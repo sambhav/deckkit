@@ -213,7 +213,7 @@ md.core.ruler.after('block', 'talkdown_annotate', state => {
   const alert = e => `<p class="td-error" role="alert">${escape(e)}</p>\n`;
   for (let i = 0; i < t.length; i++) {
     const fence = t[i], lang = fence.info.trim().match(/^[\w+-]+/)?.[0] || '';
-    if (fence.type !== 'fence' || !/\{\s*annotate\s*\}/.test(fence.info) || /^(terminal|cast|asciicast|mermaid)$/.test(lang)) continue;
+    if (fence.type !== 'fence' || !/\{\s*annotate\s*\}/.test(fence.info) || /^(terminal|cast|asciicast|mermaid|log)$/.test(lang)) continue;
     // without its list the block is left as written (this also covers an unclosed fence that swallowed the rest)
     if (!(t[i + 1]?.type === 'ordered_list_open' && t[i + 1].level === fence.level)) {
       t.splice(i, 0, html(alert('{annotate} needs a numbered list right after the code block, one item per (n) marker'))); i++; continue;
@@ -327,9 +327,34 @@ function httpExchange(source, info) {
     + panel('Request', request[1], lines.slice(0, at - 1).join('\n'), 'request')
     + panel('Response', status + (response[2]?.trim() ? ' ' + response[2].trim() : ''), lines.slice(at).join('\n'), 'response') + '</figure>';
 }
+// Logs remain literal code; only an optional leading timestamp and severity are decorated.
+function logBlock(raw, info) {
+  const source = raw.replace(/\n$/, ''), lines = source.split('\n');
+  const fail = message => `<p class="td-error" role="alert">${escape('log: ' + message)}</p><pre class="code"><code>${escape(raw)}</code></pre>`;
+  const match = info.match(/^log(?:\s+\{\s*steps:\s*([^}]+)\})?$/);
+  if (!match) return fail('use a plain fence or {steps: 1-2 | 3}');
+  if (!source.trim()) return fail('the block is empty');
+  const spec = match[1]?.trim();
+  if (spec != null) {
+    const range = '\\d+(?:\\s*-\\s*\\d+)?';
+    if (!new RegExp(`^${range}(?:\\s*,\\s*${range})*(?:\\s*\\|\\s*${range}(?:\\s*,\\s*${range})*)*$`).test(spec)) return fail('steps must be line groups like 1-2 | 3');
+    for (const part of spec.split(/[|,]/)) {
+      const [a, b = a] = part.trim().split(/\s*-\s*/).map(Number);
+      if (a < 1 || b < a || b > lines.length) return fail('step lines must be ordered ranges within the log');
+    }
+  }
+  const rows = lines.map((line, i) => {
+    const timestamp = line.match(/^(?:\[?(?:\d{4}-\d{2}-\d{2}[T ])?\d{2}:\d{2}:\d{2}(?:[.,]\d+)?(?:Z|[+-]\d{2}:?\d{2})?\]?)(?=\s|$)/)?.[0] || '';
+    const rest = line.slice(timestamp.length), severity = rest.match(/^(\s*)(TRACE|DEBUG|INFO|WARN|WARNING|ERROR|FATAL|CRITICAL)(?=\s|$)/);
+    const body = severity ? escape(severity[1]) + `<span class="log-level log-${severity[2].toLowerCase()}">${severity[2]}</span>` + escape(rest.slice(severity[0].length)) : escape(rest);
+    return `<span class="ln" data-line="${i + 1}">${timestamp ? `<span class="log-time">${escape(timestamp)}</span>` : ''}${body || ' '}</span>`;
+  });
+  return `<pre class="code w-log" tabindex="0" role="region" aria-label="Log output" data-source="${escape(raw)}"${spec ? ` data-log-steps="${escape(spec)}"` : ''}><code>${rows.join('')}</code></pre>`;
+}
 md.renderer.rules.fence = (tokens, i) => {
   const token = tokens[i], info = token.info.trim(), lang = info.match(/^[\w+-]+/)?.[0] || '';
   const source = token.content.replace(/\n$/, ''), code = escape(source);
+  if (lang === 'log') return logBlock(token.content, info);
   if (lang === 'diff') return diff(source, info);
   if (lang === 'http') return httpExchange(source, info);
   if (/^(cast|asciicast)$/.test(lang)) return `<div class="w-term w-cast" data-inline="${code}"></div>`;
