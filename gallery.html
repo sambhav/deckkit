@@ -777,6 +777,27 @@ One release appears per step. Article view keeps every release visible with a pe
 :::
 
 ---
+id: w-prompt
+---
+## Prompt → output
+
+::: prompt model="any-model" temperature=0
+### Prompt
+Summarise this diff in one line:
+
+```diff
+- fetch(url)
++ fetch(url, { signal: AbortSignal.timeout(5000) })
+```
+### Output
+Adds a **5s timeout** to `fetch()`.
+:::
+
+::: notes
+Reveal the output with ↓ or the button. The article keeps the prompt and its complete output together; model and temperature are optional labels, with no model request made.
+:::
+
+---
 ## Pull quote
 
 > The best presentation is one people can still read afterwards.

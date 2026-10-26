@@ -45,3 +45,5 @@ Animated values: `::: meter value=72 max=100 label="Migration done" unit=%` (emp
 Log viewers use a `log` fence with optional `{steps: 3 | 5-6}` line groups: numbered lines, dim timestamps and theme-native severity labels. Long logs scroll in slides; articles expand and mark every group. Copy preserves raw content.
 
 Release notes use `::: changelog`, `### v0.4.0 · 2026-10-25` headings and `#### Added` / `#### Fixed` labels: one release per step, all linked in article view. A slide `id:` keeps release links stable when slides move.
+
+Prompt/output pairs use `::: prompt model="any-model" temperature=0` with `### Prompt` and `### Output`: optional parameter badge, one output reveal step, and both cards stacked in the article.
