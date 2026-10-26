@@ -246,3 +246,19 @@ test('invalid HTTP exchanges fail visibly and retain the authored source', () =>
   }
   assert.match(md('```http {steps: 1}\nGET / HTTP/1.1\n\nHTTP/1.1 200 OK\n```'), /http: no options are supported/);
 });
+
+test('device frames preserve Markdown and escape their captions', () => {
+  const browser = md('::: browser url="https://example.com/?a=1&b=<x>"\n![Settings](settings.png)\n:::');
+  assert.match(browser, /<figure class="w w-device w-browser"/);
+  assert.match(browser, /class="w-device-label">https:\/\/example.com\/\?a=1&amp;b=&lt;x&gt;<\/span>/);
+  assert.match(browser, /<img src="settings.png" alt="Settings">/);
+  assert.match(md('::: window title=\'Build "release"\'\n```sh\nnpm test\n```\n:::'), /aria-label="Build &quot;release&quot;"/);
+  assert.match(md('::: phone\n::: tabs\n### First\nHello\n### Second\nWorld\n:::\n:::'), /w-device-body"><div class="tabs">/);
+  assert.match(md('::: browser\nHello **reader**\n:::'), /w-device-label">Browser<\/span>[\s\S]*<strong>reader<\/strong>/);
+});
+test('device frames fail visibly for empty content or unsupported options', () => {
+  assert.match(md('::: phone\n:::'), /role="alert">phone: add an image/);
+  assert.match(md('::: browser title="wrong"\nKeep **this**\n:::'), /role="alert">browser: unsupported option &quot;title&quot;<\/p><p>Keep <strong>this<\/strong>/);
+  assert.match(md('::: window url="wrong"\nKeep this\n:::'), /window: unsupported option/);
+  assert.match(md('::: phone title="wrong"\nKeep this\n:::'), /phone: unsupported option/);
+});

@@ -144,6 +144,7 @@ Q2,340
 - Pull quote: a `>` quote whose last line is `> — Name`.
 - Flip card: `::: flip`; the `###` is the front, the rest the back.
 - Diagram: a ` ```mermaid ` fence (add `{source}` to show the text beside it). Readers can click it to open it full screen and zoom, so dense diagrams are fine.
+- Device frames: `::: browser url="https://example.com/settings"`, `::: window title="Terminal"` or `::: phone` around an image, code or Markdown. URL/title are optional captions, not live embeds; full content expands in the article.
 - Terminal: a ` ```terminal ` fence; each `$ cmd` line types out per step, then its output.
 - Also: `- [x]` checklists, `text[^1]` + `[^1]: source` footnotes, `$x^2$` / `$$..$$` maths, `:rocket:` Lucide icons, `::: agenda` (links every section), `::: qr` (QR of the deck URL), `![](youtube-or-.mp4-link)` video, `![](demo.cast)` recording.
 

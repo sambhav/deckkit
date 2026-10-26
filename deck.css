@@ -829,6 +829,23 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 .w-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
 .md .w-media video, .md .w-frame { max-height: 380px; width: auto; max-width: 100%; }
 
+/* ::: browser / ::: window / ::: phone — decorative chrome, with content intact */
+.md .w-device { margin: 0; min-width: 0; width: 100%; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.md .w-device-bar { display: flex; align-items: center; gap: 16px; margin: 0; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--surface-2); color: var(--fg); font: 500 13px/1.4 var(--mono); letter-spacing: 0; }
+.w-device-dots { display: flex; gap: 6px; flex: none; }
+.w-device-dots i { width: 7px; height: 7px; border: 1px solid var(--muted); border-radius: 50%; }
+.w-device-label { min-width: 0; overflow-wrap: anywhere; }
+.md .w-device-body { min-width: 0; max-height: 340px; overflow: auto; overflow-wrap: anywhere; }
+.md .w-device-body > * { margin: 16px; }
+.md .w-device-body > :is(p, figure):has(> img:only-child), .md .w-device-body > figure.w-media { margin: 0; }
+.md .w-device-body img { display: block; margin: auto; max-width: 100%; max-height: 340px; height: auto; width: auto; object-fit: contain; border-radius: 0; }
+.md .w-device-body pre.code { font-size: var(--t-code); }
+.md .w-phone { --t-body: var(--t-card); --t-h3: var(--t-card); --t-bullet: 1em; --t-list-gap: .55em; max-width: 230px; margin-inline: auto; padding: 10px; border-radius: calc(var(--radius) + 12px); }
+.w-device-speaker { width: 36px; height: 4px; border-radius: var(--radius); margin: 0 auto 10px; background: var(--muted); }
+.md .w-phone .w-device-body { max-height: 330px; border-radius: var(--radius); }
+[data-view=read] .md .w-device-body { max-height: none; }
+[data-view=read] .md .w-device-body img { max-height: none; }
+
 /* ::: accordion */
 .w-accordion { border-top: 1px solid var(--line); }
 .w-acc { border-bottom: 1px solid var(--line); }

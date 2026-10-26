@@ -246,6 +246,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Image slides** | `layout: image` and `image: path.jpg` in the frontmatter: a full-bleed picture with the text over it |
 | **Terminal** | A ` ```terminal ` block: each `$ command` line types out on ↓, and the lines after it are its output |
 | **Recordings** | `![title](demo.cast)` plays an [asciinema](https://asciinema.org/) recording in the same window, without the asciinema player. A file needs the page served over http; paste the recording into a ` ```cast ` block to play it anywhere |
+| **Device frames** | `::: browser url="https://example.com"`, `::: window title="Terminal"` or `::: phone` around an image, code or Markdown; theme colours, with all content visible in the article |
 | **Video** | `![title](youtube, vimeo or .mp4 link)` embeds a player |
 | **Accordion** | `::: accordion`, then a `###` heading per item; ↓ opens them in turn |
 | **Feature cards** | `::: features`, then a `###` heading per card. An `:icon:` or image at the start of the heading becomes its icon. Up to three per row; set `--n` on `.w-features` for more |
