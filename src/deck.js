@@ -38,6 +38,7 @@ import { environmentDifferences } from './envdiff.js';
  *   ::: quiz                            ### question, task-list choices (one [x]); ↓ reveals answer and explanation
  *   ::: flip                            ### front, the rest is the back
  *   ::: flow / ::: stack               bulleted boxes; flow vertical changes direction; build: true or {.step} reveals items
+ *   ::: changelog                       ### version · YYYY-MM-DD releases, #### group labels; one release per step, all in articles
  *   ::: timeline                        ### milestones; ↓ walks them; vertical on phones and in read view
  *   ::: quadrant x="Effort" y="Impact"  four ### quadrant labels, then optional - Label [0.2, 0.8] points
  *   ::: chat                            **user:** / **assistant:** / **tool** messages; ↓ reveals messages; tool rows expand
@@ -735,6 +736,28 @@ import { environmentDifferences } from './envdiff.js';
       button.disabled = reading(); button.setAttribute('aria-pressed', j === i);
     }), { read: 'end' });
     cols.forEach((col, i) => col.querySelector('.w-board-title').addEventListener('click', () => st.go(i)));
+  }
+
+  // Assign release anchors after assembly: slide ids keep links stable when slides move.
+  function changelogs() {
+    slides().forEach((s, index) => s.querySelectorAll('.w-changelog').forEach((w, widget) => {
+      const entries = [...w.children], used = new Set();
+      entries.forEach(entry => {
+        const base = `td-release-${s.dataset.id || index + 1}-${widget + 1}-${entry.dataset.release}`;
+        let id = base, suffix = 1;
+        while (document.getElementById(id) || used.has(id)) id = `${base}-${++suffix}`;
+        used.add(id); entry.id = id;
+        const a = entry.querySelector('.w-release-link'); a.href = '#' + encodeURIComponent(id);
+        a.setAttribute('aria-label', `Release ${a.textContent.replace(/#$/, '').trim()}`);
+      });
+      const st = steps(w, entries.length, i => entries.forEach((entry, j) => {
+        entry.classList.toggle('on', j === i);
+        entry.setAttribute('aria-hidden', !reading() && j !== i);
+      }), { read: 'end' });
+      st.releaseWidget = w;
+      // Preserve native link activation and Space scrolling rather than deck shortcuts.
+      w.addEventListener('keydown', e => { if (e.target.closest('a, button') && (e.key === 'Enter' || e.key === ' ')) e.stopPropagation(); });
+    }));
   }
 
   // ::: hotspots — native buttons over the intrinsic image, with a prose legend below.
@@ -1797,10 +1820,30 @@ import { environmentDifferences } from './envdiff.js';
 
   // #slide or #slide.step, 1-based; [0, 1] when there's no hash
   let wrote = '';   // the hash the deck last wrote itself, so its own updates aren't followed back
-  const writeHash = h => { history.replaceState(null, '', h); wrote = location.hash; };
+  const writeHash = h => {
+    // A release URL is also a navigation target. Keep it while it still names
+    // the selected release, so reload and copying the address retain that target.
+    const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    if (target?.matches('.w-release') && target.closest('.slide') === slide() &&
+        (reading() || fromHash()[1] === at(slide()) + 1)) h = location.hash;
+    history.replaceState(null, '', h); wrote = location.hash;
+  };
+  function scrollToRelease(target) {
+    if (!reading() || !target?.matches('.w-release')) return;
+    target.scrollIntoView({ block: 'start', behavior: 'instant' });
+    // A short final release can be clamped near the next frame. Keep its owner
+    // current until the reader actually scrolls, just as go() does for a slide.
+    readAnchor = { y: scrollY };
+  }
   function fromHash() {
     const h = decodeURIComponent(location.hash.slice(1)), m = h.match(/^(\d+)(?:\.(\d+))?$/);
     if (m) return [+m[1], +(m[2] || 1)];
+    const release = document.getElementById(h);
+    if (release?.matches('.w-release')) {
+      const owner = release.closest('.slide'), list = stepsOf(owner), widget = release.parentElement;
+      const st = list.find(item => item.releaseWidget === widget);
+      if (st) return [slides().indexOf(owner) + 1, 1 + list.slice(0, list.indexOf(st)).reduce((n, item) => n + item.n - 1, 0) + [...widget.children].indexOf(release)];
+    }
     const i = slides().findIndex(s => s.dataset.id === h);
     return i >= 0 ? [i + 1, 1] : [0, 1];
   }
@@ -1933,6 +1976,7 @@ import { environmentDifferences } from './envdiff.js';
     }));
     assemble();
     if (!all.length) { document.dispatchEvent(new CustomEvent('talkdown:error', { detail: new Error('No slides found on this page') })); return; }
+    changelogs();
     agendas();
     qrs();
     lucide();
@@ -1967,7 +2011,12 @@ import { environmentDifferences } from './envdiff.js';
       if (i >= 0 && i !== cur) { history.pushState(null, '', location.href); go(i, reading() ? undefined : 0); }
     });
     addEventListener('keydown', onKey);
-    const followUrl = () => { if (location.hash === wrote) return; const [sl, sp] = fromHash(); if (sl) go(sl - 1, reading() ? undefined : sp - 1); };
+    const followUrl = () => {
+      if (location.hash === wrote) return;
+      const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+      const [sl, sp] = fromHash(); if (sl) go(sl - 1, reading() ? undefined : sp - 1);
+      scrollToRelease(target);
+    };
     addEventListener('hashchange', followUrl);
     addEventListener('popstate', followUrl);   // Back and Forward after a link jump
     let resizing = false;
@@ -1982,11 +2031,13 @@ import { environmentDifferences } from './envdiff.js';
     addEventListener('load', heatScale);   // in case the stylesheet arrived after the deck was built
     handlers.ready.forEach(f => f());
     started = true;
+    const releaseTarget = document.getElementById(decodeURIComponent(location.hash.slice(1)));
     const [sl, sp] = fromHash();
     if (reading()) enterReading();
     all.forEach(label);
     if (reading() && !sl) { cur = 0; announce(); fit(); onScroll(); }      // an article opens at the top
     else { cur = Math.max(0, sl - 1); fit(); go(cur, reading() ? undefined : sp - 1, true); }
+    scrollToRelease(releaseTarget);
   }
   // the loader waits for talkdown:setup or talkdown:error
   const boot = () => start().catch(error => { document.dispatchEvent(new CustomEvent('talkdown:error', { detail: error })); throw error; });

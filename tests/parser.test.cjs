@@ -420,3 +420,35 @@ test('envdiff keeps a normal table and inline formatting as its readable fallbac
   assert.match(html, /<a href="#next">200<\/a>/);
   assert.match(html, /<td><\/td>/);
 });
+
+test('changelogs keep grouped Markdown and distinct release entries', () => {
+  const html = md('::: changelog\n### v0.4.0 · 2026-10-25\n#### Added\n- **Sequence diagrams**\n  - Nested detail\n\n```md\n### Not a release\n```\n#### Fixed\n- [Tables](#tables)\n### v0.3.0 · 2026-10-18\nA small release.\n:::');
+  assert.match(html, /class="w w-changelog"/);
+  assert.equal((html.match(/class="w-release"/g) || []).length, 2);
+  assert.match(html, /<time datetime="2026-10-25">2026-10-25<\/time>/);
+  assert.match(html, /<h4>Added<\/h4>/);
+  assert.match(html, /<strong>Sequence diagrams<\/strong>/);
+  assert.match(html, /### Not a release/);
+  assert.match(html, /Nested detail/);
+  assert.doesNotMatch(html, /td-error/);
+});
+
+test('changelog diagnostics preserve malformed notes, dates and unsupported options', () => {
+  for (const body of ['', 'An introduction.', '### v1 · 2026-02-30\nNotes.', '### v1 · 2026-13-01\nNotes.', '### v1\nNotes.', '### v1 · 2026-10-25', '### v1 · 2026-10-25\n#### Added', '### v1 · 2026-10-25\n## Wrong level\nNotes.']) {
+    const html = md('::: changelog\n' + body + '\n:::');
+    assert.match(html, /class="td-error" role="alert">changelog:/);
+    assert.doesNotMatch(html, /class="w w-changelog"/);
+    if (body.includes('Notes.')) assert.match(html, /Notes\./);
+  }
+  assert.match(md('::: changelog count=2\n### v1 · 2026-10-25\nNotes.\n:::'), /changelog: no options/);
+  assert.doesNotMatch(md('::: changelog\n### v1 · 2028-02-29\nNotes.\n:::'), /td-error/);
+});
+
+
+test('changelog release boundaries ignore headings in nested containers', () => {
+  const html = md('::: changelog\n### v1 · 2026-10-25\n#### Added\n::: accordion\n### Detail\nExtra context.\n:::\n:::');
+  assert.match(html, /class="w w-changelog"/);
+  assert.equal((html.match(/class="w-release"/g) || []).length, 1);
+  assert.match(html, /<h3>Detail<\/h3>/);
+  assert.doesNotMatch(html, /td-error/);
+});

@@ -615,6 +615,25 @@ td.mk-only, th.mk-only { text-align: center; }
 .w-stat { border-top: 2px solid var(--accent); padding-top: .7em; }
 .w-stat-n { font: 700 var(--t-stat) / 1 var(--display); letter-spacing: -.03em; color: var(--fg); font-variant-numeric: tabular-nums; }
 .w-stat-l { margin-top: .45em; font-size: var(--t-card); line-height: 1.35; color: var(--muted); }
+/* changelog: one release on stage, a linked list in the article */
+.w-changelog { display: grid; min-width: 0; }
+.w-release { grid-area: 1 / 1; visibility: hidden; min-width: 0; padding: var(--t-gap); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow-wrap: anywhere; scroll-margin-top: 90px; }
+.w-release.on { visibility: visible; }
+.md .w-release > h3 { margin: 0 0 var(--t-gap); }
+.w-release-link { display: flex; flex-wrap: wrap; align-items: center; gap: .7em; min-height: 44px; color: var(--fg); text-decoration: none; font-size: var(--t-card); }
+.w-release-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.w-release-version { padding: .25em .6em; border-radius: var(--radius); background: var(--accent-soft); color: var(--fg); font: 600 var(--t-card) var(--mono); }
+.w-release-link time { color: var(--fg); font: 400 var(--t-small) var(--mono); }
+.w-release-anchor { margin-left: auto; color: var(--fg); }
+.md .w-release-notes > h4 { display: table; margin: .8em 0 .4em; padding: .15em .6em; color: var(--fg); background: var(--accent-soft); border-inline-start: 3px solid var(--accent); border-radius: calc(var(--radius) * .4); font-size: var(--t-small); }
+.md .w-release-notes > h4:nth-of-type(even) { background: var(--surface-2); border-color: var(--line); }
+.md .w-release-notes :is(p, li) { font-size: var(--t-card); }
+.md .w-release-notes > :is(ul, ol) { margin-top: .4em; }
+[data-view=read] .w-changelog { display: block; }
+[data-view=read] .w-release { visibility: visible; }
+[data-view=read] .w-release + .w-release { margin-top: var(--t-gap); }
+@media print { .w-changelog { display: block; } .w-release { visibility: visible; margin-bottom: var(--t-gap); } }
+
 /* timeline: horizontal on the stage */
 /* Simple diagrams use the normal list build, preserving source order in both views. */
 .md :is(.w-flow, .w-stack) { gap: var(--t-gap); margin: 0; padding: 0; }
