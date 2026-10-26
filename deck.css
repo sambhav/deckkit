@@ -1258,3 +1258,22 @@ aside.article { display: none; }
 [data-view=present] .w-quiz:not(.answered) .quiz-answer { display: none; }
 [data-view=read] .w-quiz .quiz-reveal { display: none; }
 [data-view=read] .w-quiz .quiz-reset { margin-left: 0; }
+/* Image galleries: all captions remain visible in both views. */
+.w-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: var(--t-gap); }
+.w-gallery > figure { margin: 0; min-width: 0; padding: 8px; border: 2px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+:root:not([data-view=read]) .w-gallery > figure.on { border-color: var(--accent-ink); }
+.w-gallery-open { display: block; width: 100%; min-height: 44px; padding: 0; border: 0; background: var(--surface-2); color: var(--fg); cursor: zoom-in; border-radius: var(--radius); overflow: hidden; }
+.w-gallery .w-gallery-open img { display: block; width: 100%; height: 220px; max-height: none; object-fit: contain; margin: 0; }
+.w-gallery figcaption, .w-gallery-lightbox figcaption { margin: 8px 0 0; font-size: var(--t-card, 18px); color: var(--fg); overflow-wrap: anywhere; }
+.w-gallery-open:focus-visible, .w-gallery-lightbox button:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 3px; }
+.w-gallery-lightbox { box-sizing: border-box; width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; padding: 20px; border: 0; color: var(--fg); background: var(--bg); }
+.w-gallery-lightbox[open] { display: flex; flex-direction: column; gap: 16px; }
+.w-gallery-lightbox::backdrop { background: var(--bg); }
+.w-gallery-toolbar { display: flex; align-items: center; justify-content: center; gap: 12px; flex: none; }
+.w-gallery-toolbar button { min-width: 44px; min-height: 44px; padding: 8px 14px; border: 1px solid var(--line); border-radius: var(--radius); color: var(--fg); background: var(--surface); font: inherit; cursor: pointer; }
+.w-gallery-lightbox figure { margin: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; align-items: center; overflow: auto; }
+.w-gallery-lightbox img { min-height: 0; max-height: calc(100dvh - 160px); max-width: 100%; object-fit: contain; }
+[data-view=read] .w-gallery .w-gallery-open img { height: auto; max-height: none; }
+@media (max-width: 600px) { [data-view=read] .w-gallery { grid-template-columns: 1fr; } }
+
+:is(.w-gallery, .w-gallery-lightbox) img[hidden] { display: none; }

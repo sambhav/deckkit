@@ -329,3 +329,28 @@ test('quiz accepts the proposal explanation without a blank line', () => {
   assert.match(html, /data-correct="true">B<\/li>/);
   assert.match(html, /class="quiz-answer">.*<p>The tail matters\.<\/p>/);
 });
+test('gallery accepts consecutive or separated Markdown images and preserves captions', () => {
+  for (const separator of ['\n', '\n\n']) {
+    const html = md('::: gallery\n![Rose & ocean](rose.png)' + separator + '![Synth](synth.png)\n:::');
+    assert.match(html, /class="gallery"/);
+    assert.match(html, /alt="Rose &amp; ocean"/);
+    assert.equal((html.match(/<img /g) || []).length, 2);
+    assert.doesNotMatch(html, /td-error/);
+  }
+});
+
+test('invalid galleries diagnose input and retain readable fallback', () => {
+  for (const input of ['', 'Keep this text', '![Image](a.png)\nExtra prose', '![Movie](movie.mp4)', '- ![List](a.png)']) {
+    assert.match(md('::: gallery\n' + input + '\n:::'), /role="alert">Gallery needs Markdown images/);
+  }
+  const html = md('::: gallery columns=3\n![Keep caption](a.png)\n:::');
+  assert.match(html, /Gallery needs/);
+  assert.match(html, /alt="Keep caption"/);
+});
+
+ test('gallery accepts ordinary image titles without losing the alt caption', () => {
+  const html = md('::: gallery\n![Alt caption](image.png "Optional title")\n:::');
+  assert.match(html, /class="gallery"/);
+  assert.match(html, /alt="Alt caption"/);
+  assert.doesNotMatch(html, /td-error/);
+});
