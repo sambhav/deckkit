@@ -32,6 +32,7 @@ import { beforeAfter } from './before-after.js';
  *   ```lang {annotate} + a 1. 2. list   "# (1)" / "// (1)" line-end comments become numbered pins; ↓ highlights each line and its note
  *   ::: compare                         two images; draggable wipe, ↓ reveals 0 / 50 / 100%; article shows both
  *   ::: explorable                      [qps=1000]{range=100..10000} values and {qps*40/1000} arithmetic
+ *   ::: quiz                            ### question, task-list choices (one [x]); ↓ reveals answer and explanation
  *   ::: flip                            ### front, the rest is the back
  *   ::: flow / ::: stack               bulleted boxes; flow vertical changes direction; build: true or {.step} reveals items
  *   ::: timeline                        ### milestones; ↓ walks them; vertical on phones and in read view
@@ -218,6 +219,7 @@ import { beforeAfter } from './before-after.js';
     c.querySelectorAll('.w-http').forEach(httpExchange);
     c.querySelectorAll('pre.code').forEach(copyable);
     c.querySelectorAll('.compare').forEach(box => beforeAfter(box, steps));
+    c.querySelectorAll('.quiz').forEach(quiz);
     c.querySelectorAll('.flip').forEach(flip);
     c.querySelectorAll('.accordion').forEach(accordion);
     c.querySelectorAll('.features').forEach(features);
@@ -949,6 +951,48 @@ import { beforeAfter } from './before-after.js';
     w.addEventListener('click', play);
     handlers.slide.push(s => { if (s.contains(w)) play(); else run++; });
     w.play = play;
+  }
+
+  // Choices use native buttons, so keyboard and touch share the same action.
+  function quiz(box) {
+    const heading = box.querySelector(':scope > h3');
+    const answer = box.querySelector(':scope > .quiz-answer');
+    if (!heading || !answer || !box.querySelector(':scope > .quiz-choices > li')) {
+      const error = document.createElement('p'); error.className = 'td-error'; error.setAttribute('role', 'alert');
+      error.textContent = 'quiz: use a ### question, task-list choices and exactly one checked answer'; box.prepend(error); return;
+    }
+    box.className = 'w w-quiz';
+    heading.id = `quiz-${++widgetId}`;
+    box.setAttribute('role', 'group'); box.setAttribute('aria-labelledby', heading.id);
+    answer.id = heading.id + '-answer';
+    const status = document.createElement('p'); status.className = 'quiz-status';
+    status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
+    const buttons = [...box.querySelectorAll(':scope > .quiz-choices > li')].map(li => {
+      const button = document.createElement('button'); button.type = 'button';
+      button.innerHTML = li.innerHTML; button.dataset.correct = li.dataset.correct;
+      button.setAttribute('aria-pressed', 'false');
+      li.replaceChildren(button); return button;
+    });
+    const reveal = document.createElement('button'); reveal.type = 'button'; reveal.className = 'quiz-reveal';
+    reveal.textContent = 'Show answer'; reveal.setAttribute('aria-controls', answer.id);
+    const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'quiz-reset'; reset.textContent = 'Reset quiz';
+    const clear = () => { status.textContent = ''; buttons.forEach(b => b.setAttribute('aria-pressed', 'false')); };
+    const st = steps(box, 2, i => {
+      box.classList.toggle('answered', i === 1);
+      reveal.setAttribute('aria-expanded', String(i === 1));
+      // Read view always exposes the prose answer, independent of quiz interaction.
+      if (i === 0) clear();
+    });
+    buttons.forEach((button, i) => button.addEventListener('click', () => {
+      buttons.forEach((b, j) => b.setAttribute('aria-pressed', String(i === j)));
+      st.go(1);
+      status.textContent = button.dataset.correct === 'true' ? 'Correct.' : 'Not quite. Review the answer below.';
+    }));
+    reveal.addEventListener('click', () => st.go(1));
+    reset.addEventListener('click', () => { st.go(0); buttons[0].focus(); });
+    // Space on a focused button must activate it instead of navigating slides.
+    box.addEventListener('keydown', e => { if (e.target.tagName === 'BUTTON' && [' ', 'Enter'].includes(e.key)) e.stopPropagation(); });
+    box.insertBefore(status, answer); box.append(reveal, reset);
   }
 
   // ::: flip — the ### heading is the front, the rest is the back
@@ -1697,7 +1741,7 @@ import { beforeAfter } from './before-after.js';
       if (done(s)) setAt(s, 0); else stepsOf(s).some(st => st.next());
     }));
     // a clicked button keeps focus, so Space / Enter would press it again; hand the keys back to the deck
-    document.addEventListener('click', e => { const b = e.target.closest('#stage button'); if (b && !b.matches('.glossary-button')) b.blur(); });
+    document.addEventListener('click', e => { const b = e.target.closest('#stage button'); if (b && !b.matches('.glossary-button') && !b.closest('.w-quiz')) b.blur(); });
     // [text](#id) links to the slide with that id; [text](?theme=rose#id) and ?mode=dark restyle this page in place,
     // so the slide and step you're on stay put
     document.addEventListener('click', e => {
