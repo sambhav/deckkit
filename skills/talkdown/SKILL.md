@@ -135,6 +135,7 @@ Q2,340
 ````
 - Stepped code: ` ```python {steps: 1-2 | 3} ` highlights those lines, one group per step.
 - Annotated code: ` ```python {annotate} ` with a `# (1)` (or `// (1)`, `-- (1)`, `/* (1) */`, `<!-- (1) -->`) comment ending a line, then a `1.` `2.` list right after the fence, one item per number. Pins replace the comments; each step lights one line and its note; the article puts the notes beside the code (below it on phones).
+- Diff: a ` ```diff ` fence of `+`/`-`/` ` lines, tinted green and red; `@@ label` starts a hunk. Options: `{steps: hunks}` highlights one hunk per step (or `{steps: 1-2 | 3}` by line), `title="api.py"` (default: the `+++` file name), `view=split` for old beside new on the slide (unified on phones and in the article). Copy takes the new code.
 - Stats: `::: stats` around `- **42%** faster first response`.
 - Callout: `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]`.
 - Pull quote: a `>` quote whose last line is `> — Name`.

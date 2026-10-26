@@ -185,9 +185,61 @@ md.core.ruler.after('block', 'talkdown_annotate', state => {
     i = end + 2;
   }
 });
+// ```diff {steps: hunks} title="api.py" view=split: lines tinted by their +/- marker. Every line keeps data-line
+// (its line in the fence, for {steps: 1-2 | 3}) and data-hunk (for {steps: hunks}): a hunk starts at each @@ line,
+// or, in a diff without @@ lines, is each run of changed lines. Git's file header before the first @@ becomes the title.
+function diff(source, info) {
+  // bad options still show the diff as plain code under the error, so nothing the author wrote is lost
+  const fail = text => `<p class="td-error" role="alert">${escape(text)}</p>` + (source.trim() ? `<pre class="code"><code>${escape(source)}</code></pre>` : '');
+  const steps = info.match(/\{\s*steps:\s*([^}]*)\}/)?.[1].trim();
+  let parsed;
+  try { parsed = directive(info.replace(/\{[^}]*\}/g, ' ').trim()); } catch (error) { return fail('diff: ' + error.message); }
+  const { title = '', view = 'unified', ...unknown } = parsed.options, extra = [...Object.keys(unknown), ...parsed.classes];
+  if (extra.length) return fail(`diff: unknown option "${extra[0]}" (use title="…", view=unified|split or {steps: hunks})`);
+  if (!['unified', 'split'].includes(view)) return fail(`diff: view must be unified or split, not "${view}"`);
+  if (!source.trim()) return fail('diff: the block is empty');
+  const lines = source.split('\n'), first = lines.findIndex(l => l.startsWith('@@'));
+  let file = '', hunk = 0, run = false;
+  const rows = lines.map((text, j) => {
+    if (j < first && /^(diff |index |--- |\+\+\+ |new file|deleted file|similarity |rename |old mode|new mode)/.test(text)) {
+      if (text.startsWith('+++ ') && !text.startsWith('+++ /dev/null')) file = text.slice(4).split('\t')[0].replace(/^b\//, '');
+      else if (text.startsWith('--- ') && !text.startsWith('--- /dev/null') && !file) file = text.slice(4).split('\t')[0].replace(/^a\//, '');
+      return null;
+    }
+    const kind = text[0] === '+' ? 'add' : text[0] === '-' ? 'del' : text.startsWith('@@') ? 'hunk' : text[0] === '\\' ? 'meta' : 'ctx';
+    const changed = kind === 'add' || kind === 'del';
+    if (kind === 'hunk') hunk++;
+    else if (first < 0) { if (changed && !run) hunk++; run = changed; }
+    const own = first < 0 ? run : hunk > 0, plain = kind === 'hunk' || kind === 'meta';
+    return { kind, line: j + 1, hunk: own ? hunk : 0, mark: changed ? text[0] : ' ', body: plain ? text : text.slice(changed || text[0] === ' ' ? 1 : 0) };
+  }).filter(Boolean);
+  if (!rows.length) return fail('diff: nothing after the file header');
+  const cell = (r, wide) => `<span class="ln d-${r.kind}${wide ? ' d-wide' : ''}" data-line="${r.line}"${r.hunk ? ` data-hunk="${r.hunk}"` : ''}>`
+    + (r.kind === 'hunk' || r.kind === 'meta' ? escape(r.body) : `<span class="d-m">${r.mark}</span>${escape(r.body)}`) + '</span>';
+  let split = '';
+  if (view === 'split') {
+    // old on the left, new on the right: each run of removed lines sits beside the added lines that follow it
+    const out = [], empty = '<span class="ln d-none"></span>';
+    for (let k = 0; k < rows.length;) {
+      const r = rows[k];
+      if (r.kind === 'hunk' || r.kind === 'meta') { out.push(cell(r, true)); k++; continue; }
+      if (r.kind === 'ctx') { out.push(cell(r) + cell(r)); k++; continue; }
+      const del = [], add = [];
+      while (rows[k]?.kind === 'del') del.push(rows[k++]);
+      while (rows[k]?.kind === 'add') add.push(rows[k++]);
+      for (let m = 0; m < Math.max(del.length, add.length); m++) out.push((del[m] ? cell(del[m]) : empty) + (add[m] ? cell(add[m]) : empty));
+    }
+    split = `<pre class="code w-diff-split"><code>${out.join('')}</code></pre>`;
+  }
+  const name = title || file;
+  return `<figure class="w-diff" data-view="${view}"${steps ? ` data-steps="${escape(steps)}"` : ''}>`
+    + (name ? `<figcaption>${escape(name)}</figcaption>` : '')
+    + `<pre class="code w-diff-uni"><code>${rows.map(r => cell(r)).join('')}</code></pre>${split}</figure>`;
+}
 md.renderer.rules.fence = (tokens, i) => {
   const token = tokens[i], info = token.info.trim(), lang = info.match(/^[\w+-]+/)?.[0] || '';
   const source = token.content.replace(/\n$/, ''), code = escape(source);
+  if (lang === 'diff') return diff(source, info);
   if (/^(cast|asciicast)$/.test(lang)) return `<div class="w-term w-cast" data-inline="${code}"></div>`;
   if (lang === 'terminal') return `<div class="w-term" data-lines="${escape(JSON.stringify(source ? source.split('\n') : []))}"></div>`;
   const diagram = `<div class="w-diagram"><pre class="code w-diagram-src">${code}</pre></div>`;

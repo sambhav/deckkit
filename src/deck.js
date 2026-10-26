@@ -41,6 +41,8 @@ import { visualTypes, visualChart } from './visual-charts.js';
  *   text[^1] and a "[^1]: source" line  footnotes, set small at the foot of the slide
  *   $x^2$ and $$ … $$                   maths (KaTeX, fetched only if the deck has some; <html data-math="off"> to skip)
  *   layout: image + image: url          a full-bleed picture with the text over it
+ *   ```diff {steps: hunks}              +/- lines tinted; ↓ highlights each @@ hunk (or {steps: 1-2 | 3}); title="file" view=split;
+ *                                       Copy takes the new code
  *   ```terminal                         "$ command" lines type out one per ↓, the rest is their output
  *   ![title](demo.cast) or ```cast     plays an asciinema recording (a file needs the page served over http; a ```cast block plays anywhere); ![](youtube / vimeo / .mp4 link) embeds a video
  *   ::: accordion / ::: features        ### items that open one per ↓ / a grid of cards (a leading :icon: or image is the card's icon)
@@ -189,6 +191,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
     c.querySelectorAll('td, th').forEach(marks);
     c.querySelectorAll('pre[data-steps]').forEach(codeSteps);
     c.querySelectorAll('.w-annotate').forEach(annotate);
+    c.querySelectorAll('.w-diff').forEach(diffBlock);
     c.querySelectorAll('pre.code').forEach(copyable);
     c.querySelectorAll('.flip').forEach(flip);
     c.querySelectorAll('.accordion').forEach(accordion);
@@ -279,7 +282,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
   // every code block gets a Copy button (shown on hover, always on touch screens). Its label comes from CSS,
   // so the block's textContent stays exactly its code for the diagrams, charts and highlighter that read it.
   function copyable(pre) {
-    if (pre.querySelector('.w-copy') || pre.closest('#src')) return;
+    if (pre.querySelector('.w-copy') || pre.closest('#src, .w-diff')) return;
     pre.insertAdjacentHTML('beforeend', '<button type="button" class="w-copy" aria-label="Copy code"></button>');
   }
   async function copyText(text, button) {
@@ -292,19 +295,41 @@ import { visualTypes, visualChart } from './visual-charts.js';
   }
   document.addEventListener('click', e => {
     const b = e.target.closest('.w-copy'); if (!b) return;
-    const pre = b.closest('pre'); copyText(sources.get(pre) ?? pre.firstChild.textContent, b);
+    const pre = b.closest('pre, .w-diff'); if (pre) copyText(sources.get(pre) ?? pre.firstChild.textContent, b);
   });
+  // ```diff: Copy takes the new code (context and added lines); {steps: hunks} or {steps: 1-2 | 3} highlight in turn
+  function diffBlock(fig) {
+    // one Copy button for the figure (unified and split are two views of the same code)
+    sources.set(fig, [...fig.querySelectorAll('.w-diff-uni :is(.d-ctx, .d-add)')].map(l => l.textContent.slice(1)).join('\n'));
+    if (!fig.querySelector(':scope > .w-copy')) fig.insertAdjacentHTML('beforeend', '<button type="button" class="w-copy" aria-label="Copy the new code"></button>');
+    const spec = fig.dataset.steps; if (!spec) return;
+    const lines = [...fig.querySelectorAll('[data-line]')];
+    const groups = spec === 'hunks'
+      ? [...new Set(lines.map(l => +l.dataset.hunk || 0))].filter(Boolean).map(h => l => +l.dataset.hunk === h)
+      : spec.split('|').map(g => { const set = rangeSet(g); return l => set.has(+l.dataset.line); });
+    if (!groups.length) return;
+    fig.stepper = steps(fig, groups.length + 1, i => {
+      fig.classList.toggle('stepping', i > 0 && !reading());
+      lines.forEach(l => l.classList.toggle('on', i > 0 && groups[i - 1](l)));
+    });
+    fig.addEventListener('click', e => {   // a click on a highlighted line jumps to its step
+      const l = e.target.closest('[data-line]'), k = l && !reading() ? groups.findIndex(g => g(l)) : -1;
+      if (k >= 0) fig.stepper.go(k + 1);
+    });
+  }
+  // "2, 4-6" -> {2, 4, 5, 6}
+  const rangeSet = (g, max = 1e4) => new Set(g.split(',').flatMap(r => {
+    const m = r.trim().match(/^(\d+)(?:-(\d+))?$/);
+    if (!m) return [];
+    const a = Math.max(1, +m[1]), b = Math.min(max, +(m[2] || m[1]));
+    return Array.from({ length: Math.max(0, b - a + 1) }, (_, k) => a + k);
+  }));
   function codeSteps(pre) {
     const code = pre.firstChild;
     sources.set(pre, code.textContent);
     code.innerHTML = code.innerHTML.split('\n').map(l => `<span class="ln">${l}</span>`).join('');
     const lineCount = code.children.length;
-    const groups = pre.dataset.steps.split('|').map(g => new Set(g.split(',').flatMap(r => {
-      const m = r.trim().match(/^(\d+)(?:-(\d+))?$/);
-      if (!m) return [];
-      const a = Math.max(1, +m[1]), b = Math.min(lineCount, +(m[2] || m[1]));
-      return Array.from({ length: Math.max(0, b - a + 1) }, (_, k) => a + k);
-    })));
+    const groups = pre.dataset.steps.split('|').map(g => rangeSet(g, lineCount));
     pre.stepper = steps(pre, groups.length + 1, i => {
       pre.classList.toggle('stepping', i > 0 && !reading());
       [...code.children].forEach((l, j) => l.classList.toggle('on', i > 0 && groups[i - 1].has(j + 1)));

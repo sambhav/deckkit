@@ -148,3 +148,39 @@ test('annotated code only strips the language\'s own comments and leaves bad blo
   assert.match(unlisted, /a\(\) \/\/ \(1\)<\/code>/); assert.doesNotMatch(unlisted, /w-annotate|data-pins/);
   assert.doesNotMatch(md('```mermaid {annotate}\nA-->B %% (1)\n```\n1. x'), /w-annotate/);
 });
+test('diff fences tint lines, number hunks and take the title from the file header', async () => {
+  const { renderMarkdown } = await import('../src/markdown.js');
+  const html = renderMarkdown('```diff {steps: hunks} title="api.py"\n@@ def fetch(url):\n-    return requests.get(url)\n+    return session.get(url, timeout=5)\n@@ def close():\n     pass\n```');
+  assert.match(html, /<figure class="w-diff" data-view="unified" data-steps="hunks"><figcaption>api.py<\/figcaption>/);
+  assert.match(html, /class="ln d-del" data-line="2" data-hunk="1"><span class="d-m">-<\/span>    return requests.get\(url\)/);
+  assert.match(html, /class="ln d-hunk" data-line="4" data-hunk="2">@@ def close\(\):/);
+  assert.match(html, /class="ln d-ctx" data-line="5" data-hunk="2"><span class="d-m"> <\/span>    pass/);
+  assert.doesNotMatch(html, /data-lang/);   // not handed to the syntax highlighter
+  const git = renderMarkdown('```diff\ndiff --git a/x.py b/x.py\nindex 1..2\n--- a/x.py\n+++ b/x.py\n@@ -1 +1 @@\n-a\n+b\n```');
+  assert.match(git, /<figcaption>x.py<\/figcaption>/);
+  assert.doesNotMatch(git, /\+\+\+|index 1/);
+  assert.match(git, /data-line="5" data-hunk="1">@@ -1 \+1 @@/);
+});
+test('a diff without @@ lines makes each run of changes a hunk; --- inside a hunk is a removed line', async () => {
+  const { renderMarkdown } = await import('../src/markdown.js');
+  const html = renderMarkdown('```diff\n a\n-b\n+c\n d\n+e\n```');
+  assert.match(html, /d-ctx" data-line="1"><span/);
+  assert.match(html, /d-add" data-line="3" data-hunk="1"/);
+  assert.match(html, /d-ctx" data-line="4"><span/);
+  assert.match(html, /d-add" data-line="5" data-hunk="2"/);
+  assert.match(renderMarkdown('```diff\n@@ x\n--- old\n+++ new\n```'), /d-del" data-line="2" data-hunk="1"><span class="d-m">-<\/span>-- old/);
+});
+test('diff view=split pairs removed lines with the added lines after them', async () => {
+  const { renderMarkdown } = await import('../src/markdown.js');
+  const html = renderMarkdown('```diff view=split\n@@ x\n a\n-b\n-c\n+B\n```');
+  const split = html.match(/<pre class="code w-diff-split"><code>(.*)<\/code><\/pre>/)[1];
+  assert.match(split, /^<span class="ln d-hunk d-wide"/);
+  assert.match(split, /d-del" data-line="3"[^]*?b<\/span><span class="ln d-add" data-line="5"/);
+  assert.match(split, /d-del" data-line="4"[^]*?c<\/span><span class="ln d-none"><\/span>$/);
+});
+test('diff options fail visibly and keep the code readable', async () => {
+  const { renderMarkdown } = await import('../src/markdown.js');
+  assert.match(renderMarkdown('```diff view=wide\n+a\n```'), /role="alert">diff: view must be unified or split[^]*<pre class="code"><code>\+a<\/code>/);
+  assert.match(renderMarkdown('```diff colour=red\n+a\n```'), /role="alert">diff: unknown option &quot;colour&quot;/);
+  assert.match(renderMarkdown('```diff\n```'), /role="alert">diff: the block is empty/);
+});
