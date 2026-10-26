@@ -308,6 +308,18 @@ export function directive(text) {
   return { name, options, classes };
 }
 
+// Endpoint signatures are positional, unlike ordinary key=value container options.
+function endpoint(signature, tokens, env) {
+  const content = compile(tokens, env);
+  const fail = message => `<p class="td-error" role="alert">endpoint: ${escape(message)}</p><pre class="code"><code>${escape('::: ' + signature)}</code></pre>${content}`;
+  const match = signature.match(/^endpoint\s+(GET|HEAD|POST|PUT|PATCH|DELETE|CONNECT|OPTIONS|TRACE)\s+(\/[^\s]*)$/);
+  if (!match) return fail('use ::: endpoint METHOD /path with an uppercase HTTP method and no options.');
+  const [, method, path] = match;
+  if (/[{}]/.test(path.replace(/\{[A-Za-z_][\w.-]*\}/g, ''))) return fail('path parameters must use {name}, with balanced braces.');
+  const label = path.split(/(\{[A-Za-z_][\w.-]*\})/g).map(part => part.startsWith('{') ? `<span class="w-endpoint-param">${escape(part)}</span>` : escape(part)).join('');
+  return `<section class="w w-endpoint" aria-label="${escape(method + ' ' + path)}"><header class="w-endpoint-header"><strong class="w-endpoint-method">${method}</strong><a class="w-endpoint-path"><code>${label}</code></a></header><div class="w-endpoint-body">${content}</div></section>`;
+}
+
 // ::: links keeps ordinary Markdown as its fallback; all card text is authored, never fetched.
 function linkCards(tokens, options, classes, env) {
   const fail = message => `<p class="td-error" role="alert">links: ${escape(message)}</p>${compile(tokens, env)}`;
@@ -393,6 +405,7 @@ function compile(tokens, env) {
       if (depth) { html += `<p class="td-error" role="alert">Unclosed container at line ${(token.map?.[0] || 0) + 1}</p>`; }
       const body = tokens.slice(i + 1, end);
       try {
+        if (/^endpoint(?:\s|$)/.test(token.content)) { html += endpoint(token.content, body, env); i = end; continue; }
         const { name, options, classes } = directive(token.content);
         if (name === 'flow' || name === 'stack') { html += flowStack(name, body, options, classes, env); }
         else if (name === 'links') { html += linkCards(body, options, classes, env); }
