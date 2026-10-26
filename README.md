@@ -510,7 +510,7 @@ Every colour, typeface and size is a CSS custom property. Override them after `d
 | `P` | Presenter view: a second window with the next slide, your notes and a timer, kept in step with the audience screen |
 | `L` · `D` | Laser pointer · draw on the slide (cleared on the next slide) |
 | `S` | Show the current slide's Markdown (view source) |
-| Click a diagram | Open it full screen: scroll or pinch to zoom, drag to move, `Esc` to close |
+| Click a diagram or chart | Open it full screen: scroll or pinch to zoom, drag to move, hover for values, `Esc` to close |
 | Click a link to a slide | Jumps there; the browser's Back button returns to the slide you were on |
 
 On phones, the default is slides. A compact row of **Previous**, **Next**, and **Menu** buttons stays available near the bottom. The menu contains **Slides / Article**, **Home**, and a section/slide picker. Opening it does not resize the content.

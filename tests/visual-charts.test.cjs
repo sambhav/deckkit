@@ -67,7 +67,7 @@ test('constant domains, dense rows and hostile labels keep usable output', async
   const { visualChart } = await load();
   assert.doesNotMatch(visualChart(['N','X','Y'], [['A','0','0']], 'scatter'), /NaN|Infinity/);
   const heatmap = visualChart(['Day','Hour'], Array.from({ length: 1000 }, (_, i) => ['Row ' + i, '1']), 'heatmap');
-  assert.match(heatmap, /viewBox="0 0 340 34110"/);
+  assert.match(heatmap, /viewBox="0 0 340 34096"/);
   const svg = visualChart(['N','X','Y'], [['<img onerror="bad">','1','2']], 'scatter', { title: '"><script>bad</script>' });
   assert.doesNotMatch(svg, /<script>|<img/); assert.match(svg, /&lt;img/);
   assert.throws(() => visualChart(['N','X','Y'], [['A','-1e308','0'], ['B','1e308','1']], 'scatter'), /too large/);

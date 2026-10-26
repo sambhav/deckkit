@@ -64,7 +64,7 @@ export function visualChart(headers, rows, type, options = {}) {
     const [lo, hi] = extent(values), ch = 34;
     const left = Math.min(160, Math.max(50, ...rows.map(r => Array.from(String(r[0])).length * 8 + 14)));
     const cw = Math.min(128, Math.max(64, ...numeric.map(i => names[i].length * 8 + 16)));
-    width = Math.max(340, left + numeric.length * cw + 10); height = 110 + rows.length * ch;
+    width = Math.max(340, left + numeric.length * cw + 10); height = 96 + rows.length * ch;
     numeric.forEach((i, j) => { out += label(left + j * cw + cw / 2, 24, names[i], 'middle', Math.floor(cw / 8) - 1); });
     rows.forEach((r, i) => {
       out += label(left - 12, 54 + i * ch, r[0], 'end', Math.floor(left / 8) - 1);
@@ -127,19 +127,21 @@ export function visualChart(headers, rows, type, options = {}) {
     if (data.some(d => d.lo > d.hi || d.mid !== null && (d.mid < d.lo || d.mid > d.hi))) throw Error(timeline ? 'End date precedes start date' : 'Range bounds must contain the central value');
     let [lo, hi] = extent(data.flatMap(d => [d.lo, d.hi]));
     if (timeline && lo === hi) { lo -= 86400000; hi += 86400000; } else [lo, hi] = domain(lo, hi);
-    const px = scale(lo, hi, 195, 620), format = timeline ? v => new Date(v).toISOString().slice(0, 10) : fmt;
-    height = 90 + rows.length * 38;
-    xAxis(lo, hi, 195, 620, height - 42, format);
+    // the label gutter fits the longest name (up to 22 characters), so short labels don't leave a blank band
+    const left = Math.min(195, Math.max(56, ...rows.map(r => Math.min(22, Array.from(String(r[0])).length) * 8 + 32))), right = left + 425;
+    const px = scale(lo, hi, left, right), format = timeline ? v => new Date(v).toISOString().slice(0, 10) : fmt;
+    width = right + 60; height = 90 + rows.length * 38;
+    xAxis(lo, hi, left, right, height - 42, format);
     data.forEach((d, i) => {
       const y = 28 + i * 38;
-      out += label(180, y + 5, d.name, 'end', 22);
+      out += label(left - 15, y + 5, d.name, 'end', 22);
       const tip = `${d.name}: ${format(d.lo)} – ${format(d.hi)}${d.mid === null ? '' : '; Median ' + d.mid}`;
       if (timeline) out += rect(px(d.lo), y - 9, Math.max(5, px(d.hi) - px(d.lo)), 20, palette[i % 6], tip);
       else {
         out += `<g><title>${esc(tip)}</title><line x1="${px(d.lo)}" y1="${y}" x2="${px(d.hi)}" y2="${y}" stroke="${palette[0]}" stroke-width="6"/>${line(px(d.lo), y - 7, px(d.lo), y + 7, 'var(--fg)')}${line(px(d.hi), y - 7, px(d.hi), y + 7, 'var(--fg)')}${d.mid === null ? '' : `<circle cx="${px(d.mid)}" cy="${y}" r="6" fill="var(--fg)"/>`}</g>`;
       }
     });
-    if (!timeline && mi >= 0) out += label(620, height - 3, 'Dot: Median', 'end');
+    if (!timeline && mi >= 0) out += label(right, height - 3, 'Dot: Median', 'end');
   } else if (type === 'sankey') {
     const source = column('Source'), target = column('Target'), amount = column('Value');
     const edges = rows.map(r => ({ a: text(r[source]), b: text(r[target]), v: number(r, amount) }));
@@ -224,5 +226,6 @@ export function visualChart(headers, rows, type, options = {}) {
   }
   // Reject arithmetic overflow rather than emitting an invalid, misleading SVG.
   if (/(?:="|[ ,])(?:NaN|[+-]?Infinity)(?:[ ,"<])/.test(out)) throw Error('Numeric range is too large to plot');
-  return `<svg xmlns="http://www.w3.org/2000/svg" class="w-visual-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(options.title || type + ' chart')}" style="--visual-width:${width}px;--visual-max-width:${Math.max(width, Math.min(800, width * 400 / height))}px"><title>${esc(options.title || type + ' chart')}</title><desc>Scroll to explore dense charts. Use the View control for the data table or download CSV for exact values.</desc>${out}</svg>`;
+  // taller than a slide has room for: keep the scroll at full size rather than shrinking the labels
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="w-visual-svg${height > 420 ? ' w-visual-tall' : ''}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(options.title || type + ' chart')}" style="--visual-width:${width}px;--visual-max-width:${Math.max(width, Math.min(800, width * 400 / height))}px"><title>${esc(options.title || type + ' chart')}</title><desc>Scroll to explore dense charts. Use the View control for the data table or download CSV for exact values.</desc>${out}</svg>`;
 }

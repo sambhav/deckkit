@@ -56,6 +56,13 @@ async function verifyVisualCharts(page, base) {
   const download = page.waitForEvent('download');
   await box.locator('.w-csv-download').click();
   check((await download).suggestedFilename() === 'latency-vs-throughput.csv', 'SVG CSV export must work');
+  // Any chart opens full screen for a closer look, and goes back where it was.
+  await box.locator('select').selectOption('chart');
+  await plot.click();
+  await page.locator('#zoom.on .z-chart .w-visual-svg').waitFor();
+  check(await page.locator('#zoom .z-title').textContent() === await box.locator('figcaption').textContent(), 'The chart viewer must show the chart title');
+  await page.keyboard.press('Escape');
+  check(await box.locator('.w-visual-svg').count() === 1 && !(await page.locator('#zoom.on').count()), 'Closing the viewer must return the chart to its slide');
   await page.evaluate(() => { document.documentElement.dataset.mode = 'dark'; });
   check(await plot.locator('svg').isVisible(), 'SVG chart must remain visible in dark mode');
   return { chartTypes: 12, svgTypes: 8, widths: [1440,768,390,320,844], views: ['present','read'] };
