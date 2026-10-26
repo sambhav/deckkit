@@ -28,6 +28,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
  *                                       fetched only if the deck has code; <html data-highlight="off"> to skip it)
  *   ```lang {annotate} + a 1. 2. list   "# (1)" / "// (1)" line-end comments become numbered pins; ↓ highlights each line and its note
  *   ::: flip                            ### front, the rest is the back
+ *   ::: flow / ::: stack               bulleted boxes; flow vertical changes direction; build: true or {.step} reveals items
  *   ::: timeline                        ### milestones; ↓ walks them; vertical on phones and in read view
  *   ::: board                           ### columns with lists of cards; ↓ reveals each column, all shown in read view
  *   ::: speaker                         optional photo, ### name, role and Markdown links; compact author box in read view

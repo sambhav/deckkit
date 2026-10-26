@@ -593,6 +593,31 @@ td.mk-only, th.mk-only { text-align: center; }
 .w-stat-n { font: 700 var(--t-stat) / 1 var(--display); letter-spacing: -.03em; color: var(--fg); font-variant-numeric: tabular-nums; }
 .w-stat-l { margin-top: .45em; font-size: var(--t-card); line-height: 1.35; color: var(--muted); }
 /* timeline: horizontal on the stage */
+/* Simple diagrams use the normal list build, preserving source order in both views. */
+.md :is(.w-flow, .w-stack) { gap: var(--t-gap); margin: 0; padding: 0; }
+.md .w-flow { display: flex; flex-wrap: wrap; align-items: stretch; }
+.md :is(.w-flow, .w-stack) > li { position: relative; min-width: 0; padding: .8em 1em; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--fg); font-size: var(--t-card); }
+.md .w-flow > li { flex: 1 1 8em; }
+.md :is(.w-flow, .w-stack) > li { overflow-wrap: anywhere; }
+.md :is(.w-flow, .w-stack) > li::before { content: none; }
+.md .w-flow > li + li::after { content: '→'; position: absolute; right: calc(100% + .15em); top: 50%; transform: translateY(-50%); width: calc(var(--t-gap) - .3em); text-align: center; color: var(--accent-ink); }
+.md .w-flow.vertical, [data-tall] .md .w-flow { flex-direction: column; }
+.md .w-flow.vertical > li, [data-tall] .md .w-flow > li { flex: auto; }
+.md .w-flow.vertical > li + li::after, [data-tall] .md .w-flow > li + li::after { content: '↓'; top: auto; bottom: calc(100% + .1em); left: 50%; right: auto; transform: translateX(-50%); width: auto; line-height: calc(var(--t-gap) - .2em); }
+.md .w-stack { display: grid; gap: .35em; }
+.md .w-stack > li { border-left: .25em solid var(--accent); }
+.md :is(.w-flow, .w-stack) > li > * + * { margin-top: .5em; }
+.md :is(.w-flow, .w-stack) > li > p { font-size: inherit; }
+.md :is(.w-flow, .w-stack) a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+[data-build] :is(.w-flow, .w-stack) > [data-step]:not(.shown) { visibility: hidden; }
+[data-view=read] [data-build] :is(.w-flow, .w-stack) > [data-step]:not(.shown) { visibility: visible; }
+@media print { [data-build] :is(.w-flow, .w-stack) > [data-step] { visibility: visible !important; } }
+@media (max-width: 600px) {
+  .md .w-flow { flex-direction: column; }
+  .md .w-flow > li { flex: auto; }
+  .md .w-flow > li + li::after { content: '↓'; top: auto; bottom: calc(100% + .1em); left: 50%; right: auto; transform: translateX(-50%); width: auto; line-height: calc(var(--t-gap) - .2em); }
+}
+
 .w-timeline { list-style: none; display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 24px; position: relative; padding-top: 34px; }
 .w-timeline::before { content: ''; position: absolute; left: 0; right: 0; top: 11px; height: 2px; background: var(--line); }
 .md .w-timeline > li { position: relative; padding: 0; cursor: pointer; color: var(--muted); transition: color .2s; }

@@ -386,6 +386,55 @@ The phone frame is a small, centred shell. In the article all its content remain
 :::
 
 ---
+id: w-flow
+build: true
+---
+## A tool call, end to end
+
+::: flow
+- **Prompt** Ask a question
+- **Plan** Choose the next action
+- **Tool call** Fetch the evidence
+- **Result** Answer with sources
+:::
+
+::: notes
+Each press of ↓ reveals another box. The article shows the complete process in order.
+:::
+
+---
+id: w-flow-vertical
+---
+## A request through the service
+
+::: flow vertical
+- **Validate** Check the request
+- **Route** Pick a healthy worker {.step}
+- **Respond** Return the result {.step}
+:::
+
+::: notes
+The vertical flag keeps the direction explicit. Mark individual boxes with {.step} when the first box should stay visible.
+:::
+
+---
+id: w-stack
+build: true
+---
+## The layers beneath an app
+
+::: stack
+- **App** Product and business logic
+- **Runtime** Scheduling and memory
+- **Kernel** Processes and device access
+- **Hardware** Compute, memory and storage
+:::
+
+::: notes
+The list reads from the top layer to its foundation. Builds reveal one layer at a time; article view shows them all.
+:::
+
+---
 ## Mermaid diagram
 
 ```mermaid
