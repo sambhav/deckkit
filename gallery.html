@@ -6,7 +6,8 @@
 <meta name="description" content="Live examples of Talkdown's Markdown-powered visual and interactive widgets.">
 <script src="latest.js"></script>
 <style>
-.gallery-nav{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font:500 14px system-ui}
+.gallery-nav{display:flex;gap:14px;align-items:center;white-space:nowrap;font:500 14px system-ui}
+@media (max-width:420px){.gallery-nav a+a{display:none}}
 .gallery-nav a{color:var(--accent-ink);text-decoration:none}
 .gallery-nav a:hover{text-decoration:underline}
 </style>

@@ -543,6 +543,7 @@ td.mk-only, th.mk-only { text-align: center; }
 }
 @media (max-width: 760px) {
   [data-view=read] #bar .ib { width: 44px; height: 44px; }
+  @media (max-width: 380px) { [data-view=read] #srcBtn { display: none; } }   /* five 44px buttons leave no room for the title */
   :is([data-view=read], [data-tall=fluid]) { --t-body: 17.5px; --t-lede: 20px; --t-h3: 20px; --t-section-sub: 20px; --t-statement-sub: 20px; --t-card: 14px; --t-small: 14px; --t-leading: 1.6; }
 }
 :is([data-view=read], [data-tall=fluid]) .md .cols { grid-auto-flow: row; gap: 16px; }
