@@ -226,6 +226,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 
 | Widget | Write |
 |---|---|
+| **Image gallery** | `::: gallery` around Markdown images; ↓ highlights each image, click opens a lightbox with arrow navigation and alt-text captions |
 | **Tabs** | `::: tabs`, then a `###` heading per tab. `::: toggle` is the same, styled as a switch |
 | **Walkthrough** | `::: steps`, then a `###` heading per step. Adds a counter, progress dots and Next |
 | **Explained table** | `{.explain}` after a table. The last column becomes the detail for the selected row |
