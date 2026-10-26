@@ -1,4 +1,4 @@
-// Run with `node tests/browser.cjs` after installing Playwright and its Chromium.
+// Run with `node tests/browser.cjs` against a served checkout; it drives the installed Google Chrome.
 // Exported so the same checks can also run in a connected Playwright browser.
 const verifyLatest = require('./latest.cjs');
 const verifyVisualCharts = require('./visual-charts.cjs');
@@ -7,6 +7,17 @@ async function verify(page, base) {
   const errors = [];
   page.on('pageerror', e => errors.push(e.stack || e.message));
   await page.emulateMedia({ reducedMotion: 'reduce' });
+  // Suites that load their own pages run side by side in fresh pages while this page
+  // checks the demo deck and the fixtures below.
+  const sibling = async suite => {
+    const browser = page.context().browser();
+    const tab = await (browser ? browser.newPage() : page.context().newPage());
+    tab.on('pageerror', e => errors.push(e.stack || e.message));
+    await tab.emulateMedia({ reducedMotion: 'reduce' });
+    try { return await suite(tab, base); } finally { await tab.close(); }
+  };
+  const suites = Promise.all([verifyMobileNavigation, verifyNativeScrolling, verifyVisualCharts, verifyLatest].map(sibling));
+  suites.catch(() => {});   // awaited below; this only stops an early failure here from going unhandled
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(base + '/?view=present');
   // A native HTML slide exists before the asynchronous runtime assembles the
@@ -52,8 +63,6 @@ async function verify(page, base) {
     }));
     check(!clipped.length, width + 'px phone/tablet clipping: ' + clipped.join(', '));
   }
-  await verifyMobileNavigation(page, base);
-  await verifyNativeScrolling(page, base);
   const fixture = [
     '## Syntax fixtures', '', '<!-- a plain comment', '---', 'does not split the slide -->', '', '::: notes', 'Notes with `inline code`', ':::', '',
     'Real footnote[^real]', '', '[^real]: A `code` footnote.', '',
@@ -158,8 +167,7 @@ async function verify(page, base) {
   await page.goto(base + '/empty-reference.html');
   await page.waitForFunction(() => window.Deck && document.querySelector('.td-load-error'));
   check(await page.locator('.td-load-error').isVisible(), 'A failed standalone reference needs a visible error');
-  const visualCharts = await verifyVisualCharts(page, base);
-  const latest = await verifyLatest(page, base);
+  const [, , visualCharts, latest] = await suites;
   check(!errors.length, 'Browser errors: ' + errors.join(', '));
   return { slides: count, widths: sizes.map(s => s[0]), visualCharts, latest, errors };
 }
@@ -337,8 +345,8 @@ async function verifyNativeScrolling(page, base) {
 module.exports = verify;
 if (require.main === module) {
   (async () => {
-    const { chromium } = require('playwright');
-    const browser = await chromium.launch();
+    const { chromium } = require('playwright-core');
+    const browser = await chromium.launch({ channel: 'chrome' });
     try { console.log(await verify(await browser.newPage(), process.env.TALKDOWN_URL || 'http://127.0.0.1:8000')); }
     finally { await browser.close(); }
   })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -3,46 +3,32 @@ on:
   push:
     branches: [main]
   pull_request:
-permissions:
-  contents: read
+# A new push to a pull request cancels its older run; runs on main queue so publishes stay in order.
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
-  parser:
+  # One job, so setup happens once. The browser checks drive the Google Chrome that GitHub's
+  # Ubuntu runners already have, so nothing is downloaded beyond the npm packages.
+  check:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write   # used only by the publish step, which runs on pushes to main
     steps:
+      # Read Chrome into the page cache while the next steps run: launched from a cold disk it
+      # takes about 7s to start, warm about 1s.
+      - run: (find /opt/google/chrome -type f -exec cat {} + > /dev/null 2>&1 &)
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: npm ci
+      - run: npm ci --no-audit --no-fund
       - run: npm run build
       - run: npm test
-  single-file:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-      - run: npm ci
-      - run: npm run build
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:single-file
       - run: npm run test:browser
-  # After the checks pass on main, publish the site and the freshly built runtime to the
-  # gh-pages branch, which GitHub Pages serves. Hashed dist/ files are only ever added
-  # there, so cached manifests and pinned decks keep working.
-  publish:
-    needs: [parser, single-file]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    concurrency: publish
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-      - run: npm ci
-      - run: npm run build
-      - run: npm run publish:site
+      # After the checks pass on main, publish the site and the freshly built runtime to the
+      # gh-pages branch, which GitHub Pages serves. Hashed dist/ files are only ever added
+      # there, so cached manifests and pinned decks keep working.
+      - if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: npm run publish:site

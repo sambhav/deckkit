@@ -46,14 +46,14 @@ module.exports = verifySingleFile;
 if (require.main === module) {
   (async () => {
     const fs = require('node:fs/promises'), os = require('node:os'), path = require('node:path');
-    const { chromium } = require('playwright');
+    const { chromium } = require('playwright-core');
     const root = path.join(__dirname, '..');
     const files = {
       html: await fs.readFile(path.join(root, 'examples/starter.html'), 'utf8'),
       js: await fs.readFile(path.join(root, 'deck.js'), 'utf8'),
       css: await fs.readFile(path.join(root, 'deck.css'), 'utf8'),
     };
-    const browser = await chromium.launch();
+    const browser = await chromium.launch({ channel: 'chrome' });
     try { console.log(await verifySingleFile(await browser.newPage(), files, fs, os)); }
     finally { await browser.close(); }
   })().catch(error => { console.error(error); process.exitCode = 1; });
