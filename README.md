@@ -240,6 +240,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Flip cards** | `::: flip`: the `###` heading is the front, the rest is the back |
 | **Flow / stack** | `::: flow` or `::: stack` around a bulleted list. `::: flow vertical` points down; `build: true` or `{.step}` reveals boxes on ↓. Article view shows all boxes |
 | **Timeline** | `::: timeline`, then a `###` heading per milestone. Vertical on phones |
+| **Explorable numbers** | `::: explorable` around prose with `[qps=1000]{range=100..10000}` and `{qps*40/1000}`. Native sliders update arithmetic in both views; optional `step=100` inside the range braces |
 | **Stats** | `::: stats` around a list like `- **42%** faster first response` |
 | **Callouts** | `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]` |
 | **Diagrams** | ` ```mermaid `: flowcharts, networks, sequence, architecture, state, charts and more. Add `{source}` to show the text beside it. Readers can click a diagram to open it full screen and zoom |

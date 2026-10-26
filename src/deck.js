@@ -1,3 +1,4 @@
+import { activateExplorable } from './explorable.js';
 import { renderMarkdown, renderInline, slideChunks } from './markdown.js';
 import { glossary } from './glossary.js';
 import { parseCSV, chartDataset, csvDownload } from './data.js';
@@ -30,6 +31,7 @@ import { beforeAfter } from './before-after.js';
  *                                       fetched only if the deck has code; <html data-highlight="off"> to skip it)
  *   ```lang {annotate} + a 1. 2. list   "# (1)" / "// (1)" line-end comments become numbered pins; ↓ highlights each line and its note
  *   ::: compare                         two images; draggable wipe, ↓ reveals 0 / 50 / 100%; article shows both
+ *   ::: explorable                      [qps=1000]{range=100..10000} values and {qps*40/1000} arithmetic
  *   ::: flip                            ### front, the rest is the back
  *   ::: flow / ::: stack               bulleted boxes; flow vertical changes direction; build: true or {.step} reveals items
  *   ::: timeline                        ### milestones; ↓ walks them; vertical on phones and in read view
@@ -204,6 +206,7 @@ import { beforeAfter } from './before-after.js';
     c.querySelectorAll('.w-quadrant').forEach(quadrantSteps);
     c.querySelectorAll('.stats').forEach(stats);
     c.querySelectorAll('.w-hotspots').forEach(hotspots);
+    c.querySelectorAll('.w-explore').forEach(activateExplorable);
     c.querySelectorAll('blockquote').forEach(callout);
     c.querySelectorAll('blockquote:not(.callout)').forEach(quote);
     c.querySelectorAll('div.chart, figure[data-chart]').forEach(chart);
