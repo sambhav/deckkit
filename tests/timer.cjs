@@ -65,8 +65,10 @@ module.exports = async function verifyTimer(inputPage, base) {
     await page.evaluate(() => Deck.setView('present'));
     assert.equal(await clock.textContent(), '0:00', 'returning to slides catches up');
     await page.setViewportSize({ width: 320, height: 740 });
+    // Resize fitting is queued on RAF; allow two frames on the paused clock.
+    await context.clock.runFor(32);
     const bounds = await timer.boundingBox();
-    assert(bounds.width <= 320, 'timer fits a phone');
+    assert(bounds && bounds.width <= 320, 'timer fits a phone: ' + JSON.stringify(bounds));
     assert.equal(await timer.locator('button').evaluateAll(buttons => buttons.every(b => b.getBoundingClientRect().height >= 24)), true);
   } finally { await context.close(); }
 };
