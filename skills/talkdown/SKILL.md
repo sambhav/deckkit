@@ -113,6 +113,7 @@ Notes can span lines. Timing cues like `[~60s]` are dropped from the article. Co
 
 Stateful widgets step with ↓ and expand in the article; charts follow their `view` setting.
 
+- Image hotspots: `::: hotspots` around one `![Alt text](image.png)` followed by `- [12%, 30%] Label` bullets. Coordinates are x from the left and y from the top, each 0–100%. No options; labels accept inline formatting and links. The first pin starts selected; ↓ or a pin button selects the next label. Article view shows the image with all pins and a numbered legend.
 - Board: `::: board`, a `### Column` heading per column and a Markdown list per column (each top-level item is a card). ↓ reveals each column; article view shows every card, stacking columns on phones. Keep slides to 2–4 short columns; use a new slide for more. No options.
 
 - Flow / stack: `::: flow` or `::: stack` around a bulleted list, one box per item. `::: flow vertical` points down. Slide frontmatter `build: true` reveals every box on ↓; `{.step}` marks individual items. Article view shows all boxes; narrow screens stack flows vertically. No options besides `flow vertical`.

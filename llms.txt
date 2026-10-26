@@ -26,3 +26,5 @@ latest.js loads the current release each time a page opens, so published decks n
 HTTP exchanges use a `http` fence: request line, headers/body, a blank line, then the response status line and headers/body. Present view reveals the response on ↓; article view stacks both with Copy buttons.
 
 API endpoint references use `::: endpoint GET /v1/users/{id}` around a description and optional Markdown parameter table. Both views show all content; the article path is a permalink. Use an uppercase standard HTTP method and slash-prefixed path; `{name}` highlights parameters. No options.
+
+- Image hotspots: `::: hotspots` around one Markdown image and `- [12%, 30%] Label` bullets; percentages measure x/y from left/top, 0–100%. The first numbered pin starts active, ↓ selects each next pin, and article view shows all pins with a numbered legend. Labels support inline formatting and links; no options.
