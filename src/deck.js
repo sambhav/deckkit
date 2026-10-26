@@ -1,4 +1,5 @@
 import { renderMarkdown, renderInline, slideChunks } from './markdown.js';
+import { glossary } from './glossary.js';
 import { parseCSV, chartDataset, csvDownload } from './data.js';
 import { visualTypes, visualChart } from './visual-charts.js';
 import { beforeAfter } from './before-after.js';
@@ -35,6 +36,7 @@ import { beforeAfter } from './before-after.js';
  *   ::: quadrant x="Effort" y="Impact"  four ### quadrant labels, then optional - Label [0.2, 0.8] points
  *   ::: chat                            **user:** / **assistant:** / **tool** messages; ↓ reveals messages; tool rows expand
  *   ::: board                           ### columns with lists of cards; ↓ reveals each column, all shown in read view
+ *   ::: glossary                       Term: Definition lines; first use tooltips in articles, glossary: inline opts slides in
  *   ::: speaker                         optional photo, ### name, role and Markdown links; compact author box in read view
  *   ::: links                           a list of [Title](URL) descriptions becomes further-reading cards; no network fetches
  *   ::: hotspots                        image + - [12%, 30%] Label; ↓ selects each numbered pin; article shows a legend
@@ -140,7 +142,7 @@ import { beforeAfter } from './before-after.js';
   const inline = renderInline;
 
   /* a Markdown deck: slides split by ---; a chunk of only `key: value` lines is the next slide's frontmatter */
-  const META = /^(section|name|layout|kicker|build|class|takeaway|id|image|read|present):\s*(.*)$/;
+  const META = /^(section|name|layout|kicker|build|class|takeaway|id|image|read|present|glossary):\s*(.*)$/;
   let section = '', part = 0;
   const sourceOf = new WeakMap();   // slide element -> its Markdown as written, for view source
   function mdSlides(src) {
@@ -172,6 +174,7 @@ import { beforeAfter } from './before-after.js';
     Object.assign(el.dataset, { section, name: meta.name || heading });
     if (meta.takeaway) el.dataset.takeaway = meta.takeaway;
     if (meta.id) el.dataset.id = meta.id;
+    if (meta.glossary) el.dataset.glossary = meta.glossary;
     if (meta.read) el.dataset.read = meta.read;            // hide: leave it out of the article · text: only its prose
     if (meta.present) el.dataset.present = meta.present;   // hide: an article-only section, skipped when presenting
     // absolute, because a relative url() in a custom property resolves against the stylesheet (dist/), not the page
@@ -1353,6 +1356,7 @@ import { beforeAfter } from './before-after.js';
       link.href = '#' + encodeURIComponent(slide.dataset.id);
       link.setAttribute('aria-label', 'Permalink to ' + label);
     });
+    const finishGlossary = glossary(stage);
     // an author's own <div id="bar"> (a .title plus any links) becomes the top bar; talkdown adds the section and tools
     const own = $('bar');
     if (own && !stage.contains(own)) stage.prepend(own);
@@ -1386,6 +1390,7 @@ import { beforeAfter } from './before-after.js';
         fig.addEventListener('click', () => { if (reading()) { setView('present'); go(i, 0); } });
       }
     });
+    finishGlossary?.();
     frames = [...document.querySelectorAll('.frame')];
 
     stage.insertAdjacentHTML('beforeend', `
@@ -1689,7 +1694,7 @@ import { beforeAfter } from './before-after.js';
       if (done(s)) setAt(s, 0); else stepsOf(s).some(st => st.next());
     }));
     // a clicked button keeps focus, so Space / Enter would press it again; hand the keys back to the deck
-    document.addEventListener('click', e => { const b = e.target.closest('#stage button'); if (b) b.blur(); });
+    document.addEventListener('click', e => { const b = e.target.closest('#stage button'); if (b && !b.matches('.glossary-button')) b.blur(); });
     // [text](#id) links to the slide with that id; [text](?theme=rose#id) and ?mode=dark restyle this page in place,
     // so the slide and step you're on stay put
     document.addEventListener('click', e => {
