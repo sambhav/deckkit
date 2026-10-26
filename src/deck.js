@@ -26,6 +26,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
  *   a table then {.explain}             the last column becomes the detail for the selected row; ✓ ◐ ✗ cells are coloured
  *   ```lang {steps: 2 | 3-4}            highlight those lines, one group per step (code is syntax-highlighted by highlight.js,
  *                                       fetched only if the deck has code; <html data-highlight="off"> to skip it)
+ *   ```lang {annotate} + a 1. 2. list   "# (1)" / "// (1)" line-end comments become numbered pins; ↓ highlights each line and its note
  *   ::: flip                            ### front, the rest is the back
  *   ::: timeline                        ### milestones; ↓ walks them; vertical on phones and in read view
  *   ::: stats                           big numbers: "- **42%** faster first response"
@@ -187,6 +188,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
     c.querySelectorAll('table.explain').forEach(explain);
     c.querySelectorAll('td, th').forEach(marks);
     c.querySelectorAll('pre[data-steps]').forEach(codeSteps);
+    c.querySelectorAll('.w-annotate').forEach(annotate);
     c.querySelectorAll('pre.code').forEach(copyable);
     c.querySelectorAll('.flip').forEach(flip);
     c.querySelectorAll('.accordion').forEach(accordion);
@@ -309,6 +311,35 @@ import { visualTypes, visualChart } from './visual-charts.js';
     });
   }
 
+  // ```lang {annotate} and a numbered list: "# (n)" comments became pins (see markdown.js); ↓ highlights each pin's lines and its note
+  function annotate(box) {
+    const pre = box.querySelector(':scope > pre[data-pins]'), ol = box.querySelector(':scope > ol');
+    if (!pre) return;
+    const code = pre.firstChild, pins = pre.dataset.pins.split(',').map(Number), notes = ol ? [...ol.children] : [], first = ol ? ol.start : 1;
+    const step = n => n >= first && n < first + notes.length ? n - first + 1 : -1;
+    sources.set(pre, code.textContent);
+    code.innerHTML = code.innerHTML.split('\n').map(l => `<span class="ln">${l}</span>`).join('');
+    // pins go back on after the highlighter rewrites the lines; the number comes from CSS so textContent stays the code.
+    // Like timeline rows, pins and notes are click targets; the keyboard steps them with ↓ and 1–9.
+    pre.decorate = () => [...code.children].forEach((l, j) => pins[j] && l.insertAdjacentHTML('beforeend',
+      `<span class="w-pin" data-n="${pins[j]}"></span>`));
+    pre.decorate();
+    notes.forEach((li, j) => li.dataset.n = first + j);
+    const st = pre.stepper = steps(box, notes.length + 1, i => {
+      const n = i ? first + i - 1 : 0;
+      box.classList.toggle('stepping', i > 0);
+      [...code.children].forEach((l, j) => l.classList.toggle('on', !!n && pins[j] === n));
+      code.querySelectorAll('.w-pin').forEach(b => b.classList.toggle('on', +b.dataset.n === n));
+      notes.forEach((li, j) => li.classList.toggle('on', j === i - 1));
+    });
+    box.addEventListener('click', e => {
+      if (reading()) return;
+      const pin = e.target.closest('.w-pin'), li = e.target.closest('.w-notes > li');
+      const k = pin ? step(+pin.dataset.n) : li ? notes.indexOf(li) + 1 : -1;
+      if (k > 0) st.go(k);
+    });
+  }
+
   /* syntax highlighting: highlight.js, fetched only when the deck has fenced code.
      <html data-highlight="off"> turns it off; data-highlight="/path/highlight.min.js" self-hosts it. */
   const HLJS = 'https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/highlight.min.js';
@@ -325,7 +356,8 @@ import { visualTypes, visualChart } from './visual-charts.js';
     const run = () => pres.forEach(pre => {
       if (!window.hljs?.getLanguage(pre.dataset.lang)) return;
       const html = hljs.highlight(sources.get(pre) ?? pre.firstChild.textContent, { language: pre.dataset.lang, ignoreIllegals: true }).value;
-      pre.firstChild.innerHTML = pre.dataset.steps ? perLine(html) : html;
+      pre.firstChild.innerHTML = pre.dataset.steps || pre.dataset.pins ? perLine(html) : html;
+      pre.decorate?.();
       pre.stepper?.go(pre.stepper.i, true);
     });
     window.hljs ? run() : load(opt || HLJS, run);

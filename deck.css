@@ -477,6 +477,22 @@ td.mk-only, th.mk-only { text-align: center; }
 .md pre.code .ln { display: block; margin: 0 -1.4em; padding: 0 1.4em; border-left: 3px solid transparent; transition: background .2s, opacity .2s; }
 .md pre.code.stepping .ln { opacity: .4; }
 .md pre.code.stepping .ln.on { opacity: 1; background: var(--accent-soft); border-left-color: var(--accent); }
+/* ```lang {annotate}: the code with numbered pins, its notes beside it; each step lights one pin's lines and its note */
+.w-annotate { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: calc(var(--t-gap) * 1.4); align-items: start; }
+.w-pin, .md .w-notes > li::before { display: inline-grid; place-items: center; min-width: 1.6em; height: 1.6em; padding: 0 .35em; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent-ink); font: 600 .7em/1 var(--mono); letter-spacing: 0; transition: background .2s, color .2s; }
+.w-pin { margin-left: .7em; vertical-align: .12em; cursor: pointer; user-select: none; }
+.w-pin::before { content: attr(data-n); }
+.w-pin:hover, .w-pin.on { background: var(--accent); color: var(--on-accent); }
+.md .w-notes { gap: calc(var(--t-list-gap) + .5em); }
+.md .w-notes > li { padding-left: 2.3em; font-size: var(--t-card); cursor: pointer; transition: opacity .2s; }
+.md .w-notes > li::before { content: attr(data-n); left: 0; top: .1em; font-size: .8em; }
+:root:not([data-view=read]) .w-annotate.stepping .w-notes > li { opacity: .45; }
+:root:not([data-view=read]) .w-annotate.stepping .w-notes > li.on { opacity: 1; }
+:root:not([data-view=read]) .w-annotate.stepping .w-notes > li.on::before { background: var(--accent); color: var(--on-accent); }
+:root:not([data-view=read]) .w-annotate.stepping pre.code .ln { opacity: .4; }
+:root:not([data-view=read]) .w-annotate.stepping pre.code .ln.on { opacity: 1; background: var(--accent-soft); border-left-color: var(--accent); }
+:is([data-tall]) .w-annotate { grid-template-columns: 1fr; }
 .w-flip { position: relative; display: grid; cursor: pointer; perspective: 1000px; min-height: 8.5em; }
 .w-face { grid-area: 1 / 1; backface-visibility: hidden; border-radius: var(--radius); padding: 1em 1.2em; border: 1px solid var(--line); background: var(--surface);
           transition: transform .5s cubic-bezier(.2, .7, .2, 1); display: flex; flex-direction: column; justify-content: center; gap: .4em; }
@@ -927,6 +943,12 @@ aside.article { display: none; }
 [data-view=read] .w-back { background: var(--surface-2); color: var(--fg); }
 [data-view=read] .w-back p, [data-view=read] .w-back li { color: var(--fg); }
 [data-view=read] .md pre.code .ln, [data-view=read] .md pre.code.stepping .ln.on { opacity: 1; background: none; border-left-color: transparent; }
+[data-view=read] .w-annotate { grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 1100px) { [data-view=read] .w-annotate { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); width: var(--figw); margin-left: calc((100% - var(--figw)) / 2); } }
+[data-view=read] .w-annotate .w-notes > li, [data-view=read] .w-annotate.stepping .w-notes > li { opacity: 1; cursor: default; font-size: var(--t-body); }
+[data-view=read] .w-annotate .w-notes > li::before { background: var(--accent-soft); color: var(--accent-ink); top: .25em; }
+[data-view=read] .w-annotate pre.code .ln { opacity: 1; background: none; border-left-color: transparent; }
+[data-view=read] .w-pin { pointer-events: none; background: var(--accent-soft); color: var(--accent-ink); }
 :is([data-view=read], [data-tall]) .w-timeline { grid-template-columns: 1fr; gap: 18px; padding: 0 0 0 30px; }
 :is([data-view=read], [data-tall]) .w-timeline::before { left: 7px; right: auto; top: 6px; bottom: 6px; width: 2px; height: auto; }
 :is([data-view=read], [data-tall]) .md .w-timeline > li::before { left: -30px; top: 4px; }
@@ -942,7 +964,7 @@ aside.article { display: none; }
   [data-view=read] .frame:has(.layout-section) { margin-top: 104px; }
 }
 
-@media (prefers-reduced-motion: reduce) { .slide.active { animation: none; } [data-build] [data-step] { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .slide.active { animation: none; } [data-build] [data-step], .w-pin, .w-notes > li, .md pre.code .ln { transition: none; } }
 
 @media print {
   .w-chart-tools { display: none !important; }
