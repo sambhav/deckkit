@@ -1,3 +1,4 @@
+import { changelogHTML } from './changelog.js';
 import { hotspotMarkup } from './hotspots.js';
 import { explorableInline, explorable } from './explorable.js';
 import { countValue, meterValue } from './meter.js';
@@ -578,6 +579,10 @@ function compile(tokens, env) {
             const label = escape(options.label), unit = escape(options.unit || '');
             html += `<div class="w w-meter" data-value="${value}" data-max="${max}" data-precision="${(options.value.split('.')[1] || '').length}" data-suffix="${unit}"><div class="w-meter-heading"><span>${label}</span><strong aria-hidden="true">${value}${unit}</strong></div><div class="w-meter-track" role="meter" aria-label="${label}" aria-valuemin="0" aria-valuemax="${max}" aria-valuenow="${value}" aria-valuetext="${value}${unit}"><span style="width:${value / max * 100}%"></span></div></div>`;
           } catch (error) { html += `<p class="td-error" role="alert">${escape(error.message)}</p><p>${escape(token.content)}</p>${content}`; }
+        }
+        else if (name === 'changelog') {
+          try { html += changelogHTML(body, ts => compile(ts, env), options, classes); }
+          catch (error) { html += `<p class="td-error" role="alert">changelog: ${escape(error.message)}</p>` + compile(body, env); }
         }
         else if (name === 'links') { html += linkCards(body, options, classes, env); }
         else if (['notes', 'say', 'read'].includes(name) && env.collectNotes) {
