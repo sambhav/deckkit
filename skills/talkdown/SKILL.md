@@ -111,6 +111,8 @@ Notes can span lines. Timing cues like `[~60s]` are dropped from the article. Co
 
 ## Widgets (plain Markdown)
 
+- Stepped equations: `$$ {steps}` on its own line, TeX rows separated by `\\`, then `$$`. Use `&` to align cells and `\text{…}` for explanations. ↓ or **Next equation** reveals each row; article view shows every equation. Existing KaTeX loading and `data-math="off"` work unchanged.
+
 Stateful widgets step with ↓ and expand in the article; charts follow their `view` setting.
 
 - Image hotspots: `::: hotspots` around one `![Alt text](image.png)` followed by `- [12%, 30%] Label` bullets. Coordinates are x from the left and y from the top, each 0–100%. No options; labels accept inline formatting and links. The first pin starts selected; ↓ or a pin button selects the next label. Article view shows the image with all pins and a numbered legend.

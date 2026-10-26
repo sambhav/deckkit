@@ -693,6 +693,21 @@ Adjust request volume or latency to see how concurrency changes. Each slider als
 > The best presentation is one people can still read afterwards.
 
 ---
+id: w-derive
+---
+## Derive the total time
+
+$$ {steps}
+T &= N \cdot t \\
+  &= 10^6 \cdot 40\,\mu s \\
+  &= 40\,s \quad \text{(one million requests)}
+$$
+
+::: notes
+Multiply the number of requests by the time per request. Each ↓ reveals the next equation; article view includes the complete derivation and its explanation.
+:::
+
+---
 ## Maths
 
 A familiar equation: $E = mc^2$.
