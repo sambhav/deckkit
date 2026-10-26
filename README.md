@@ -101,7 +101,7 @@ Open it in a browser and press →. The stable loader checks a fresh release man
 
 <br>
 
-Copy [`deck.css`](deck.css) and [`deck.js`](deck.js) next to your HTML and link them directly. [`examples/starter.html`](examples/starter.html) is a ready-made starting point. To publish, put the folder anywhere that serves static files: GitHub Pages, a bucket, an intranet share.
+Download [`deck.css`](https://sambhav.dev/talkdown/deck.css) and [`deck.js`](https://sambhav.dev/talkdown/deck.js), or take them from a [release](https://github.com/sambhav/talkdown/releases), and put them next to your HTML. [`examples/starter.html`](examples/starter.html) is a ready-made starting point. To publish, put the folder anywhere that serves static files: GitHub Pages, a bucket, an intranet share.
 
 </details>
 
@@ -113,7 +113,7 @@ For decks that should follow Talkdown updates, include this one stable URL:
 <script src="https://sambhav.dev/talkdown/latest.js"></script>
 ```
 
-The loader itself can be cached. It requests `latest.json` with `cache: no-store` and a unique URL, then loads the named, integrity-checked JS/CSS pair. Those content-hashed files can be cached indefinitely. Every `npm run build` updates the manifest automatically; keep the older hashed files available for readers who already loaded a manifest.
+The loader itself can be cached. It requests `latest.json` with `cache: no-store` and a unique URL, then loads the named, integrity-checked JS/CSS pair. Those content-hashed files can be cached indefinitely. CI publishes a new manifest and hashed pair on every change to `main`, and never removes older hashed files, so readers who already loaded a manifest keep working.
 
 This updates decks on a new visit or reload, not halfway through a presentation. It requires a network connection. While it loads, readers see a spinner in their light or dark mode; if the release can't be fetched or the runtime fails to start, they get an error screen with a Reload button instead of a blank page. Existing `deck.js` / `deck.css` links and offline authoring continue to work.
 
@@ -129,7 +129,7 @@ Talkdown.onReady(Deck => {
 </script>
 ```
 
-For a frozen, reproducible deck, copy both asset URLs and integrity values from a release's `latest.json` and link that exact pair instead. A mutable jsDelivr `@main` URL can serve cached code for hours, and browsers may retain it longer; it does not guarantee the latest runtime.
+For a frozen, reproducible deck, copy both asset URLs and integrity values from a [release](https://github.com/sambhav/talkdown/releases)'s `latest.json` and link that exact pair instead. A mutable jsDelivr branch URL can serve cached code for hours, and browsers may retain it longer; it does not guarantee the latest runtime.
 
 ## Recommended choices for new decks
 
@@ -629,7 +629,7 @@ Links show as small pills beside the title, and talkdown still adds the section 
 
 ## Compatibility with existing decks
 
-Existing public `deck.js` and `deck.css` URLs on jsDelivr and sambhav.dev remain supported. Keep using the same two root asset paths; there is no required `dist/` path or additional parser script.
+The public `https://sambhav.dev/talkdown/deck.js` and `deck.css` URLs remain supported. Built files are published to the `gh-pages` branch rather than committed to `main`, so jsDelivr links to the runtime use `cdn.jsdelivr.net/gh/sambhav/talkdown@gh-pages/deck.js` (and `deck.css`); `@main` now holds only the sources.
 
 | Existing syntax | Supported behavior | Prefer for new content |
 |---|---|---|
@@ -646,9 +646,11 @@ Current Chrome, Edge, Firefox and Safari, on desktop and mobile. Print from the 
 
 ## 🤝 Contributing
 
-Deck authors never build anything: use `latest.js`, or local `deck.js` and `deck.css` for offline decks. Maintainers edit `deck.css` directly and the JavaScript in `src/`, then run `npm ci`, `npm run build` and `npm test`. Commit the rebuilt `deck.js`, `latest.json`, and new `dist/deck.<hash>.js` / `.css` assets. Keep previous hashed assets available. CI checks the committed bundle and manifest against a fresh build.
+Deck authors never build anything: use `latest.js`, or local `deck.js` and `deck.css` for offline decks. Maintainers edit `deck.css` directly and the JavaScript in `src/`, then run `npm ci`, `npm run build` and `npm test`. Built files (`deck.js`, `latest.json`, `dist/`) are git-ignored; don't commit them.
 
-For browser checks, run `npx playwright install chromium`, then `npm run test:single-file` and `node tests/run-browser.cjs`. The browser suite covers the full demo, phone layouts, CSV and Markdown table equivalence, view switching, downloads, invalid data, native HTML charts, notes and keyboard controls.
+Releasing is automatic. When the checks pass on `main`, CI builds the runtime and publishes the site to the `gh-pages` branch, which GitHub Pages serves at sambhav.dev/talkdown (`npm run publish:site`, see [`scripts/publish.sh`](scripts/publish.sh)). Each build adds its content-hashed pair to `dist/` there; older pairs are never removed. Push a `vX.Y.Z` tag to also create a GitHub Release with `deck.js`, `deck.css`, `latest.json` and the hashed pair.
+
+For browser checks, run `npx playwright install chromium`, then `npm run test:single-file` and `npm run test:browser`. The browser suite covers the full demo, phone layouts, CSV and Markdown table equivalence, view switching, downloads, invalid data, native HTML charts, notes and keyboard controls.
 
 talkdown is pre-release (0.3.0), so the syntax may still change before 1.0.
 

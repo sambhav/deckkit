@@ -11,7 +11,7 @@ const notices = ['markdown-it', 'mdurl', 'uc.micro', 'punycode.js'].map(name => 
   if (!license) throw new Error('Missing license for ' + name);
   return '/* ' + name + '\n' + fs.readFileSync(path.join(dir, license), 'utf8').replace(/\*\//g, '* /') + '\n*/';
 }).join('\n');
-// Authors link the committed deck.js and deck.css directly; only deck.js is built.
+// Builds deck.js, the hashed dist/ pair and latest.json (all git-ignored; CI publishes them to gh-pages).
 buildSync({
   entryPoints: ['src/deck.js'], outfile: 'deck.js', bundle: true,
   // Smaller stand-ins: linkify is off (about 11KB), and the browser decodes entities itself (about 22KB).
@@ -21,7 +21,7 @@ buildSync({
   banner: { js: '/* talkdown 0.3 — bundled runtime; edit src/deck.js, then npm run build. */\n' + notices },
 });
 
-// Old content-hashed assets stay available for cached manifests and pinned decks.
+// Old content-hashed assets stay available on gh-pages (scripts/publish.sh only adds) for cached manifests and pinned decks.
 fs.mkdirSync('dist', { recursive: true });
 const release = { schema: 1 };
 for (const type of ['js', 'css']) {

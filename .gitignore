@@ -1,2 +1,7 @@
 node_modules/
 playwright-output/
+
+# built by CI and published to the gh-pages branch
+/deck.js
+/latest.json
+/dist/

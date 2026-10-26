@@ -26,7 +26,7 @@ By default, deliver one `.html` file: a boilerplate plus Markdown in a `<script 
 </html>
 ```
 
-Inside the Markdown block write `<\/script>` for a literal closing script tag. Open the file in a browser; refresh to preview. Self-hosting: put `deck.css` and `deck.js` beside the file.
+Inside the Markdown block write `<\/script>` for a literal closing script tag. Open the file in a browser; refresh to preview. Self-hosting: download `https://sambhav.dev/talkdown/deck.css` and `deck.js` and put them beside the file.
 
 To keep content in a separate file, use `<script type="text/markdown" data-src="talk.md"></script>` and serve it over HTTP. Keep inline Markdown as the default for a single-file deliverable; it also works from disk with local runtime assets. Prefer a referenced `.md` file for code-heavy or frequently edited source when HTTP serving is available. References and inline/HTML slides can be mixed in document order. Resolve media paths relative to the HTML wrapper.
 

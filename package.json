@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.cjs",
-    "test": "node --test tests/*.test.cjs",
+    "test": "node --test tests/parser.test.cjs",
     "test:browser": "node tests/run-browser.cjs",
-    "test:single-file": "node tests/single-file.cjs"
+    "test:single-file": "node tests/single-file.cjs",
+    "publish:site": "scripts/publish.sh"
   },
   "devDependencies": {
     "esbuild": "0.28.2",
