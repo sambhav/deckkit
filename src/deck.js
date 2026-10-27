@@ -42,6 +42,7 @@ import { runCell, liveCode } from './runnable.js';
  *   ::: explorable                      [qps=1000]{range=100..10000} values and {qps*40/1000} arithmetic
  *   ::: quiz                            ### question, task-list choices (one [x]); ↓ reveals answer and explanation
  *   ::: prompt model="any-model" temperature=0   ### Prompt / ### Output; ↓ reveals the output
+ *   ::: versus                          ### models side by side (2-4), optional > prompt quote and ### Verdict; ↓ adds one column
  *   ::: flip                            ### front, the rest is the back
  *   ::: flow / ::: stack               bulleted boxes; flow vertical changes direction; build: true or {.step} reveals items
  *   ::: changelog                       ### version · YYYY-MM-DD releases, #### group labels; one release per step, all in articles
@@ -279,6 +280,7 @@ import { runCell, liveCode } from './runnable.js';
     [...c.querySelectorAll('.code-group')].reverse().forEach(codeGroup);
     c.querySelectorAll('.quiz').forEach(quiz);
     c.querySelectorAll('.w-prompt').forEach(prompt);
+    c.querySelectorAll('.w-versus').forEach(versus);
     c.querySelectorAll('.flip').forEach(flip);
     c.querySelectorAll('.accordion').forEach(accordion);
     c.querySelectorAll('.features').forEach(features);
@@ -1379,6 +1381,12 @@ import { runCell, liveCode } from './runnable.js';
     w.addEventListener('keydown', e => {
       if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('button, a, input, select, textarea, summary')) e.stopPropagation();
     });
+  }
+
+  // ::: versus — one column per step, then the verdict; the article shows everything.
+  function versus(w) {
+    const parts = [...w.querySelectorAll(':scope > .w-versus-cols > section, :scope > .w-versus-verdict')];
+    steps(w, parts.length, i => parts.forEach((p, j) => { p.classList.toggle('pending', j > i); p.inert = j > i; }), { read: 'end' });
   }
 
   // Choices use native buttons, so keyboard and touch share the same action.
