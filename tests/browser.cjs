@@ -188,6 +188,38 @@ async function verify(page, base) {
   check(await page.locator('.slide.active .w-diff-split').isVisible() && !(await page.locator('.slide.active .w-diff-uni').isVisible()), 'view=split must show the split view on the stage');
   await page.evaluate(() => Deck.setView('read'));
   check(!(await page.locator('.w-diff-split').first().isVisible()) && await page.locator('.w-diff[data-view=split] .w-diff-uni').isVisible(), 'The article must show the unified diff');
+  // ::: code-group: a pick switches every group that has the language, is remembered, and steps only the visible code
+  const groups = ['## Groups', '::: code-group', '```python', 'a = 1', '```', '```js {steps: 1}', 'let a = 1', '```', ':::',
+    '::: code-group', '```go', 'a := 1', '```', '```javascript', 'let b = 2', '```', '```js [Deno]', 'let c = 3', '```', ':::',
+    '---', '## Other', '::: code-group', '```ruby', 'a = 1', '```', '```js', 'let a = 1', '```', ':::'].join('\n');
+  await page.route('**/groups.html*', r => r.fulfill({ contentType: 'text/html', body:
+    '<!doctype html><html data-fonts="off" data-highlight="off"><head><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + groups + '</script></body></html>' }));
+  await page.goto(base + '/groups.html?view=present');
+  await page.waitForFunction(() => window.Deck?.slides.length === 2);
+  const tabsOf = k => page.locator('.w-codegroup').nth(k).locator('[role=tab]');
+  const picked = k => page.locator('.w-codegroup').nth(k).locator('[role=tab][aria-selected=true]').textContent();
+  check(JSON.stringify(await tabsOf(1).allTextContents()) === '["Go","JavaScript","Deno"]', 'Tabs must be named from the language or the [label]');
+  check(await picked(0) === 'Python' && await picked(1) === 'Go', 'With no stored pick each group must open on its first language');
+  check(await page.evaluate(() => Deck.slide.querySelectorAll('.w-cg-pane:not(.on)').length === 3 && Deck.slide.querySelector('.w-cg-pane.on pre').checkVisibility()), 'Only the picked language may show');
+  await page.keyboard.press('ArrowDown');
+  check(await page.evaluate(() => Deck.cur) === 1, 'Steps inside a hidden language must not hold the slide');
+  await page.evaluate(() => Deck.go(0));
+  await tabsOf(0).nth(1).click();
+  check(await picked(0) === 'JavaScript' && await picked(1) === 'JavaScript' && await picked(2) === 'JavaScript', 'A pick must switch every group that has the language');
+  await page.keyboard.press('ArrowDown');
+  check(await page.evaluate(() => Deck.cur) === 0 && await page.locator('.slide.active .ln.on').textContent() === 'let a = 1', 'Steps in the picked language must run on ↓');
+  await tabsOf(1).nth(1).focus();
+  await page.keyboard.press('ArrowRight');
+  check(await picked(1) === 'Deno' && await picked(0) === 'JavaScript' && await page.evaluate(() => Deck.cur === 0 && document.activeElement.textContent === 'Deno'), 'Arrow keys must move between tabs without leaving the slide');
+  await page.goto(base + '/groups.html?view=read');
+  await page.waitForFunction(() => window.Deck?.slides.length === 2);
+  check(await picked(1) === 'Deno' && await picked(0) === 'JavaScript', 'A reload must open on the remembered picks, newest first');
+  check(await page.locator('.w-langs').first().isVisible() && await page.locator('.w-cg-pane:not(.on)').first().evaluate(p => getComputedStyle(p).display) === 'none', 'The article must keep the switcher and show only the pick');
+  await page.evaluate(() => {   // a pick in another window of the deck (the presenter view) arrives as a storage event
+    localStorage.setItem('talkdown:choice:lang', JSON.stringify(['go', 'deno']));
+    dispatchEvent(new StorageEvent('storage', { key: 'talkdown:choice:lang' }));
+  });
+  check(await picked(1) === 'Go' && await picked(0) === 'JavaScript', 'A pick made in another window must switch the groups that have it');
   // HTTP exchanges reveal only the response on ↓; articles show both and Copy preserves each raw message.
   const exchange = '## HTTP\n```http\nGET /users HTTP/1.1\nAccept: application/json\n\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n{"id":7}\n```';
   await page.route('**/http-exchange.html*', r => r.fulfill({ contentType: 'text/html', body:

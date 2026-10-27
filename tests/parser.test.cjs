@@ -452,3 +452,13 @@ test('changelog release boundaries ignore headings in nested containers', () => 
   assert.match(html, /<h3>Detail<\/h3>/);
   assert.doesNotMatch(html, /td-error/);
 });
+test('code groups keep each fence; a [label] after the language names its tab and leaves other options working', async () => {
+  const { renderMarkdown } = await import('../src/markdown.js');
+  const html = renderMarkdown('::: code-group\n```python\na = 1\n```\n```js [Node.js] {steps: 1}\nlet a = 1\n```\n:::');
+  assert.match(html, /^<div class="code-group"><pre class="code" data-lang="python"><code>a = 1<\/code><\/pre><pre data-label="Node.js" class="code" data-lang="js" data-steps="1">/);
+  assert.match(renderMarkdown('```diff [Patch] title="a.py"\n+a\n```'), /^<figure data-label="Patch" class="w-diff"[^]*<figcaption>a.py<\/figcaption>/);
+  assert.match(renderMarkdown('```py [Python 3] {annotate}\nx # (1)\n```\n1. One.'), /<pre data-label="Python 3" class="code" data-lang="py" data-pins="1">/);
+  assert.match(renderMarkdown('```terminal [Shell]\n$ ls\n```'), /^<div data-label="Shell" class="w-term"/);
+  assert.match(renderMarkdown('```js\nconst a = [1]\n```'), /^<pre class="code" data-lang="js"><code>const a = \[1\]/);   // brackets in the code are code
+  assert.match(renderMarkdown('```md [x](y)\n```'), /data-label="x"/);
+});

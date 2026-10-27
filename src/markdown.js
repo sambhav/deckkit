@@ -353,8 +353,13 @@ function logBlock(raw, info) {
   });
   return `<pre class="code w-log" tabindex="0" role="region" aria-label="Log output" data-source="${escape(raw)}"${spec ? ` data-log-steps="${escape(spec)}"` : ''}><code>${rows.join('')}</code></pre>`;
 }
+// ```js [Node.js]: a bracketed label after the language (VitePress's convention) names the block's tab in a ::: code-group
 md.renderer.rules.fence = (tokens, i) => {
-  const token = tokens[i], info = token.info.trim(), lang = info.match(/^[\w+-]+/)?.[0] || '';
+  const out = fence(tokens[i]), label = tokens[i].info.match(/^\s*[\w+-]+\s+\[([^\]\n]+)\]/)?.[1].trim();
+  return label ? out.replace(/^<[\w-]+/, m => `${m} data-label="${escape(label)}"`) : out;
+};
+function fence(token) {
+  const info = token.info.trim().replace(/^([\w+-]+)\s+\[[^\]\n]+\]/, '$1'), lang = info.match(/^[\w+-]+/)?.[0] || '';
   const source = token.content.replace(/\n$/, ''), code = escape(source);
   if (lang === 'log') return logBlock(token.content, info);
   if (lang === 'diff') return diff(source, info);
@@ -365,7 +370,7 @@ md.renderer.rules.fence = (tokens, i) => {
   if (lang === 'mermaid') return /\{\s*source\s*\}/.test(info) ? `<div class="w-with-source"><pre class="code"><code>${code}</code></pre>${diagram}</div>` : diagram;
   const pins = token.meta?.pins, steps = !pins && info.match(/\{\s*steps:\s*([^}]*)\}/)?.[1];
   return `<pre class="code"${lang ? ` data-lang="${lang}"` : ''}${steps ? ` data-steps="${escape(steps)}"` : ''}${pins ? ` data-pins="${pins.join(',')}"` : ''}><code>${code}</code></pre>`;
-};
+}
 const linkOpen = md.renderer.rules.link_open;
 md.renderer.rules.link_open = (tokens, i, options, env, self) => {
   if (/^https?:/.test(tokens[i].attrGet('href'))) { tokens[i].attrSet('target', '_blank'); tokens[i].attrSet('rel', 'noopener'); }
