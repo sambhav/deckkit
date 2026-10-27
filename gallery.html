@@ -32,7 +32,7 @@ id: index
 - [Visual charts](#visual): twelve chart types, quadrant, stats, meter and sparklines
 - [Interactive content](#interactive): tabs, walkthroughs, comparisons, quizzes and live numbers
 - [Code and diagrams](#technical): code, logs, diffs, APIs, prompts, flows and frames
-- [Presentation components](#content): cards, boards, release notes, links and images
+- [Presentation components](#content): cards, timelines, boards, callouts, links and images
 
 Each example is live. Press S for its Markdown source.
 
@@ -241,6 +241,22 @@ A first sample looks like `spark:5`; every trend inherits its text colour.
 Sparklines show the shape of a trend; the accessible label lists every authored value, in slides and the article.
 :::
 
+
+---
+id: w-marks
+---
+## Marks in a comparison
+
+| Feature | Talkdown | Slide app | Static site |
+|---|---|---|---|
+| Plain Markdown source | ✓ | ✗ | ✓ |
+| Presenter mode | ✓ | ✓ | ✗ |
+| Reads as an article | ✓ | ◐ | ✓ |
+
+::: notes
+A ✓, ◐ or ✗ at the start of a cell becomes an icon in the theme's green, accent and red. The text stays in the source for screen readers and plain Markdown.
+:::
+
 ---
 section: Interactive content
 id: interactive
@@ -254,6 +270,23 @@ One source, multiple views.
 Tabs keep the slide focused.
 ### Trade-offs
 Use them when an audience benefits from switching context.
+:::
+
+
+---
+id: w-toggle
+---
+## Monthly or yearly?
+
+::: toggle
+### Monthly
+**$12** per seat, cancel any time.
+### Yearly
+**$120** per seat: two months free.
+:::
+
+::: notes
+A toggle is tabs styled as a switch, for two or three options. Press ↓ to flip it; the article shows both panels.
 :::
 
 ---
@@ -406,6 +439,24 @@ async function request(url) {
   return response.json();
 }
 ```
+
+
+---
+id: w-steps-code
+---
+## Walk through the code
+
+```python {steps: 1-2 | 3-4 | 5}
+def handler(event):
+    user = authenticate(event)
+    if not user.can("read"):
+        raise Forbidden()
+    return load(event["id"])
+```
+
+::: notes
+Each ↓ lights up the next group of lines: authentication, the permission check, then the result. The article shows the whole function.
+:::
 
 ---
 ## Terminal
@@ -759,6 +810,25 @@ Open-source maintainer · building tools for clear explanations.
 A speaker card keeps a name, role, portrait and links together. The same Markdown becomes a compact author box in the article. The photo is optional.
 :::
 
+
+---
+id: w-timeline
+---
+## How we got here
+
+::: timeline
+### 2024
+A prototype in one HTML file.
+### 2025
+Themes, charts and the article view.
+### 2026
+Widgets for code, data and teaching.
+:::
+
+::: notes
+Each ↓ walks to the next milestone. Phones and the article show the timeline vertically.
+:::
+
 ---
 id: w-board
 ---
@@ -844,12 +914,67 @@ Use ↓ to highlight each image, then open one to browse the collection at full 
 > [!TIP]
 > Press S on any slide to see the exact source.
 
+
+---
+id: w-callouts
+---
+## Callouts
+
+> [!NOTE]
+> Every deck is one HTML file and one block of Markdown.
+
+> [!WARNING]
+> Pin a version before you present offline.
+
+::: notes
+GitHub-style callouts: NOTE, TIP, WARNING, IMPORTANT and CAUTION, in the theme's colours.
+:::
+
+---
+id: w-footnotes
+---
+## Footnotes
+
+Most audiences read slides again afterwards.[^1] Write for that reader too.[^2]
+
+[^1]: An assumption worth testing with your own analytics.
+[^2]: The article view turns speaker notes into prose.
+
+::: notes
+Footnote markers link to sources set small at the foot of the slide, and in the article.
+:::
+
 ---
 ## Pull quote
 
 > The best presentation is one people can still read afterwards.
 >
 > — The idea behind Talkdown
+
+---
+id: w-agenda
+---
+## Agenda
+
+::: agenda
+:::
+
+::: notes
+An empty agenda block lists every section slide, each linking to it.
+:::
+
+---
+id: w-qr
+layout: center
+---
+## Open this gallery
+
+::: qr
+:::
+
+::: notes
+An empty QR block encodes the deck's own link; put a URL inside to encode that instead.
+:::
 
 ---
 id: w-ask

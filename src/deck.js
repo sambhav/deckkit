@@ -1888,10 +1888,14 @@ import { environmentDifferences } from './envdiff.js';
     });
   }
 
-  // ::: agenda lists the section slides, each linking to its slide
+  // ::: agenda lists the section slides, each linking to its slide; decks without section slides list where each section: starts
   function agendas() {
-    const parts = slides().map((s, i) => [s, i]).filter(([s]) => s.classList.contains('layout-section'));
+    const all = slides().map((s, i) => [s, i]);
+    let parts = all.filter(([s]) => s.classList.contains('layout-section'));
+    const starts = !parts.length;
+    if (starts) parts = all.filter(([s, i]) => s.dataset.section && s.dataset.section !== all[i - 1]?.[0].dataset.section);
     document.querySelectorAll('.w-agenda').forEach(w => w.innerHTML = `<ol>${parts.map(([s, i]) =>
+      starts ? `<li><a href="#${i + 1}"><b>${esc(s.dataset.section)}</b></a></li>` :
       `<li><a href="#${i + 1}"><b>${esc(s.querySelector('h1, h2')?.textContent || s.dataset.section || '')}</b>${s.querySelector('h1 + p, h2 + p') ? `<span>${esc(s.querySelector('h1 + p, h2 + p').textContent)}</span>` : ''}</a></li>`).join('')}</ol>`);
   }
 
