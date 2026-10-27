@@ -462,3 +462,28 @@ test('code groups keep each fence; a [label] after the language names its tab an
   assert.match(renderMarkdown('```js\nconst a = [1]\n```'), /^<pre class="code" data-lang="js"><code>const a = \[1\]/);   // brackets in the code are code
   assert.match(renderMarkdown('```md [x](y)\n```'), /data-label="x"/);
 });
+
+test('array fences render cells, step data and a step table', () => {
+  const html = md('```array\n[1, 3, <5>]\nlo=0 hi=2\nlo=2 hi=2 *<5>\n```');
+  assert.match(html, /class="w w-array" data-array="/);
+  assert.equal((html.match(/class="w-array-cell"/g) || []).length, 3);
+  assert.match(html, /&lt;5&gt;/);
+  assert.equal((html.match(/<tr><td>\d/g) || []).length, 2);
+  assert.match(md('```array\n[1, 2]\n```'), /<figure class="w w-array"><div class="w-array-cells"/);
+});
+
+test('invalid array fences fail visibly and retain the source', () => {
+  for (const [source, error] of [
+    ['', 'the block is empty'],
+    ['[1, , 3]', 'the first line must be the data'],
+    ['[1, 2]\nlo=2', 'step 1: lo=2 is outside the 2 cells'],
+    ['[1, 2]\nlo=0 lo=1', 'step 1 sets lo twice'],
+    ['[1, 2]\nlo', 'step 1: &quot;lo&quot; should be name=index or \\*value'],
+    ['[1, 2]\n*9', 'step 1: \\*9 is not in the data'],
+  ]) {
+    const html = md('```array\n' + source + '\n```');
+    assert.match(html, new RegExp('role="alert">array: ' + error));
+    assert.doesNotMatch(html, /class="w w-array"/);
+  }
+  assert.match(md('```array {x}\n[1]\n```'), /array: no options/);
+});

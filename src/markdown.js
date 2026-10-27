@@ -375,6 +375,35 @@ function logBlock(raw, info) {
   });
   return `<pre class="code w-log" tabindex="0" role="region" aria-label="Log output" data-source="${escape(raw)}"${spec ? ` data-log-steps="${escape(spec)}"` : ''}><code>${rows.join('')}</code></pre>`;
 }
+// ```array: the first line is the data, each later line one step of name=index pointers; *value marks a found cell.
+// The table is the complete record (and the article view); deck.js turns the cells into a stepper.
+function arrayBlock(raw, info) {
+  const fail = message => `<p class="td-error" role="alert">${escape('array: ' + message)}</p><pre class="code"><code>${escape(raw)}</code></pre>`;
+  if (info !== 'array') return fail('no options are supported; use a plain array fence');
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  if (!lines.length) return fail('the block is empty');
+  const cells = lines[0].replace(/^\[/, '').replace(/\]$/, '').split(',').map(c => c.trim());
+  if (cells.some(c => !c)) return fail('the first line must be the data, such as [1, 3, 5]');
+  if (cells.length > 40) return fail('at most 40 cells');
+  const rows = [], names = [];
+  for (const [n, line] of lines.slice(1).entries()) {
+    const pointers = {}, found = [];
+    for (const tok of line.split(/\s+/)) {
+      const ptr = tok.match(/^([A-Za-z_]\w*)=(\d+)$/);
+      if (ptr) {
+        if (Object.hasOwn(pointers, ptr[1])) return fail(`step ${n + 1} sets ${ptr[1]} twice`);
+        if (+ptr[2] >= cells.length) return fail(`step ${n + 1}: ${ptr[1]}=${ptr[2]} is outside the ${cells.length} cells (indexes start at 0)`);
+        pointers[ptr[1]] = +ptr[2]; if (!names.includes(ptr[1])) names.push(ptr[1]);
+      } else if (tok.length > 1 && tok[0] === '*') found.push(tok.slice(1));
+      else return fail(`step ${n + 1}: "${tok}" should be name=index or *value`);
+    }
+    for (const v of found) if (!cells.includes(v)) return fail(`step ${n + 1}: *${v} is not in the data`);
+    rows.push({ p: pointers, f: found });
+  }
+  const list = `<div class="w-array-cells" role="list" aria-label="Array">${cells.map((c, i) => `<div class="w-array-cell" role="listitem"><span class="w-array-v">${escape(c)}</span><span class="w-array-i">${i}</span><span class="w-array-p"></span></div>`).join('')}</div>`;
+  const table = rows.length ? `<table class="w-array-table"><thead><tr><th>Step</th>${names.map(n => `<th>${escape(n)}</th>`).join('')}<th>Found</th></tr></thead><tbody>${rows.map((r, i) => `<tr><td>${i + 1}</td>${names.map(n => `<td>${n in r.p ? r.p[n] : ''}</td>`).join('')}<td>${r.f.map(escape).join(', ')}</td></tr>`).join('')}</tbody></table>` : '';
+  return `<figure class="w w-array"${rows.length ? ` data-array="${escape(JSON.stringify(rows))}"` : ''}>${list}${table}</figure>`;
+}
 // ```js [Node.js]: a bracketed label after the language (VitePress's convention) names the block's tab in a ::: code-group
 md.renderer.rules.fence = (tokens, i) => {
   const out = fence(tokens[i]), label = tokens[i].info.match(/^\s*[\w+-]+\s+\[([^\]\n]+)\]/)?.[1].trim();
@@ -386,6 +415,7 @@ function fence(token) {
   if (lang === 'log') return logBlock(token.content, info);
   if (lang === 'diff') return diff(source, info);
   if (lang === 'http') return httpExchange(source, info);
+  if (lang === 'array') return arrayBlock(source, info);
   if (/^(cast|asciicast)$/.test(lang)) return `<div class="w-term w-cast" data-inline="${code}"></div>`;
   if (lang === 'terminal') return `<div class="w-term" data-lines="${escape(JSON.stringify(source ? source.split('\n') : []))}"></div>`;
   const diagram = `<div class="w-diagram"><pre class="code w-diagram-src">${code}</pre></div>`;
