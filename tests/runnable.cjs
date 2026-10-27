@@ -1,0 +1,45 @@
+const assert = require('node:assert/strict');
+module.exports = async function verifyRunnable(page, base) {
+  const source = ['id: run', '---', '## Run', '```js {run}', 'console.log([3, 1, 2].toSorted());', 'console.warn("careful");', 'await null; try { document.cookie } catch { console.log("blocked") }', '```', '---', 'id: live', '---', '## Live', '::: live', '```html', '<p id="x">Hi</p>', '```', '```css', 'p { color: rgb(255, 0, 0) }', '```', ':::', '---', '## Bad', '::: live', 'text', ':::'].join('\n');
+  await page.route('**/runnable-fixture.html*', route => route.fulfill({ contentType: 'text/html; charset=utf-8', body: '<!doctype html><html data-fonts="off" data-highlight="off" data-icons="off"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + source + '</script></body></html>' }));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(base + '/runnable-fixture.html?view=present');
+  await page.waitForFunction(() => window.Deck?.slides.length === 3);
+  const cell = page.locator('.w-run'), out = cell.locator('.w-run-out');
+  assert.equal(await page.locator('iframe').count(), 1, 'only the live preview exists until the cell runs');
+  assert.match(await cell.locator('textarea').inputValue(), /toSorted/);
+  await page.keyboard.press('ArrowDown');
+  await page.waitForFunction(() => /blocked/.test(document.querySelector('.w-run-out').textContent));
+  assert.match(await out.textContent(), /\[1,2,3\]/);
+  assert.match(await out.textContent(), /careful/);
+  // edit, then Run again; Space and typing stay in the editor
+  await cell.locator('textarea').fill('console.log(6 * 7); throw new Error("boom")');
+  await cell.locator('textarea').press('Space');
+  assert.equal(await page.evaluate(() => Deck.cur), 0);
+  await cell.locator('button').click();
+  await page.waitForFunction(() => /boom/.test(document.querySelector('.w-run-out').textContent));
+  assert.match(await out.textContent(), /42/);
+  await page.waitForFunction(() => !document.querySelector('.w-run-btn').disabled);
+  await page.evaluate(() => Deck.setView('read'));
+  assert.match(await out.textContent(), /42/, 'output stays in the article');
+  await page.evaluate(() => Deck.setView('present'));
+  // live
+  await page.evaluate(() => Deck.go(1, 0));
+  const frame = page.frameLocator('.w-live-out');
+  await frame.locator('#x').waitFor();
+  assert.equal(await frame.locator('#x').evaluate(el => getComputedStyle(el).color), 'rgb(255, 0, 0)');
+  await page.locator('.w-live-edit[data-lang=html] textarea').fill('<p id="y">Changed</p>');
+  await frame.locator('#y').waitFor();
+  assert.equal(await page.locator('.w-live-out').getAttribute('sandbox'), 'allow-scripts');
+  const [a, b] = await Promise.all(['.w-live-editors', '.w-live-view'].map(s => page.locator(s).boundingBox()));
+  assert.ok(b.x > a.x + a.width - 2, 'code left, output right');
+  await page.evaluate(() => Deck.setView('read'));
+  const [c, d] = await Promise.all(['.w-live-editors', '.w-live-view'].map(s => page.locator(s).boundingBox()));
+  assert.ok(d.y > c.y + c.height - 2, 'stacked in the article');
+  assert.match(await page.locator('.td-error').textContent(), /live:/);
+  await page.evaluate(() => Deck.setView('present'));
+  await page.evaluate(() => Deck.go(1, 0));
+  await page.evaluate(() => document.activeElement.blur());
+  await page.keyboard.press('s');
+  assert.match(await page.locator('#src').textContent(), /::: live/);
+};
