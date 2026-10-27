@@ -74,6 +74,7 @@ Frontmatter keys:
 | `build` | `true`: each block and list item appears one step at a time |
 | `class` / `id` | Extra classes / deep-link name (`#id`, and `[text](#id)` links) |
 | `takeaway` | One line shown above the speaker notes |
+| `author` · `date` · `tags` | Byline under the slide's first `#` heading: `By` author, `YYYY-MM-DD` date, auto reading time, `[a, b]` tags; adds meta/OpenGraph tags. Put on the title slide; no hidden state |
 | `image` | Background picture |
 | `read` | `hide` (not in the article) or `text` (only its notes) |
 | `present` | `hide` (article-only slide) |
@@ -189,6 +190,7 @@ The article.
 ### Presentation components
 
 - Speaker card: `::: speaker` around an optional `![Portrait](photo.jpg)`, one `### Name`, role text and Markdown links. Links get icons; the article shows a compact author box.
+- Byline: `author: Name`, `date: 2026-10-25` (YYYY-MM-DD; bad dates show an error) and `tags: [a, b]` as frontmatter on the title slide. Renders under its `#` heading with auto reading time in both views, and adds meta/OpenGraph tags. All optional.
 - Roadmap board: `::: board`, a `### Column` heading per column and a Markdown list per column (each top-level item is a card). ↓ reveals each column; article view shows every card, stacking columns on phones. Keep slides to 2–4 short columns; use a new slide for more. No options.
 - Changelog: `::: changelog`, `### v0.4.0 · 2026-10-25` per release and `#### Added` / `#### Fixed` group labels, followed by Markdown notes. No options; dates must be valid `YYYY-MM-DD`. One release per ↓ step; article view shows all with links. Give the slide an `id:` to keep release links stable when slides move.
 - Link cards: `::: links` around a bulleted list of `- [Title](URL) Description` items. Shows title, domain and authored description; no options, no metadata requests. Use HTTP(S), relative URLs or `#section` links; descriptions can use inline emphasis/code but no additional links, HTML or images. Cards stack on phones.
