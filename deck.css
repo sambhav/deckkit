@@ -1217,6 +1217,16 @@ aside.article { display: none; }
                         background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px); }
 [data-view=read] #progress { position: fixed; top: 0; bottom: auto; height: 2px; z-index: 50; transition: none; }
 [data-view=read] #pager, [data-view=read] #help { display: none; }
+[data-read-progress][data-view=read] #progress { height: 3px; }
+#rail { display: none; }
+@media (min-width: 1480px) {
+  [data-read-progress][data-view=read] #rail { display: block; position: fixed; top: 96px; left: max(16px, calc(50vw - 520px - 224px)); width: 192px; max-height: calc(100vh - 140px); overflow-y: auto; z-index: 4; font-size: 13px; }
+}
+#rail ol { list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--line); }
+#rail a { display: block; padding: 5px 10px 5px 12px; margin-left: -1px; border-left: 2px solid transparent; color: var(--muted); text-decoration: none; line-height: 1.35; }
+#rail a:hover { color: var(--fg); }
+#rail a[aria-current] { color: var(--fg); font-weight: 600; border-left-color: var(--accent); }
+#rail a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 [data-view=read] .frame { display: block; margin-top: 96px; scroll-margin-top: 76px; }
 [data-view=read] .frame > .rh { display: flex; gap: 10px; align-items: baseline; font: 500 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
 [data-view=read] .frame > .rh span { color: var(--muted); opacity: .75; }
@@ -1308,7 +1318,7 @@ aside.article { display: none; }
   html, body { background: #fff; overflow: visible; height: auto; }
   #stage { position: static; transform: none !important; }
   .slide { display: block !important; position: relative; page-break-after: always; animation: none; }
-  #bar, #pager, #progress, #help, #notes, #overview, #keys, #src, #dock, #mhead, #mNotes, #mobileNav { display: none !important; }
+  #bar, #pager, #progress, #rail, #help, #notes, #overview, #keys, #src, #dock, #mhead, #mNotes, #mobileNav { display: none !important; }
   [data-build] [data-step] { opacity: 1 !important; transform: none !important; }
   .w-panes { display: block !important; }
   .w-pane { visibility: visible !important; opacity: 1 !important; }
