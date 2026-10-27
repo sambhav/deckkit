@@ -201,6 +201,7 @@ The article.
 - Pull quotes: a `>` quote whose last line is `> — Name`.
 - Audience questions: `::: ask url="https://example.com/questions"` + closing `:::` (empty block). Absolute HTTP(S) URL, without credentials. Large QR and destination in slides; plain “Ask a question” link in articles. Link remains usable if QR loading fails.
 - Sidenotes: `text.[>Measured over 14 days.]` inline (Markdown and links allowed inside, brackets must balance). Numbered mark; click or Enter opens a popover. Article: margin note on wide screens, tap-to-open inline on phones. Use for asides; use `[^1]` for sources.
+- Cite box: `::: cite` + closing `:::` (empty block). Reads the page's `<title>`, `<meta name="author">`, `<meta name="date">` (YYYY-MM-DD) and canonical link; options `title="…" author="…" date=2026-10-26 url="https://…"` override them. Article shows the permalink and Copy link / Copy Markdown / Copy BibTeX buttons; hidden on slides unless you add the `present` flag (`::: cite present`).
 - Also: `- [x]` checklists, `text[^1]` + `[^1]: source` footnotes, `$x^2$` / `$$..$$` maths, `:rocket:` Lucide icons, `::: agenda` (links every section), `::: qr` (QR of the deck URL), `![](youtube-or-.mp4-link)` video, `![](demo.cast)` recording.
 
 ## Themes and mode

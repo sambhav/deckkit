@@ -1,6 +1,7 @@
 import { promptPair } from './prompt.js';
 import { versus } from './versus.js';
 import { regexBlock } from './regex.js';
+import { citeHTML } from './cite.js';
 import { changelogHTML } from './changelog.js';
 import { hotspotMarkup } from './hotspots.js';
 import { explorableInline, explorable } from './explorable.js';
@@ -793,6 +794,7 @@ function compile(tokens, env) {
             ? `<div class="timer" data-duration="${duration}"><p class="w-timer-duration">Duration: ${timerLabel(duration)}</p><div class="w-timer-body">${content}</div></div>`
             : '<p class="td-error" role="alert">timer: use a duration such as 10m or 1h30m (1 second to 24 hours), with no options.</p>' + content;
         }
+        else if (name === 'cite') { html += citeHTML(body, options, classes, ts => compile(ts, env)); }
         else if (name === 'ask') { html += audienceAsk(body, options, classes, env); }
         else if (name === 'meter') {
           const content = compile(body, env);
