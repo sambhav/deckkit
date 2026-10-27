@@ -738,6 +738,27 @@ Pick a language once: every code group in the deck switches to it, and the choic
 :::
 
 ---
+id: w-tree
+---
+## File tree
+
+```tree {steps}
+src/
+  deck.js           # steps, views and widgets
+  markdown.js       # Markdown to slide HTML
+  + tree.js         # new in this change
+tests/
+  parser.test.cjs
+  - legacy.cjs
+* deck.css          # every theme lives here
+README.md
+```
+
+::: notes
+Each ↓ opens the next folder; click a folder to open or close it. The article shows the whole tree.
+:::
+
+---
 ## Mermaid diagram
 
 ```mermaid
