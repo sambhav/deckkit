@@ -108,6 +108,8 @@ Pause for questions.
 :::
 ```
 
+Long articles: `<html data-read-progress>` adds a floating section list (sections, or slides when there is one section) that highlights the current part and jumps on click, on screens 1480px or wider; the thin progress bar at the top of the article is always on. No effect when presenting.
+
 Notes can span lines. Timing cues like `[~60s]` are dropped from the article. Controls: ← → slides, ↑ ↓ steps then slides, **N** notes, **R** read/present, **O** overview, **T** light/dark, **P** presenter view, **S** shows the Markdown source of the current slide, **?** all keys.
 
 ## Widgets (plain Markdown)
