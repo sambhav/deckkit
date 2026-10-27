@@ -750,7 +750,7 @@ import { environmentDifferences } from './envdiff.js';
         while (document.getElementById(id) || used.has(id)) id = `${base}-${++suffix}`;
         used.add(id); entry.id = id;
         const a = entry.querySelector('.w-release-link'); a.href = '#' + encodeURIComponent(id);
-        a.setAttribute('aria-label', `Release ${a.textContent.replace(/#$/, '').trim()}`);
+        a.setAttribute('aria-label', `Release ${[a.querySelector('.w-release-version')?.textContent, a.querySelector('time')?.textContent].filter(Boolean).join(', ')}`);
       });
       const st = steps(w, entries.length, i => entries.forEach((entry, j) => {
         entry.classList.toggle('on', j === i);
@@ -888,12 +888,14 @@ import { environmentDifferences } from './envdiff.js';
   function stats(box) {
     const src = [...box.querySelectorAll(':scope > ul > li, :scope > ol > li, :scope > p')];
     const w = document.createElement('div'); w.className = 'w w-stats';
+    if (src.some(el => !el.querySelector('strong'))) box.insertAdjacentHTML('beforebegin', '<p class="td-error" role="alert">stats: start each item with a bold number, like - **42%** faster.</p>');
     w.innerHTML = src.map(el => {
       const n = el.querySelector('strong'), num = n ? n.innerHTML : '';
       n?.remove();
       return `<div class="w-stat"><div class="w-stat-n">${num}</div><div class="w-stat-l">${el.innerHTML.trim()}</div></div>`;
     }).join('');
     w.style.setProperty('--n', Math.min(4, src.length));
+    w.style.setProperty('--n-narrow', src.length === 3 ? 3 : Math.min(2, src.length));   // narrow screens: three across, never a lone third
     box.replaceWith(w);
   }
 
@@ -1014,9 +1016,11 @@ import { environmentDifferences } from './envdiff.js';
       }).join('')}</svg><span>${series[0].name}</span></div>` + legend(labels.map((l, i) => [l, i, `<b>${series[0].shown[i]}</b>`]));
     } else if (kind === 'line') {
       const x = i => (labels.length > 1 ? i / (labels.length - 1) * 100 : 50).toFixed(2);
+      // with several series, the lowest end value is labelled under its dot so neighbouring end labels do not collide
+      const ends = series.map(s => s.v.at(-1)), lowEnd = s => series.length > 1 && s.v.at(-1) === Math.min(...ends);
       w.innerHTML = (series.length > 1 ? legend(series.map((s, j) => [s.name, j])) : '') + `<div class="w-plot"><div class="w-area">`
         + `<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${series.map((s, j) => `<polyline class="w-s s${j % 6}" points="${s.v.map((v, i) => `${x(i)},${100 - pct(v)}`).join(' ')}"/>`).join('')}</svg>`
-        + series.map((s, j) => s.v.map((v, i) => `<i class="w-dot w-s s${j % 6}${i === s.v.length - 1 ? ' last' : ''}" style="left:${x(i)}%;bottom:${pct(v)}%"><b>${s.shown[i]}</b></i>`).join('')).join('')
+        + series.map((s, j) => s.v.map((v, i) => `<i class="w-dot w-s s${j % 6}${i === s.v.length - 1 ? ' last' + (lowEnd(s) ? ' below' : '') : ''}" style="left:${x(i)}%;bottom:${pct(v)}%"><b>${s.shown[i]}</b></i>`).join('')).join('')
         + labels.map((l, i) => `<span class="w-x" style="left:${x(i)}%">${l}</span>`).join('') + '</div></div>';
     } else {
       const bar = (s, j, i) => `<div class="w-b w-s s${j % 6}" style="--v:${(Math.abs(s.v[i]) / range * 100).toFixed(2)}%;--bottom:${pct(Math.min(0, s.v[i]))}%;--start:${pct(Math.min(0, s.v[i]))}%"><b>${s.shown[i]}</b></div>`;

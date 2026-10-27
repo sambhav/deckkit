@@ -42,7 +42,7 @@ async function verifyVisualCharts(page, base) {
     }
   }
   // A keyboard user can focus and scroll plots, switch to exact data, and export it.
-  const box = page.locator('.w-chart-box').nth(1);
+  const box = page.locator('.w-chart-box').filter({ has: page.locator('figcaption', { hasText: /^Latency vs throughput$/ }) });
   await box.scrollIntoViewIfNeeded();
   await box.locator('select').selectOption('chart');
   const plot = box.locator('.w-visual-chart');
