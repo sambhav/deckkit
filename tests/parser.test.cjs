@@ -495,6 +495,16 @@ test('stepped mermaid lists node ids per step, with optional notes, and fails vi
   assert.match(md('```mermaid {steps: a: <b>x</b>}\nflowchart LR\n  a\n```'), /&lt;b&gt;x&lt;\/b&gt;/);
 });
 
+test('cite boxes validate their options and keep invalid input visible', () => {
+  assert.match(md('::: cite present author="Ada Lovelace" date=2026-10-26\n:::'), /class="w w-cite w-cite-present" data-author="Ada Lovelace" data-date="2026-10-26"/);
+  assert.match(md('::: cite\n:::'), /^<div class="w w-cite"><p class="w-cite-fallback">Cite this page<\/p><\/div>$/);
+  for (const [source, message] of [
+    ['::: cite date=tomorrow\n:::', /date must be a real/], ['::: cite date=2026-02-31\n:::', /date must be a real/],
+    ['::: cite url="javascript:alert(1)"\n:::', /absolute HTTP/], ['::: cite colour=red\n:::', /unknown option/],
+    ['::: cite loud\n:::', /unknown flag/], ['::: cite\nKeep this text.\n:::', /leave the block empty[\s\S]*Keep this text/],
+  ]) { const html = md(source); assert.match(html, /role="alert">cite: /); assert.match(html, message); }
+});
+
 test('array fences render cells, step data and a step table', () => {
   const html = md('```array\n[1, 3, <5>]\nlo=0 hi=2\nlo=2 hi=2 *<5>\n```');
   assert.match(html, /class="w w-array" data-array="/);

@@ -10,6 +10,7 @@ import { visualTypes, visualChart } from './visual-charts.js';
 import { beforeAfter } from './before-after.js';
 import { environmentDifferences } from './envdiff.js';
 import { runCell, liveCode } from './runnable.js';
+import { citeFormats } from './cite.js';
 
 /* talkdown — slide decks written in Markdown (or HTML), presented on a 16:9 stage, read like an article on a phone.
  *
@@ -59,6 +60,7 @@ import { runCell, liveCode } from './runnable.js';
  *   ::: glossary                       Term: Definition lines; first use tooltips in articles, glossary: inline opts slides in
  *   ::: speaker                         optional photo, ### name, role and Markdown links; compact author box in read view
  *   author: date: tags: [a, b]          slide frontmatter: a byline under the title in the article, with reading time and <meta> / OpenGraph tags
+ *   ::: cite                            share box from the page's title, author and date metadata; hidden on the stage unless `present`; copy link, Markdown, BibTeX
  *   ::: links                           a list of [Title](URL) descriptions becomes further-reading cards; no network fetches
  *   ::: hotspots                        image + - [12%, 30%] Label; ↓ selects each numbered pin; article shows a legend
  *   ::: timer 10m                     countdown started with ↓ or Start; pause/reset controls, duration text in articles
@@ -338,6 +340,7 @@ import { runCell, liveCode } from './runnable.js';
     c.querySelectorAll('.speaker').forEach(speaker);
     c.querySelectorAll('.w-run').forEach(w => runCell(w, { steps, reading, widgetId: () => ++widgetId }));
     c.querySelectorAll('.w-live').forEach(w => liveCode(w, { root }));
+    c.querySelectorAll('.w-cite').forEach(cite);
     c.querySelectorAll('.w-term:not(.w-cast)').forEach(terminal);
     c.querySelectorAll('.w-cast').forEach(cast);
     c.querySelectorAll('.qr').forEach(b => { b.className = 'w w-qr'; b.dataset.url = b.textContent.trim(); b.textContent = ''; });
@@ -1433,6 +1436,35 @@ import { runCell, liveCode } from './runnable.js';
       icon.dataset.icon = url.protocol === 'mailto:' ? 'mail' : /(^|\.)github\.com$/i.test(url.hostname) ? 'github' : 'link';
       link.prepend(icon, document.createTextNode(' '));
     }
+  }
+
+  // ::: cite: defaults come from the page's own metadata; options on the container win. Copy buttons, no network.
+  function cite(box) {
+    const meta = n => document.querySelector(`meta[name="${n}"], meta[property="${n}"]`)?.content.trim() || '';
+    const canonical = document.querySelector('link[rel=canonical]');
+    const page = new URL(canonical?.href || location.href, document.baseURI);
+    if (!/^(https?|file):$/.test(page.protocol)) page.href = location.href;   // never turn a hostile canonical into a link
+    if (!canonical || page.href === location.href) { page.hash = ''; ['view', 'mode', 'theme', 'slide'].forEach(k => page.searchParams.delete(k)); }
+    const date = (box.dataset.date || meta('date') || meta('article:published_time')).slice(0, 10);
+    const data = {
+      title: box.dataset.title || meta('og:title') || document.title.trim(), author: box.dataset.author || meta('author'),
+      date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : '', url: box.dataset.url || page.href,
+    };
+    if (!data.title) {
+      box.innerHTML = '<p class="td-error" role="alert">cite: no title found; set title="…" or give the page a &lt;title&gt;.</p>'; return;
+    }
+    const f = citeFormats(data), e = s => qesc(esc(s));
+    box.innerHTML = `<div class="w-cite-head"><span class="w-cite-label">Cite this</span><a class="w-cite-link" href="${e(f.link)}">${e(f.link)}</a></div>`
+      + `<p class="w-cite-text">${e(f.text)}</p><div class="w-cite-actions" role="group" aria-label="Copy citation">`
+      + [['link', 'Copy link'], ['markdown', 'Copy Markdown'], ['bibtex', 'Copy BibTeX']].map(([k, label]) => `<button type="button" data-copy="${k}">${label}</button>`).join('')
+      + '</div><p class="w-cite-status" role="status"></p>';
+    const status = box.querySelector('.w-cite-status');
+    box.addEventListener('keydown', ev => { if ([' ', 'Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End'].includes(ev.key)) ev.stopPropagation(); });
+    box.querySelectorAll('button').forEach(b => b.addEventListener('click', async () => {
+      await copyText(f[b.dataset.copy], b);
+      status.textContent = `Copied ${b.textContent.replace('Copy ', '')}`;
+      clearTimeout(box.reset); box.reset = setTimeout(() => { status.textContent = ''; }, 1600);
+    }));
   }
 
   /* terminals: ```terminal fences type each "$ command" on ↓ and print its output; ![](x.cast) plays an asciinema recording */

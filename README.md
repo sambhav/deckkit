@@ -315,6 +315,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Emphasis marks** | `[closer to users]{.circle .step}`: a hand-drawn `.underline`, `.circle`, `.box`, `.highlight`, `.strike` or `.bracket` around a phrase. `.step` draws it in on ↓; articles show it drawn |
 | **Agenda** | An empty `::: agenda` lists every section slide, each linking to it |
 | **Audience questions** | `::: ask url="https://example.com/questions"` (empty block): a large QR on the slide, a link in the article |
+| **Cite box** | An empty `::: cite`: permalink plus copy buttons for the link, a Markdown link and BibTeX, from the page's `<title>`, `<meta name="author">` and `<meta name="date">`. Optional `title="…" author="…" date=YYYY-MM-DD url="…"`. Article only unless you add `present` |
 | **QR code** | `::: qr` draws a QR code of the deck's link, or of a URL written inside it |
 
 ```md

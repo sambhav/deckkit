@@ -1778,3 +1778,17 @@ aside.article { display: none; }
 .w-tokens[data-build] .w-token:not(.shown) { visibility: hidden; }
 [data-view=read] .w-tokens[data-build] .w-token:not(.shown) { visibility: visible; }
 @media print { .w-tokens[data-build] .w-token { visibility: visible !important; } }
+/* ::: cite: share / cite box. Hidden on the stage unless it has the `present` flag; always in the article. */
+:root:not([data-view=read]) .w-cite:not(.w-cite-present) { display: none; }
+.w-cite { display: flex; flex-direction: column; gap: .6em; box-sizing: border-box; max-width: 100%; padding: calc(var(--t-gap) * 1.2); border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); font-size: calc(var(--t-body) * .8); }
+.w-cite-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2em 1em; min-width: 0; }
+.w-cite-label { font-weight: 700; }
+.md .w-cite .w-cite-link { min-width: 0; font: .85em var(--mono); color: var(--accent-ink); overflow-wrap: anywhere; }
+.md .w-cite p { margin: 0; }
+.md .w-cite .w-cite-text { color: var(--muted); line-height: 1.5; }
+.w-cite-actions { display: flex; flex-wrap: wrap; gap: .5em; }
+.w-cite-actions button { min-height: 36px; padding: .3em .9em; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); color: var(--fg); font: inherit; font-size: .9em; cursor: pointer; }
+.w-cite-actions button:hover { border-color: var(--accent); }
+.w-cite-actions button:focus-visible, .md .w-cite .w-cite-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.md .w-cite .w-cite-status { min-height: 1.3em; font-size: .85em; color: var(--accent-ink); }
+[data-view=read] .w-cite { padding: var(--t-gap); }
