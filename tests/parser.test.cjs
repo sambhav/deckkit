@@ -554,3 +554,22 @@ test('install fences carry their system', () => {
   assert.match(html, /<pre class="code" data-lang="sh"><code>plain/);
   assert.doesNotMatch(md('```sh now\nx\n```'), /data-os/);
 });
+
+test('regex fences explain parts, run tests and report bad patterns', () => {
+  const html = md('```regex\n^(\\d{4})-(?<m>\\d{2})$\ntest: 2026-10\ntest: 26-10\ntest:\n```');
+  assert.match(html, /class="w w-regex" data-parts="5"/);
+  assert.match(html, /capture group 2, named “m”/);
+  assert.match(html, /a digit, exactly 4 times/);
+  assert.match(html, /<mark>2026-10<\/mark>/);
+  assert.equal((html.match(/is-match/g) || []).length, 1);
+  assert.equal((html.match(/is-miss/g) || []).length, 2);
+  assert.match(html, /<b>m<\/b> <code>10<\/code>/);
+  assert.match(md('```regex\n/a|b/i\ntest: B\n```'), /flags: i[\s\S]*is-match/);
+  assert.match(md('```regex\na(b\n```'), /role="alert">regex: Invalid regular expression[\s\S]*<pre class="code">/);
+  assert.match(md('```regex\n```'), /regex: add a pattern line/);
+  assert.match(md('```regex\r\n[^]a\r\ntest: xa\r\n```'), /any character, including a newline[\s\S]*is-match/);
+  assert.match(md('```regex\n(?i:a)\n```'), /group with flags “i”|Invalid regular expression/);   // modifiers need a newer engine
+  assert.match(md('```regex\na\ntest: ' + 'a'.repeat(201) + '\n```'), /limited to 200/);
+  assert.match(md('```regex\na\nb\n```'), /use one pattern line/);
+  assert.match(md('```regex\n<b>&\ntest: <b>&\n```'), /&lt;b&gt;&amp;/);
+});
