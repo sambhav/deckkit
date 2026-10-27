@@ -1,0 +1,25 @@
+const assert = require('node:assert/strict');
+module.exports = async function verifyRegex(page, base) {
+  const source = ['id: rx', '---', '## Regex', '```regex', '^(\\d{4})-(\\d{2})$', 'test: 2026-10', 'test: 26-10', '```'].join('\n');
+  await page.route('**/regex-fixture.html*', route => route.fulfill({ contentType: 'text/html; charset=utf-8', body: '<!doctype html><html data-fonts="off" data-highlight="off" data-icons="off"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + source + '</script></body></html>' }));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(base + '/regex-fixture.html?view=present');
+  await page.waitForFunction(() => window.Deck?.slides.length === 1);
+  const w = page.locator('.w-regex');
+  assert.equal(await w.locator('.rx-pattern > .rx.on').count(), 0, 'overview first');
+  assert.equal(await w.locator('.rx-part:visible').count(), 5, 'top-level parts only in overview');
+  await page.keyboard.press('ArrowDown');
+  assert.equal(await w.locator('.rx-pattern > .rx.on').textContent(), '^');
+  await page.keyboard.press('ArrowDown');
+  assert.equal(await w.locator('.rx-pattern > .rx.on').getAttribute('data-i'), '2');
+  assert.equal(await w.locator('.rx-part.on > ul:visible').count(), 1, 'group pieces open when spotlighted');
+  assert.equal(await w.locator('.is-match mark').textContent(), '2026-10');
+  await page.keyboard.press('s');
+  assert.match(await page.locator('#src').textContent(), /```regex/);
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => Deck.setView('read'));
+  assert.equal(await w.locator('.rx-part > ul:visible').count(), 2, 'article shows every part');
+  assert.equal(await w.locator('.rx-part:visible').evaluateAll(els => els.every(e => getComputedStyle(e).opacity === '1')), true);
+  await page.setViewportSize({ width: 320, height: 740 });
+  assert.equal(await w.evaluate(el => el.scrollWidth <= el.clientWidth + 1), true, 'fits phone');
+};

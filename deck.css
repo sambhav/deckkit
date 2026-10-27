@@ -1714,3 +1714,48 @@ aside.article { display: none; }
 [data-view=present] .w-venn [data-region]:not(.shown) { opacity: 0; }
 [data-view=read] .w-venn-list { display: block; margin-top: var(--t-gap); font-size: var(--t-small); }
 @media (prefers-reduced-motion: reduce) { .w-venn-label { transition: none; } }
+
+
+/* ```regex: the pattern in coloured parts, an explanation per part, then the tests */
+.md .w-regex { display: grid; gap: var(--t-gap); min-width: 0; margin-bottom: 0; font-size: var(--t-card); }
+.w-regex ul, .w-regex ol { margin: 0; padding: 0; list-style: none; }
+.w-regex .rx-head { display: flex; flex-wrap: wrap; align-items: center; gap: .6em 1em; margin: 0; font-size: var(--t-body); }
+.w-regex code { font-family: var(--mono); }
+.w-regex .rx-pattern { padding: .5em .7em; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow-wrap: anywhere; line-height: 1.7; font-size: 1em; }
+.w-regex .rx { border-radius: .25em; padding: .05em .15em; transition: opacity .2s; }
+.w-regex .rx-pattern .rx { border: 1px solid transparent; padding: .05em .1em; }
+.w-regex .rx-pattern .rx .rx { padding: 0 .05em; }
+.w-regex .rx-anchor { background: var(--fg); color: var(--bg); }
+.w-regex .rx-group { background: var(--accent-soft); color: var(--fg); border-color: var(--accent); }
+.w-regex .rx-class { background: var(--surface-2); color: var(--fg); border-color: var(--line); }
+.w-regex .rx-literal { color: var(--fg); border-color: var(--line); }
+.w-regex .rx-ref { color: var(--fg); border: 1px dashed var(--accent-ink); }
+.w-regex .rx-alt { color: var(--accent-ink); font-weight: 700; }
+.w-regex .rx-q { margin-left: .1em; padding: 0 .2em; background: var(--accent); color: var(--on-accent); border-radius: .2em; }
+.w-regex .rx-paren { color: var(--fg); font-weight: 700; }
+.w-regex .rx-anchor .rx-paren { color: var(--bg); }
+.w-regex .rx-flags { padding: .15em .6em; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius); color: var(--muted); font: 500 var(--t-card)/1.4 var(--mono); }
+.w-regex .rx-parts { display: grid; gap: .35em; }
+.w-regex .rx-part { display: block; padding: .15em .5em; border-left: 3px solid var(--line); transition: opacity .2s; }
+.w-regex .rx-part > code { margin-right: .35em; }
+.w-regex .rx-part > ul { margin: .25em 0 0 1.2em; display: grid; gap: .2em; }
+.w-regex .rx-part > ul > .rx-part { border-left-width: 2px; }
+.w-regex .rx-label { color: var(--fg); }
+.w-regex .rx-tests { display: grid; gap: .4em; }
+.w-regex .rx-test { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3em 1em; padding: .35em .7em; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: var(--radius); overflow-wrap: anywhere; }
+.w-regex .rx-test.is-miss { border-left-color: var(--faint); }
+.w-regex .rx-test code { flex: 1 1 10em; min-width: 0; }
+.w-regex .rx-test mark { background: var(--accent-soft); color: var(--fg); box-shadow: 0 0 0 1px var(--accent); border-radius: .2em; }
+.w-regex .rx-empty { color: var(--muted); font-style: italic; }
+.w-regex .rx-result { font-weight: 600; white-space: nowrap; }
+.w-regex .rx-test.is-miss .rx-result { color: var(--muted); }
+.w-regex .rx-groups { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: .3em 1.2em; color: var(--muted); }
+.w-regex .rx-groups b { margin-right: .3em; color: var(--accent-ink); }
+.w-regex .rx-groups code { color: var(--fg); }
+/* present: spotlight one part and open its pieces; article: everything open and undimmed */
+:root:not([data-view=read]) .w-regex[data-active] .rx-pattern > .rx:not(.on), :root:not([data-view=read]) .w-regex[data-active] .rx-parts > .rx-part:not(.on) { opacity: .4; }
+:root:not([data-view=read]) .w-regex .rx-part:not(.on) > ul { display: none; }
+:root:not([data-view=read]) .w-regex .rx-part.on { border-left-color: var(--accent); background: var(--accent-soft); }
+:root:not([data-view=read]) .w-regex .rx-pattern > .rx.on { outline: 2px solid var(--accent); outline-offset: 2px; }
+:is([data-view=read], [data-tall]) .w-regex .rx-part > ul { display: grid; }
+:root:not([data-view=read]):not([data-tall]) .w-regex .rx-parts { grid-auto-flow: column; grid-template-rows: repeat(var(--rx-rows, 4), auto); grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .2em 1.2em; align-items: start; }

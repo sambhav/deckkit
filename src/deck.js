@@ -89,6 +89,7 @@ import { runCell, liveCode } from './runnable.js';
  *   ```js {run}                         editable JavaScript with a Run button (↓ runs it) and its console output; runs in a sandboxed iframe
  *   ::: live                            ```html / ```css / ```js fences: editors beside a sandboxed preview that redraws as you type (stacked in read view)
  *   ```json {explore open=2 highlight="a.b"}  collapsible JSON tree; open=N levels (or all) start open; ↓ opens and marks each highlighted path
+ *   ```regex                            a pattern line then "test: text" lines (or /pattern/flags); ↓ explains one part at a time, tests show match or not
  *   ```terminal                         "$ command" lines type out one per ↓, the rest is their output
  *   ```bitfield bits=32                 "0-3 Version" lines draw a packet/register layout; ↓ highlights each field; the article adds a field table
  *   ::: endpoint GET /users/{id}        method badge, highlighted path parameters and Markdown reference; article path is a permalink
@@ -290,6 +291,7 @@ import { runCell, liveCode } from './runnable.js';
     c.querySelectorAll('.quiz').forEach(quiz);
     c.querySelectorAll('.w-prompt').forEach(prompt);
     c.querySelectorAll('.w-versus').forEach(versus);
+    c.querySelectorAll('.w-regex').forEach(regexSteps);
     c.querySelectorAll('.flip').forEach(flip);
     c.querySelectorAll('.accordion').forEach(accordion);
     c.querySelectorAll('.features').forEach(features);
@@ -1493,6 +1495,15 @@ import { runCell, liveCode } from './runnable.js';
   function versus(w) {
     const parts = [...w.querySelectorAll(':scope > .w-versus-cols > section, :scope > .w-versus-verdict')];
     steps(w, parts.length, i => parts.forEach((p, j) => { p.classList.toggle('pending', j > i); p.inert = j > i; }), { read: 'end' });
+  }
+
+  // ```regex — step 0 shows the whole pattern; each ↓ then spotlights one top-level part. Article shows every part.
+  function regexSteps(w) {
+    const n = +w.dataset.parts || 0, parts = [...w.querySelectorAll('[data-i]')];
+    steps(w, n + 1, k => {
+      w.toggleAttribute('data-active', k > 0);
+      parts.forEach(p => p.classList.toggle('on', +p.dataset.i === k));
+    });
   }
 
   // Choices use native buttons, so keyboard and touch share the same action.

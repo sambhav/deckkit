@@ -266,6 +266,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Terminal** | A ` ```terminal ` block: each `$ command` types out on ↓, and the lines after it are its output |
 | **Install by system** | `::: install` around one fence per system: ` ```sh macos `, ` ```sh linux `, ` ```powershell windows `. OS tabs with the viewer's own system selected first; a pick is remembered. Each block has a **Copy** button |
 | **Recordings** | `![title](demo.cast)` plays an [asciinema](https://asciinema.org/) recording without the player. A file needs http; a ` ```cast ` block plays anywhere |
+| **Regex explainer** | A ` ```regex ` block: a pattern line, then `test: text` lines (or `/pattern/flags`). Each part is coloured and explained; ↓ spotlights one part at a time, tests show match or no match with captured groups |
 | **Logs** | ` ```log {steps: 3 \| 5-6} ` numbers log lines, dims timestamps and styles levels. ↓ highlights line groups; Copy keeps the raw log |
 | **Diffs** | ` ```diff {steps: hunks} title="api.py" ` tints changes and highlights each `@@` hunk on ↓. `view=split` shows old beside new; **Copy** takes the new code |
 | **HTTP exchange** | A ` ```http ` fence: request and headers, a blank line, then `HTTP/1.1 200 OK` and the response. ↓ reveals the response |

@@ -1,5 +1,6 @@
 import { promptPair } from './prompt.js';
 import { versus } from './versus.js';
+import { regexBlock } from './regex.js';
 import { changelogHTML } from './changelog.js';
 import { hotspotMarkup } from './hotspots.js';
 import { explorableInline, explorable } from './explorable.js';
@@ -522,6 +523,7 @@ function fence(token) {
   if (lang === 'sequence') return sequenceHTML(source);
   if (/\{\s*explore(?=[\s}])/.test(info)) return jsonTree(token.content, info);
   if (lang === 'diff') return diff(source, info);
+  if (lang === 'regex') return regexBlock(source, escape);
   if (lang === 'http') return httpExchange(source, info);
   if (lang === 'array') return arrayBlock(source, info);
   if (lang === 'bitfield') return bitfield(source, info);
