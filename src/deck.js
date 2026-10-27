@@ -66,6 +66,7 @@ import { runCell, liveCode } from './runnable.js';
  *   ```bench unit=ms                    lines of "name  12.1 ± 0.4" (or hyperfine JSON): ranked bars, whiskers, "N× slower"; table and CSV in read view
  *   ::: envdiff                         a normal table: key then environment columns; ↓ or toggle shows differing rows only
  *   ::: magnitude unit=s                a table of label | value drawn as log-scale bars (ns..days); ↓ reveals rows, table shown in articles
+ *   ::: venn                            two or three ### sets, then "- A & B: label" regions; ↓ reveals each region; article lists them
  *   ::: stats                           big numbers: "- **42%** faster first response"
  *   > [!NOTE] / [!TIP] / [!WARNING]     callouts (also [!IMPORTANT], [!CAUTION])
  *   ```mermaid                          diagrams (Mermaid, fetched only if the deck has one; <html data-diagrams="off"> to skip);
@@ -257,6 +258,7 @@ import { runCell, liveCode } from './runnable.js';
     c.querySelectorAll('.w-derive').forEach(derive);
     c.querySelectorAll('.board').forEach(board);
     c.querySelectorAll('.w-quadrant').forEach(quadrantSteps);
+    c.querySelectorAll('.w-venn').forEach(vennSteps);
     c.querySelectorAll('.gallery').forEach(b => gallery(b, steps));
     c.querySelectorAll('.stats').forEach(stats);
     c.querySelectorAll('.magnitude').forEach(magnitude);
@@ -1065,6 +1067,13 @@ import { runCell, liveCode } from './runnable.js';
     svg.append(path); span.prepend(svg);
     if (!('markStep' in span.dataset)) { span.classList.add('on'); return; }
     steps(span, 2, i => span.classList.toggle('on', i > 0), { read: 'end' });
+  }
+
+  // ::: venn — ↓ reveals each region's text in turn; the circles and set names are always there
+  function vennSteps(w) {
+    const regions = [...w.querySelectorAll('[data-region]')];
+    if (!regions.length) return;
+    steps(w, regions.length + 1, i => regions.forEach((r, j) => r.classList.toggle('shown', j < i)), { read: 'end' });
   }
 
   // ::: stats — each list item or paragraph leads with its number in bold: "**42%** faster first response"

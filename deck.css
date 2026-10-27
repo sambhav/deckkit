@@ -1682,3 +1682,35 @@ aside.article { display: none; }
 .w-json .tv-number, .w-json .tv-boolean, .w-json .tv-null { color: var(--fg); font-style: italic; }
 .w-json .tn.on > summary, .w-json .tl.on { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
 @media (prefers-reduced-motion: reduce) { .w-json summary::before { transition: none; } }
+
+[data-view=read] .md .w-tree { max-height: none; overflow: visible; }
+.w-tree :is(.tc, .tclose) { margin-left: 1.4em; }
+.w-tree .tclose { display: block; margin-left: 0; }
+.w-tree .tn { margin: 0; }
+.w-tree .tl { padding-left: 1.2em; overflow-wrap: anywhere; }
+.w-tree summary { position: relative; display: block; min-height: 1.6em; padding-left: 1.2em; border-radius: .25em; cursor: pointer; list-style: none; }
+.w-tree summary::-webkit-details-marker { display: none; }
+.w-tree summary::before { content: ""; position: absolute; left: .15em; top: .5em; border: .3em solid transparent; border-left: .45em solid var(--muted); transition: transform .12s; }
+.w-tree details[open] > summary::before { transform: rotate(90deg) translate(.1em, .15em); }
+.w-tree details[open] > summary .tsum, .w-tree details[open] > summary > .tp:last-child { display: none; }
+.w-tree summary:hover { background: var(--accent-soft); }
+.w-tree summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.w-tree .tk { color: var(--fg); font-weight: 600; }
+.w-tree .tp, .w-tree .tsum { color: var(--muted); }
+.w-tree .tv-string { color: var(--fg); }
+.w-tree .tv-number, .w-tree .tv-boolean, .w-tree .tv-null { color: var(--fg); font-style: italic; }
+.w-tree .tn.on > summary, .w-tree .tl.on { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+@media (prefers-reduced-motion: reduce) { .w-tree summary::before { transition: none; } }
+
+/* ::: venn — two or three circles, region text in the overlaps; ↓ reveals each region's text. Articles add a list of regions. */
+.w-venn { margin: 0 auto; width: 100%; max-width: 620px; color: var(--fg); }
+.w-venn-plot { position: relative; aspect-ratio: 400 / 320; container-type: inline-size; }
+.w-venn-circle { position: absolute; border-radius: 50%; border: 2px solid var(--c); background: color-mix(in srgb, var(--c) 22%, transparent); }
+.w-venn-circle.c0 { --c: var(--chart-1, var(--accent)); } .w-venn-circle.c1 { --c: var(--chart-2, var(--accent-ink)); } .w-venn-circle.c2 { --c: var(--chart-3, var(--muted)); }
+.w-venn-label { position: absolute; font-size: clamp(12px, 3.3cqw, var(--t-small)); transform: translate(-50%, -50%); width: 25cqw; display: grid; gap: .15em; text-align: center; line-height: 1.2; overflow-wrap: anywhere; transition: opacity .2s; }
+.w-venn[data-sets="2"] .w-venn-label { width: 28cqw; }
+.w-venn-label b { font-size: 1.1em; }
+.md .w-venn-list { display: none; margin: 0; padding: 0; list-style: none; }
+[data-view=present] .w-venn [data-region]:not(.shown) { opacity: 0; }
+[data-view=read] .w-venn-list { display: block; margin-top: var(--t-gap); font-size: var(--t-small); }
+@media (prefers-reduced-motion: reduce) { .w-venn-label { transition: none; } }

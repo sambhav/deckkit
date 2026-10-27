@@ -7,6 +7,7 @@ import { countValue, meterValue } from './meter.js';
 import { benchBlock } from './bench.js';
 import MarkdownIt from 'markdown-it';
 import { quadrant } from './quadrant.js';
+import { venn } from './venn.js';
 
 import { shortcut } from './keyboard-shortcuts.js';
 import { chatTranscript } from './chat.js';
@@ -745,6 +746,10 @@ function compile(tokens, env) {
         }
         else if (name === 'quadrant') {
           try { html += quadrant(body, options, classes); }
+          catch (error) { html += `<p class="td-error" role="alert">${escape(error.message)}</p>` + compile(body, env); }
+        }
+        else if (name === 'venn') {
+          try { html += venn(body, options, classes); }
           catch (error) { html += `<p class="td-error" role="alert">${escape(error.message)}</p>` + compile(body, env); }
         }
         else if (name === 'chat') { html += chatTranscript(body, { options, classes, escape, render: ts => compile(ts, env), renderInline: ts => md.renderer.renderInline(ts, md.options, env) }); }
