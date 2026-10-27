@@ -534,7 +534,7 @@ function fence(token) {
     // {steps: client,edge: note | edge,origin}: each group lists node ids (and so the edges between them) to light on ↓
     const spec = info.match(/\{\s*steps:([^}]*)\}/)?.[1], plan = spec != null && mermaidSteps(spec);
     const bad = plan?.error ? `<p class="td-error" role="alert">${escape('mermaid: ' + plan.error)}</p>` : '';
-    const notes = plan?.groups?.some(g => g.note) ? `<ol class="w-diagram-notes">${plan.groups.map((g, k) => g.note ? `<li data-step="${k}">${escape(g.note)}</li>` : '').join('')}</ol>` : '';
+    const notes = plan?.groups?.some(g => g.note) ? `<ol class="w-diagram-notes">${plan.groups.map((g, k) => g.note ? `<li data-note="${k}" value="${k + 1}">${escape(g.note)}</li>` : '').join('')}</ol>` : '';
     const diagram = `<div class="w-diagram"${plan?.groups ? ` data-steps="${escape(JSON.stringify(plan.groups.map(g => g.ids)))}"` : ''}><pre class="code w-diagram-src">${code}</pre></div>`;
     const stage = plan?.groups ? `<div class="w-stepped">${diagram}${notes}</div>` : diagram;
     return bad + (/\{\s*source\s*\}/.test(info) ? `<div class="w-with-source"><pre class="code"><code>${code}</code></pre>${stage}</div>` : stage);

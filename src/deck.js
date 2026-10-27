@@ -758,7 +758,7 @@ import { runCell, liveCode } from './runnable.js';
       const st = steps(stage, groups.length, i => {
         const svg = b.querySelector('svg'), stepping = !reading(), ids = new Set(stepping ? groups[i] : []);
         stage.classList.toggle('stepping', stepping);
-        notes.forEach(li => li.classList.toggle('on', stepping && +li.dataset.step === i));
+        notes.forEach(li => { const on = stepping && +li.dataset.note === i; li.classList.toggle('on', on); on ? li.setAttribute('aria-current', 'step') : li.removeAttribute('aria-current'); });
         if (!svg) return;
         svg.classList.toggle('dk-stepping', stepping);
         svg.querySelectorAll('g.node').forEach(g => g.classList.toggle('dk-on', ids.has(idOf(g))));

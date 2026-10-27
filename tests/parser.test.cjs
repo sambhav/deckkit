@@ -465,7 +465,7 @@ test('code groups keep each fence; a [label] after the language names its tab an
 test('stepped mermaid lists node ids per step, with optional notes, and fails visibly', () => {
   const ok = md('```mermaid {steps: a,b: First hop | b,c}\nflowchart LR\n  a --> b --> c\n```');
   assert.match(ok, /^<div class="w-stepped"><div class="w-diagram" data-steps="\[\[&quot;a&quot;,&quot;b&quot;\],\[&quot;b&quot;,&quot;c&quot;\]\]">/);
-  assert.match(ok, /<ol class="w-diagram-notes"><li data-step="0">First hop<\/li><\/ol>/);
+  assert.match(ok, /<ol class="w-diagram-notes"><li data-note="0" value="1">First hop<\/li><\/ol>/);
   assert.doesNotMatch(md('```mermaid {steps: a | b}\nflowchart LR\n  a --> b\n```'), /w-diagram-notes/);
   assert.match(md('```mermaid {source} {steps: a,b}\nflowchart LR\n  a --> b\n```'), /^<div class="w-with-source">[\s\S]*w-stepped/);
   assert.doesNotMatch(md('```mermaid\nflowchart LR\n  a --> b\n```'), /w-stepped|data-steps/);
