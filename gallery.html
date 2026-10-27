@@ -864,6 +864,24 @@ Each line is a bit range and a name. Press ↓ to highlight one field at a time;
 :::
 
 ---
+id: w-sequence
+---
+## A TLS handshake, one message at a time
+
+```sequence
+Browser -> Server: ClientHello
+Server --> Browser: ServerHello + certificate
+note: Browser checks the certificate chain
+Browser -> Server: Key exchange, Finished
+Server --> Browser: Finished
+Browser -> Server: Encrypted request
+```
+
+::: notes
+Press down to draw each message; notes appear with the message before them. The article shows the whole diagram and a numbered message list.
+:::
+
+---
 section: Presentation components
 id: content
 ---
