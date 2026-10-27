@@ -454,6 +454,7 @@ function arrayBlock(raw, info) {
   const list = `<div class="w-array-cells" role="list" aria-label="Array">${cells.map((c, i) => `<div class="w-array-cell" role="listitem"><span class="w-array-v">${escape(c)}</span><span class="w-array-i">${i}</span><span class="w-array-p"></span></div>`).join('')}</div>`;
   const table = rows.length ? `<table class="w-array-table"><thead><tr><th>Step</th>${names.map(n => `<th>${escape(n)}</th>`).join('')}<th>Found</th></tr></thead><tbody>${rows.map((r, i) => `<tr><td>${i + 1}</td>${names.map(n => `<td>${n in r.p ? r.p[n] : ''}</td>`).join('')}<td>${r.f.map(escape).join(', ')}</td></tr>`).join('')}</tbody></table>` : '';
   return `<figure class="w w-array"${rows.length ? ` data-array="${escape(JSON.stringify(rows))}"` : ''}>${list}${table}</figure>`;
+}
 // "a,b: note | b,c" becomes [{ ids: [a, b], note }, { ids: [b, c] }]; a group's note follows its first colon
 function mermaidSteps(spec) {
   const groups = spec.split('|').map(g => {
@@ -538,7 +539,6 @@ function fence(token) {
     const stage = plan?.groups ? `<div class="w-stepped">${diagram}${notes}</div>` : diagram;
     return bad + (/\{\s*source\s*\}/.test(info) ? `<div class="w-with-source"><pre class="code"><code>${code}</code></pre>${stage}</div>` : stage);
   }
-  const diagram = `<div class="w-diagram"><pre class="code w-diagram-src">${code}</pre></div>`;
   const pins = token.meta?.pins, steps = !pins && info.match(/\{\s*steps:\s*([^}]*)\}/)?.[1];
   return `<pre class="code"${lang ? ` data-lang="${lang}"` : ''}${steps ? ` data-steps="${escape(steps)}"` : ''}${pins ? ` data-pins="${pins.join(',')}"` : ''}><code>${code}</code></pre>`;
 }
