@@ -85,6 +85,7 @@ import { runCell, liveCode } from './runnable.js';
  *   ![title](demo.cast) or ```cast     plays an asciinema recording (a file needs the page served over http; a ```cast block plays anywhere); ![](youtube / vimeo / .mp4 link) embeds a video
  *   ::: accordion / ::: features        ### items that open one per ↓ / a grid of cards (a leading :icon: or image is the card's icon)
  *   [[Ctrl+Shift+P]] / [[Mod+K]]       inline keycaps; Mod is Command on Apple platforms and Control elsewhere
+ *   [text]{.circle .step}               hand-drawn mark (.underline .circle .box .highlight .strike .bracket); .step draws it in on ↓
  *   :rocket:                            a Lucide icon in the theme's colours (any name from lucide.dev/icons)
  *   ::: browser url="…" / ::: window title="…" / ::: phone   CSS device frames around images, code or Markdown
  *   ::: agenda / ::: qr                 a contents slide linking every section / a QR code of the deck's link (or the URL inside)
@@ -252,6 +253,7 @@ import { runCell, liveCode } from './runnable.js';
     c.querySelectorAll('.w-explore').forEach(activateExplorable);
     c.querySelectorAll('.timer').forEach(countdown);
     c.querySelectorAll('.w-meter, .w-countup').forEach(meter);
+    c.querySelectorAll('.ink').forEach(drawMark);
     c.querySelectorAll('div.envdiff').forEach(envdiff);
     c.querySelectorAll('blockquote').forEach(callout);
     c.querySelectorAll('blockquote:not(.callout)').forEach(quote);
@@ -939,6 +941,26 @@ import { runCell, liveCode } from './runnable.js';
       const index = points.length ? +el.dataset.point : j;
       el.classList.toggle('shown', index <= i);
     }), { read: 'end' });
+  }
+
+  // [text]{.circle .step} — a hand-drawn mark behind the text; with .step it draws in on ↓, otherwise it is always drawn
+  // Paths are in a stretched 100x100 box (non-scaling stroke), so one outline fits any word or phrase.
+  const INK = {
+    underline: 'M2 86 C 28 80, 62 92, 98 83',
+    strike: 'M1 52 C 30 45, 66 57, 99 48',
+    circle: 'M54 5 C 20 2, 3 28, 5 52 C 7 80, 35 97, 62 94 C 90 92, 99 66, 96 38 C 93 14, 68 4, 38 10',
+    box: 'M3 10 L97 5 L96 95 L4 92 L5 3',
+    bracket: 'M13 7 C 3 10, 4 30, 4 50 C 4 70, 3 90, 13 93 M87 7 C 97 10, 96 30, 96 50 C 96 70, 97 90, 87 93',
+    highlight: 'M1 22 C 30 14, 70 18, 99 12 L98 88 C 66 94, 30 86, 2 92 Z',
+  };
+  function drawMark(span) {
+    const kind = span.className.match(/ink-(\w+)/)?.[1]; if (!INK[kind]) return;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 100 100'); svg.setAttribute('preserveAspectRatio', 'none'); svg.setAttribute('aria-hidden', 'true');
+    const path = document.createElementNS(svg.namespaceURI, 'path'); path.setAttribute('d', INK[kind]); path.setAttribute('vector-effect', 'non-scaling-stroke');
+    svg.append(path); span.prepend(svg);
+    if (!('markStep' in span.dataset)) { span.classList.add('on'); return; }
+    steps(span, 2, i => span.classList.toggle('on', i > 0), { read: 'end' });
   }
 
   // ::: stats — each list item or paragraph leads with its number in bold: "**42%** faster first response"

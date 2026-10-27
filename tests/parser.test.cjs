@@ -501,3 +501,11 @@ test('bench fences rank results, scale whiskers and fail visibly with the source
     assert.match(md(bad), /role="alert">bench:/);
   assert.match(md('```bench\nno numbers\n```'), /<pre class="code"><code>no numbers/);
 });
+
+test('emphasis marks wrap inline text and report bad names', () => {
+  assert.match(md('The [cache]{.circle .step} moved.'), /<span class="ink ink-circle" data-mark-step>cache<\/span> moved/);
+  assert.match(md('[**p99**]{.underline}'), /<span class="ink ink-underline"><strong>p99<\/strong><\/span>/);
+  assert.match(md('[x]{.circel .box}'), /role="alert">mark: use one of/);
+  assert.match(md('[x]{.circle .box}'), /role="alert">mark:/);
+  assert.match(md('[x]{.step} and `[x]{.circle}`'), /^<p>\[x\]\{\.step\} and <code>\[x\]\{\.circle\}<\/code><\/p>/);
+});

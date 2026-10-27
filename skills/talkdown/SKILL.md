@@ -183,6 +183,7 @@ The article.
 - Changelog: `::: changelog`, `### v0.4.0 · 2026-10-25` per release and `#### Added` / `#### Fixed` group labels, followed by Markdown notes. No options; dates must be valid `YYYY-MM-DD`. One release per ↓ step; article view shows all with links. Give the slide an `id:` to keep release links stable when slides move.
 - Link cards: `::: links` around a bulleted list of `- [Title](URL) Description` items. Shows title, domain and authored description; no options, no metadata requests. Use HTTP(S), relative URLs or `#section` links; descriptions can use inline emphasis/code but no additional links, HTML or images. Cards stack on phones.
 - Image gallery: `::: gallery` around `![Caption](image.png)` lines. No options. ↓ highlights each image; click or Enter opens a lightbox, ← → browse, Escape closes and restores focus. Article view shows a responsive grid with every alt-text caption.
+- Emphasis marks: `[closer to users]{.circle .step}` inline; one of `.underline .circle .box .highlight .strike .bracket`, optional `.step` draws it in on ↓ (document order); no `.step` = always drawn. Keep phrases short, no nesting. Articles show marks drawn.
 - Callouts: `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]`.
 - Pull quotes: a `>` quote whose last line is `> — Name`.
 - Audience questions: `::: ask url="https://example.com/questions"` + closing `:::` (empty block). Absolute HTTP(S) URL, without credentials. Large QR and destination in slides; plain “Ask a question” link in articles. Link remains usable if QR loading fails.
