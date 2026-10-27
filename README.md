@@ -267,7 +267,9 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **HTTP exchange** | A ` ```http ` fence: request and headers, a blank line, then `HTTP/1.1 200 OK` and the response. ↓ reveals the response |
 | **Bit layout** | A ` ```bitfield bits=32 ` fence with one `0-3 Version` (or `7 Flag`) line per field: packet headers, registers, structs. Rows wrap at `bits`; ↓ highlights each field; the article adds an offset and width table |
 | **API endpoint** | `::: endpoint GET /v1/users/{id}` around a description and parameter table; path parameters are highlighted, with a permalink in the article |
+| **JSON explorer** | ` ```json {explore open=2 highlight="user.roles"} ` is a collapsible tree. `open=N` or `all` sets the starting depth; ↓ opens and marks each highlighted path; Copy keeps the raw JSON |
 | **Prompt / output** | `::: prompt model="any-model" temperature=0` (both optional), then `### Prompt` and `### Output`. Side by side on the stage; ↓ reveals the output |
+| **Model comparison** | `::: versus` with 2-4 `### Model` headings, an optional leading `> prompt` quote and a final `### Verdict`. Equal columns on the stage; ↓ adds one at a time |
 | **Chat transcript** | `::: chat` with lines starting `**user:**`, `**assistant:**`, `**system:**` or `**tool**`. ↓ reveals messages; tool calls expand |
 | **Environment diff** | `::: envdiff` around a table: a key column plus two or more environments. Differing values are highlighted; ↓ or Differences only hides the rest |
 | **Keyboard shortcuts** | `[[Ctrl+Shift+P]]` renders keycaps. `[[Mod+K]]` shows ⌘ on Apple platforms and Ctrl elsewhere; `Plus` is the + key |
