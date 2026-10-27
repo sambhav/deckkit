@@ -455,6 +455,47 @@ function arrayBlock(raw, info) {
   const table = rows.length ? `<table class="w-array-table"><thead><tr><th>Step</th>${names.map(n => `<th>${escape(n)}</th>`).join('')}<th>Found</th></tr></thead><tbody>${rows.map((r, i) => `<tr><td>${i + 1}</td>${names.map(n => `<td>${n in r.p ? r.p[n] : ''}</td>`).join('')}<td>${r.f.map(escape).join(', ')}</td></tr>`).join('')}</tbody></table>` : '';
   return `<figure class="w w-array"${rows.length ? ` data-array="${escape(JSON.stringify(rows))}"` : ''}>${list}${table}</figure>`;
 }
+// ```json {explore open=2 highlight="user.roles"}: a collapsible tree built from nested <details>, so it works without JavaScript.
+// open=N starts N levels expanded (or all); highlight lists comma-separated paths (a.b[0].c) that ↓ opens and marks in turn.
+function jsonTree(raw, info) {
+  const source = raw.replace(/\n$/, '');
+  const fail = message => `<p class="td-error" role="alert">${escape('explore: ' + message)}</p><pre class="code"><code>${escape(raw)}</code></pre>`;
+  const braces = [], rest = info.replace(/^[\w+-]+/, '').replace(/"[^"]*"|'[^']*'|\{[^}]*\}/g, m => m[0] === '{' ? (braces.push(m), ' ') : m);
+  if (braces.length !== 1 || rest.trim()) return fail('use one {explore open=2 highlight="a.b"} group');
+  if (info.match(/^[\w+-]+/)?.[0] !== 'json') return fail('only json is supported');
+  let parsed;
+  try { parsed = directive(braces[0].slice(1, -1).trim()); } catch (error) { return fail(error.message); }
+  const { open = '1', highlight = '', ...unknown } = parsed.options, extra = [...Object.keys(unknown), ...parsed.classes];
+  if (extra.length) return fail(`unknown option "${extra[0]}" (use open=N|all and highlight="a.b, c[0]")`);
+  if (!/^(\d{1,3}|all)$/.test(open)) return fail(`open must be a number or all, not "${open}"`);
+  if (!source.trim()) return fail('the block is empty');
+  let data;
+  try { data = JSON.parse(source); } catch (error) { return fail('invalid JSON: ' + error.message); }
+  const levels = open === 'all' ? Infinity : +open;
+  const segments = path => [...path.matchAll(/\[(\d+)\]|([^.[\]]+)/g)].map(m => m[1] ?? m[2]);
+  const join = segs => segs.reduce((a, k) => a + (/^\d+$/.test(k) ? `[${k}]` : (a ? '.' : '') + k), '');
+  const marks = [];
+  for (const spec of highlight.split(',').map(x => x.trim()).filter(Boolean)) {
+    let at = data;
+    const segs = segments(spec);
+    for (const k of segs) at = at && typeof at === 'object' && Object.hasOwn(at, k) ? at[k] : undefined;
+    if (!segs.length || at === undefined) return fail(`highlight path "${spec}" does not exist`);
+    marks.push(join(segs));
+  }
+  const tag = [...new Set(marks)];
+  const kind = v => v === null ? 'null' : typeof v;
+  const key = k => k == null ? '' : `<span class="tk">${escape(typeof k === 'number' ? String(k) : JSON.stringify(k))}</span><span class="tp">: </span>`;
+  const leaf = v => `<span class="tv tv-${kind(v)}">${escape(JSON.stringify(v))}</span>`;
+  const node = (v, k, segs, depth) => {
+    const attrs = ` data-path="${escape(join(segs))}"`;
+    const arr = Array.isArray(v), entries = v && typeof v === 'object' ? (arr ? v.map((x, i) => [i, x]) : Object.entries(v)) : null;
+    if (!entries?.length) return `<div class="tn tl"${attrs}>${key(k)}${entries ? `<span class="tp">${arr ? '[]' : '{}'}</span>` : leaf(v)}</div>`;
+    const [o, c] = arr ? '[]' : '{}', n = entries.length;
+    return `<details class="tn"${attrs}${depth < levels ? ' open' : ''}><summary>${key(k)}<span class="tp">${o}</span><span class="tsum"> ${n} ${arr ? (n === 1 ? 'item' : 'items') : (n === 1 ? 'key' : 'keys')} </span><span class="tp">${c}</span></summary>`
+      + `<div class="tc">${entries.map(([ek, ev]) => node(ev, ek, [...segs, String(ek)], depth + 1)).join('')}</div><span class="tp tclose">${c}</span></details>`;
+  };
+  return `<figure class="w-tree" role="group" aria-label="JSON explorer" data-source="${escape(source)}"${tag.length ? ` data-highlight="${escape(JSON.stringify(tag))}"` : ''}>${node(data, null, [], 0)}</figure>`;
+}
 // ```js [Node.js]: a bracketed label after the language (VitePress's convention) names the block's tab in a ::: code-group
 md.renderer.rules.fence = (tokens, i) => {
   const out = fence(tokens[i]), label = tokens[i].info.match(/^\s*[\w+-]+\s+\[([^\]\n]+)\]/)?.[1].trim();
@@ -465,6 +506,7 @@ function fence(token) {
   const source = token.content.replace(/\n$/, ''), code = escape(source);
   if (lang === 'log') return logBlock(token.content, info);
   if (lang === 'sequence') return sequenceHTML(source);
+  if (/\{\s*explore(?=[\s}])/.test(info)) return jsonTree(token.content, info);
   if (lang === 'diff') return diff(source, info);
   if (lang === 'http') return httpExchange(source, info);
   if (lang === 'array') return arrayBlock(source, info);

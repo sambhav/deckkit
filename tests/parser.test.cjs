@@ -509,3 +509,27 @@ test('emphasis marks wrap inline text and report bad names', () => {
   assert.match(md('[x]{.circle .box}'), /role="alert">mark:/);
   assert.match(md('[x]{.step} and `[x]{.circle}`'), /^<p>\[x\]\{\.step\} and <code>\[x\]\{\.circle\}<\/code><\/p>/);
 });
+
+test('json explorer renders nested details, opens N levels and marks highlight paths', () => {
+  const html = md('```json {explore open=2 highlight="user.roles[1], ok"}\n{"user":{"id":7,"roles":["a","<b>"]},"ok":true,"e":{}}\n```');
+  assert.match(html, /class="w-tree"/);
+  assert.equal((html.match(/<details/g) || []).length, 3);
+  assert.equal((html.match(/<details[^>]* open/g) || []).length, 2);
+  assert.match(html, /data-highlight="\[&quot;user\.roles\[1\]&quot;,&quot;ok&quot;\]"/);
+  assert.match(html, /data-path="user\.roles\[1\]"/);
+  assert.doesNotMatch(html, /<b>/);
+  assert.doesNotMatch(html, /td-error/);
+});
+
+test('json explorer diagnostics keep the source visible', () => {
+  for (const [info, body, message] of [
+    ['json {explore}', '{bad', /invalid JSON/], ['json {explore}', '', /empty/], ['json {explore open=x}', '{}', /open must be/],
+    ['json {explore depth=2}', '{}', /unknown option/], ['json {explore highlight="a.b"}', '{"a":1}', /does not exist/],
+    ['yaml {explore}', 'a: 1', /only json/],
+  ]) {
+    const html = md('```' + info + '\n' + body + '\n```');
+    assert.match(html, /class="td-error" role="alert"/); assert.match(html, message);
+    assert.match(html, /<pre class="code">/);
+  }
+  assert.doesNotMatch(md('```json\n{"a":1}\n```'), /w-tree/);
+});

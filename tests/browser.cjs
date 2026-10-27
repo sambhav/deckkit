@@ -220,6 +220,19 @@ async function verify(page, base) {
     dispatchEvent(new StorageEvent('storage', { key: 'talkdown:choice:lang' }));
   });
   check(await picked(1) === 'Go' && await picked(0) === 'JavaScript', 'A pick made in another window must switch the groups that have it');
+  // JSON explorer: ↓ opens the path to each highlight; the article opens everything; Copy keeps the raw JSON.
+  const tree = '## Tree\n```json {explore highlight="a.b[1]"}\n{"a":{"b":[1,2]},"c":3}\n```';
+  await page.route('**/json-tree.html*', r => r.fulfill({ contentType: 'text/html', body:
+    '<!doctype html><html data-fonts="off" data-highlight="off"><head><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + tree + '</script></body></html>' }));
+  await page.goto(base + '/json-tree.html?view=present');
+  await page.waitForFunction(() => window.Deck?.slides.length === 1);
+  const rows = page.locator('.w-tree [data-path="a.b[1]"]');
+  check(!(await rows.isVisible()), 'The JSON tree must start with the highlighted path collapsed');
+  await page.keyboard.press('ArrowDown');
+  check(await rows.isVisible() && await rows.evaluate(el => el.classList.contains('on')), 'Down must open and mark the highlighted JSON path');
+  await page.keyboard.press('r');
+  check(await page.locator('.w-tree details:not([open])').count() === 0, 'The article must open the whole JSON tree');
+  await page.keyboard.press('r');
   // HTTP exchanges reveal only the response on ↓; articles show both and Copy preserves each raw message.
   const exchange = '## HTTP\n```http\nGET /users HTTP/1.1\nAccept: application/json\n\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n{"id":7}\n```';
   await page.route('**/http-exchange.html*', r => r.fulfill({ contentType: 'text/html', body:
