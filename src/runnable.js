@@ -49,7 +49,7 @@ export function runCell(w, { steps, reading, widgetId }) {
   button.addEventListener('click', () => (reading() || st.i ? run() : st.go(1)));
   src.addEventListener('input', () => { src.rows = lines(src.value); });
   // typing, Space and Enter belong to the editor and button, not to slide navigation
-  w.addEventListener('keydown', e => { if (e.target.closest('textarea, button, pre')) e.stopPropagation(); });
+  w.addEventListener('keydown', e => { if (e.key !== 'Escape' && e.target.closest('textarea, button, pre')) e.stopPropagation(); });
 }
 
 // ::: live: html, css and js fences become editors beside a rendered preview that redraws a moment after each edit.
@@ -80,5 +80,5 @@ export function liveCode(w, { root }) {
   let queued; const redraw = () => { clearTimeout(queued); queued = setTimeout(draw, 300); };
   new MutationObserver(redraw).observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-mode'] });
   draw();
-  w.addEventListener('keydown', e => { if (e.target.closest('textarea')) e.stopPropagation(); });
+  w.addEventListener('keydown', e => { if (e.key !== 'Escape' && e.target.closest('textarea')) e.stopPropagation(); });
 }
