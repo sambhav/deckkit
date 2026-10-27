@@ -18,160 +18,27 @@ id: gallery
 
 Live examples of Talkdown's Markdown-powered widgets.
 
-[Main demo](./) · [Documentation](https://github.com/sambhav/talkdown#-widgets)
+[Main demo](./) · [Documentation](https://github.com/sambhav/talkdown#widgets)
 
 ::: notes
 Every example in this gallery is authored in Markdown. Press S to inspect and copy the source of a slide, or R to read everything as an article. The main demo introduces Talkdown and explains the presentation experience.
 :::
 
 ---
-kicker: Gallery
 id: index
----
-id: w-gallery
----
-## A small visual collection
-
-::: gallery
-![Dusk: a quiet landscape](assets/dusk.svg)
-![Speaker portrait](assets/speaker.svg)
-![Talkdown mark](docs/logo.svg)
-:::
-
-::: notes
-Use ↓ to highlight each image, then open one to browse the collection at full size. Every caption remains visible in the article.
-:::
-
 ---
 ## Explore by category
 
-- [Visual charts](#visual)
-- [Interactive content](#interactive)
-- [Code and diagrams](#technical)
-- [Presentation components](#content)
+- [Visual charts](#visual): twelve chart types, quadrant, stats, meter and sparklines
+- [Interactive content](#interactive): tabs, walkthroughs, comparisons, quizzes and live numbers
+- [Code and diagrams](#technical): code, logs, diffs, APIs, prompts, flows and frames
+- [Presentation components](#content): cards, boards, release notes, links and images
 
 Each example is live. Press S for its Markdown source.
 
 ---
 section: Visual charts
 id: visual
----
-## Heatmap
-
-::: chart type=heatmap title="Requests by day and hour" total="Total"
-| Day | 09:00 | 10:00 | 11:00 | 12:00 | Total |
-|---|---:|---:|---:|---:|---:|
-| Mon | 12 | 22 | 45 | 57 | 136 |
-| Tue | 16 | 31 | 58 | 80 | 185 |
-| Wed | 11 | 27 | 42 | 61 | 141 |
-| Thu | 18 | 36 | 56 | 79 | 189 |
-:::
-
----
-id: w-quadrant
----
-## Prioritise the next sprint
-
-::: quadrant x="Effort" y="Impact"
-### Quick wins
-### Big bets
-### Fill-ins
-### Money pits
-- Cache headers [0.2, 0.8]
-- Search overhaul [0.75, 0.7]
-- Fix labels [0.25, 0.25]
-- Legacy rewrite [0.8, 0.2]
-:::
-
-::: notes
-Start with cache headers: high impact for little effort. Coordinates are normalized from zero to one; press S to inspect the source.
-:::
-
----
-## Scatter
-
-::: chart type=scatter x="Latency" y="Throughput" title="Latency vs throughput"
-| System | Latency | Throughput |
-|---|---:|---:|
-| A | 80 | 950 |
-| B | 110 | 820 |
-| C | 150 | 690 |
-| D | 190 | 560 |
-:::
-
----
-## Bubble
-
-::: chart type=bubble x="Latency" y="Throughput" size="Users" title="Service utilisation"
-| System | Latency | Throughput | Users |
-|---|---:|---:|---:|
-| A | 80 | 950 | 20 |
-| B | 110 | 820 | 50 |
-| C | 150 | 690 | 35 |
-:::
-
----
-## Waterfall
-
-::: chart type=waterfall title="Latency improvements (ms)"
-| Stage | Value | Kind |
-|---|---:|---|
-| Initial | 500 | total |
-| Cache | -200 | change |
-| Batching | -150 | change |
-| Network | -80 | change |
-| Final | 70 | total |
-:::
-
----
-## Timeline chart
-
-::: chart type=timeline title="Release roadmap"
-| Task | Start | End |
-|---|---|---|
-| Design | 2026-10-01 | 2026-10-31 |
-| Implementation | 2026-10-20 | 2026-12-05 |
-| Testing | 2026-12-01 | 2026-12-31 |
-| Release | 2027-01-05 | |
-:::
-
----
-## Sankey
-
-::: chart type=sankey title="Agent request routing"
-| Source | Target | Value |
-|---|---|---:|
-| Requests | Tools | 600 |
-| Requests | RAG | 300 |
-| Requests | Other | 100 |
-| Tools | Success | 540 |
-| Tools | Failure | 60 |
-:::
-
----
-## Treemap
-
-::: chart type=treemap title="Infrastructure spend"
-| Path | Value |
-|---|---:|
-| Compute / GPU | 400 |
-| Compute / CPU | 200 |
-| Storage / Object | 150 |
-| Storage / Database | 100 |
-| Network / Egress | 150 |
-:::
-
----
-## Range
-
-::: chart type=range title="Latency distribution (ms)"
-| System | Min | Max | Median |
-|---|---:|---:|---:|
-| A | 30 | 180 | 85 |
-| B | 70 | 310 | 140 |
-| C | 45 | 230 | 110 |
-:::
-
 ---
 ## Bar chart
 
@@ -218,6 +85,163 @@ Start with cache headers: high impact for little effort. Coordinates are normali
 :::
 
 ---
+## Scatter
+
+::: chart type=scatter x="Latency" y="Throughput" title="Latency vs throughput"
+| System | Latency | Throughput |
+|---|---:|---:|
+| A | 80 | 950 |
+| B | 110 | 820 |
+| C | 150 | 690 |
+| D | 190 | 560 |
+:::
+
+---
+## Bubble
+
+::: chart type=bubble x="Latency" y="Throughput" size="Users" title="Service utilisation"
+| System | Latency | Throughput | Users |
+|---|---:|---:|---:|
+| A | 80 | 950 | 20 |
+| B | 110 | 820 | 50 |
+| C | 150 | 690 | 35 |
+:::
+
+---
+## Range
+
+::: chart type=range title="Latency distribution (ms)"
+| System | Min | Max | Median |
+|---|---:|---:|---:|
+| A | 30 | 180 | 85 |
+| B | 70 | 310 | 140 |
+| C | 45 | 230 | 110 |
+:::
+
+---
+## Waterfall
+
+::: chart type=waterfall title="Latency improvements (ms)"
+| Stage | Value | Kind |
+|---|---:|---|
+| Initial | 500 | total |
+| Cache | -200 | change |
+| Batching | -150 | change |
+| Network | -80 | change |
+| Final | 70 | total |
+:::
+
+---
+## Timeline chart
+
+::: chart type=timeline title="Release roadmap"
+| Task | Start | End |
+|---|---|---|
+| Design | 2026-10-01 | 2026-10-31 |
+| Implementation | 2026-10-20 | 2026-12-05 |
+| Testing | 2026-12-01 | 2026-12-31 |
+| Release | 2027-01-05 | |
+:::
+
+---
+## Heatmap
+
+::: chart type=heatmap title="Requests by day and hour" total="Total"
+| Day | 09:00 | 10:00 | 11:00 | 12:00 | Total |
+|---|---:|---:|---:|---:|---:|
+| Mon | 12 | 22 | 45 | 57 | 136 |
+| Tue | 16 | 31 | 58 | 80 | 185 |
+| Wed | 11 | 27 | 42 | 61 | 141 |
+| Thu | 18 | 36 | 56 | 79 | 189 |
+:::
+
+---
+## Sankey
+
+::: chart type=sankey title="Agent request routing"
+| Source | Target | Value |
+|---|---|---:|
+| Requests | Tools | 600 |
+| Requests | RAG | 300 |
+| Requests | Other | 100 |
+| Tools | Success | 540 |
+| Tools | Failure | 60 |
+:::
+
+---
+## Treemap
+
+::: chart type=treemap title="Infrastructure spend"
+| Path | Value |
+|---|---:|
+| Compute / GPU | 400 |
+| Compute / CPU | 200 |
+| Storage / Object | 150 |
+| Storage / Database | 100 |
+| Network / Egress | 150 |
+:::
+
+---
+id: w-quadrant
+---
+## Prioritise the next sprint
+
+::: quadrant x="Effort" y="Impact"
+### Quick wins
+### Big bets
+### Fill-ins
+### Money pits
+- Cache headers [0.2, 0.8]
+- Search overhaul [0.75, 0.7]
+- Fix labels [0.25, 0.25]
+- Legacy rewrite [0.8, 0.2]
+:::
+
+::: notes
+Start with cache headers: high impact for little effort. Coordinates are normalized from zero to one; press S to inspect the source.
+:::
+
+---
+## Stats
+
+::: stats
+- **23** themes
+- **2** reading modes
+- **0** things to install
+:::
+
+---
+id: w-meter
+---
+## Migration, on track
+
+::: meter value=72 max=100 label="Migration done" unit=%
+:::
+
+- **[1.2M]{count}** requests/day
+
+::: notes
+Press down to fill the migration meter, then again to count the daily traffic. Article readers see the final figures immediately.
+:::
+
+---
+id: w-sparkline
+---
+## Trends at a glance
+
+| Service | p99 (ms) | Last six deploys |
+|---|---|---|
+| API | 480 | `spark:9,8,8,6,5,5` |
+| Search | 220 | `spark:3,4,3,5,6,7` |
+| Queue | 120 | `spark:4,4,4,4,4,4` |
+
+A first sample looks like `spark:5`; every trend inherits its text colour.
+
+::: notes
+Sparklines show the shape of a trend; the accessible label lists every authored value, in slides and the article.
+:::
+
+---
 section: Interactive content
 id: interactive
 ---
@@ -245,6 +269,30 @@ Readers can explore the same content.
 :::
 
 ---
+## Walkthrough
+
+::: steps
+### Request
+The caller sends a request.
+### Check
+The gateway validates identity.
+### Execute
+The agent invokes an authorised tool.
+### Return
+The result is returned to the caller.
+:::
+
+---
+## Flip cards
+
+::: flip
+### Question
+What does a cache do?
+### Answer
+It keeps frequently accessed data close to the caller.
+:::
+
+---
 id: w-before-after
 ---
 ## Navigation, before and after
@@ -259,27 +307,90 @@ Drag the divider, focus the range and use the arrow keys, or press ↓ to reveal
 :::
 
 ---
-## Flip cards
+id: w-hotspots
+---
+## Read the landscape
 
-::: flip
-### Question
-What does a cache do?
-### Answer
-It keeps frequently accessed data close to the caller.
+::: hotspots
+![Mountain ridges at dusk](assets/dusk.svg)
+- [25%, 35%] **Sky:** warm light above the horizon
+- [62%, 60%] **Ridge:** a distant silhouette
+- [80%, 85%] **Foreground:** depth from overlapping layers
+:::
+
+::: notes
+Press ↓ to select the next numbered pin, or tap a pin to jump to its label. Percentages keep annotations attached as the image scales. The article shows the complete numbered legend below the image.
 :::
 
 ---
-## Walkthrough
+id: w-quiz
+---
+## Check your understanding
 
-::: steps
-### Request
-The caller sends a request.
-### Check
-The gateway validates identity.
-### Execute
-The agent invokes an authorised tool.
-### Return
-The result is returned to the caller.
+::: quiz
+### What does p99 measure?
+- [ ] Average latency
+- [x] Latency 99% of requests beat
+- [ ] Peak latency
+
+The tail matters because users notice the slow ones.
+:::
+
+::: notes
+Choose an answer or press ↓ to reveal it. In article view the answer and explanation stay readable; Reset clears your choice. Nothing is stored or sent.
+:::
+
+---
+id: w-explore
+---
+## How many workers?
+
+::: explorable
+With [qps=1000]{range=100..10000 step=100} requests/s at [ms=40]{range=5..200} ms, you need **{qps*ms/1000}** concurrent workers.
+:::
+
+::: notes
+Adjust request volume or latency to see how concurrency changes. Each slider also supports arrow keys; the article starts with the authored values.
+:::
+
+---
+id: w-glossary
+glossary: inline
+---
+## Explain jargon once
+
+Reduce TTFB before tuning p99. A faster TTFB makes the page feel ready sooner.
+
+::: glossary
+TTFB: Time to first byte: how long the browser waits for the response to begin.
+p99: The latency that 99% of requests beat.
+:::
+
+::: notes
+Hover, focus or tap an underlined term for its definition. The article ends with an expanded Glossary. Stage annotations require glossary: inline in the slide frontmatter.
+:::
+
+---
+## Explained table
+
+| Feature | Why it matters |
+|---|---|
+| Markdown | Easy to edit |
+| Widgets | Consistent visual output |
+| Static hosting | Simple publishing |
+{.explain}
+
+---
+id: w-timer
+---
+## Time to try it
+
+::: timer 10m
+Pair up and sketch the smallest experiment that tests your assumption.
+:::
+
+::: notes
+Start the ten-minute exercise with ↓ or Start. Pause for questions, or Reset for another group.
 :::
 
 ---
@@ -295,6 +406,38 @@ async function request(url) {
   return response.json();
 }
 ```
+
+---
+## Terminal
+
+```terminal
+$ npm run build
+Building Talkdown...
+Done.
+$ npm test
+Tests complete.
+```
+
+---
+id: w-annotate
+---
+## Annotated code
+
+```python {annotate}
+def save(rows, dsn):
+    conn = pool.connect(dsn)          # (1)
+    with conn.transaction():          # (2)
+        for row in rows:
+            conn.execute(INSERT, row)
+    return len(rows)                  # (3)
+```
+1. Borrows one connection from the pool instead of opening a new one.
+2. Every insert inside commits together, or none of them do.
+3. The caller learns how many rows were written.
+
+::: notes
+Each ↓ lights one numbered line and its note; in the article the notes sit beside the code.
+:::
 
 ---
 id: w-log
@@ -354,38 +497,6 @@ view=split sets the old file beside the new one on the slide; phones and the art
 :::
 
 ---
-## Terminal
-
-```terminal
-$ npm run build
-Building Talkdown...
-Done.
-$ npm test
-Tests complete.
-```
-
----
-id: w-annotate
----
-## Annotated code
-
-```python {annotate}
-def save(rows, dsn):
-    conn = pool.connect(dsn)          # (1)
-    with conn.transaction():          # (2)
-        for row in rows:
-            conn.execute(INSERT, row)
-    return len(rows)                  # (3)
-```
-1. Borrows one connection from the pool instead of opening a new one.
-2. Every insert inside commits together, or none of them do.
-3. The caller learns how many rows were written.
-
-::: notes
-Each ↓ lights one numbered line and its note; in the article the notes sit beside the code.
-:::
-
----
 id: w-http
 ---
 ## One API exchange
@@ -405,52 +516,100 @@ The request goes first. Press ↓ to reveal the response; in the article both me
 :::
 
 ---
-id: w-device
+id: w-endpoint
 ---
-## Browser frame
+## API endpoint
 
-::: browser url="https://example.com/landscapes"
-![Layers of hills at sunset](assets/dusk.svg)
+::: endpoint GET /v1/users/{id}
+Returns one user, including their display name and account status.
+
+| Param | Type | Notes |
+|---|---|---|
+| id | integer | Required path parameter |
+| fields | string | Optional comma-separated fields |
 :::
 
 ::: notes
-A browser frame gives a screenshot its URL context. The chrome uses the theme colours, and the entire image remains visible.
+The endpoint keeps its full description and parameter table visible. Read view adds a permalink on the path; press S to see its Markdown.
 :::
 
 ---
-id: w-window
+id: w-prompt
 ---
-## Window frame
+## Prompt → output
 
-::: window title="Release check"
-```sh
-$ npm run build
-Build complete.
-$ npm test
-36 tests passed.
+::: prompt model="any-model" temperature=0
+### Prompt
+Summarise this diff in one line:
+
+```diff
+- fetch(url)
++ fetch(url, { signal: AbortSignal.timeout(5000) })
 ```
+### Output
+Adds a **5s timeout** to `fetch()`.
 :::
 
 ::: notes
-A window title gives plain code or Markdown a little context without turning the caption into a control.
+Reveal the output with ↓ or the button. The article keeps the prompt and its complete output together; model and temperature are optional labels, with no model request made.
 :::
 
 ---
-id: w-phone
+id: w-chat
 ---
-## Phone frame
+## An agent at work
 
-::: phone
-### Your reading list
-
-- The next chapter
-- Notes for tomorrow
-- Ideas worth keeping
+::: chat
+**user:** Summarise the failing test.
+**assistant:** Running it first.
+**tool** `pytest -k auth` → 1 failed
+**assistant:** The token fixture expired.
 :::
 
 ::: notes
-The phone frame is a small, centred shell. In the article all its content remains readable without scrolling inside the frame.
+Press ↓ to reveal one message at a time. Expand Tool call to inspect the command and result. Article view shows the entire conversation, with tool details available on demand.
 :::
+
+---
+id: w-envdiff
+---
+## Why does production differ?
+
+::: envdiff
+| Key | dev | staging | prod |
+|---|---|---|---|
+| `POOL` | 5 | 20 | **200** |
+| `TIMEOUT` | 30s | 30s | **5s** |
+| `LOG_LEVEL` | info | info | info |
+| `RETRIES` | 3 | 3 | 3 |
+:::
+
+::: notes
+Underlined, bold environment values mark rows that differ. Press ↓ or use Differences only to focus on those rows. Article view always includes the full table; narrow screens can scroll the table horizontally.
+:::
+
+---
+id: w-kbd
+---
+## Keep your hands on the keyboard
+
+- Open the command palette with [[Mod+Shift+P]].
+- Search this project with [[Mod+K]], then press [[Enter]].
+- Zoom in with [[Ctrl+Plus]]; cancel with [[Esc]].
+
+::: notes
+Write shortcuts with double brackets, separating keys with plus signs. Mod adapts to the reader's platform: Command on Apple devices, Control elsewhere. Explicit Ctrl stays Control. The keycaps are the same in slides and articles; press S to inspect the Markdown.
+:::
+
+---
+## Mermaid diagram
+
+```mermaid
+flowchart LR
+  A[Markdown] --> B[Talkdown]
+  B --> C[Slides]
+  B --> D[Article]
+```
 
 ---
 id: w-flow
@@ -502,28 +661,86 @@ The list reads from the top layer to its foundation. Builds reveal one layer at 
 :::
 
 ---
-## Mermaid diagram
+id: w-device
+---
+## Browser frame
 
-```mermaid
-flowchart LR
-  A[Markdown] --> B[Talkdown]
-  B --> C[Slides]
-  B --> D[Article]
+::: browser url="https://example.com/landscapes"
+![Layers of hills at sunset](assets/dusk.svg)
+:::
+
+::: notes
+A browser frame gives a screenshot its URL context. The chrome uses the theme colours, and the entire image remains visible.
+:::
+
+---
+id: w-window
+---
+## Window frame
+
+::: window title="Release check"
+```sh
+$ npm run build
+Build complete.
+$ npm test
+36 tests passed.
 ```
+:::
+
+::: notes
+A window title gives plain code or Markdown a little context without turning the caption into a control.
+:::
+
+---
+id: w-phone
+---
+## Phone frame
+
+::: phone
+### Your reading list
+
+- The next chapter
+- Notes for tomorrow
+- Ideas worth keeping
+:::
+
+::: notes
+The phone frame is a small, centred shell. In the article all its content remains readable without scrolling inside the frame.
+:::
+
+---
+## Maths
+
+A familiar equation: $E = mc^2$.
+
+---
+id: w-derive
+---
+## Derive the total time
+
+$$ {steps}
+T &= N \cdot t \\
+  &= 10^6 \cdot 40\,\mu s \\
+  &= 40\,s \quad \text{(one million requests)}
+$$
+
+::: notes
+Multiply the number of requests by the time per request. Each ↓ reveals the next equation; article view includes the complete derivation and its explanation.
+:::
 
 ---
 section: Presentation components
 id: content
 ---
-## Stats
+## Feature cards
 
-::: stats
-### 23
-Themes
-### 2
-Reading modes
-### 0
-Things to install
+::: features
+### :zap: Fast
+Write Markdown.
+### :palette: Themed
+Change the whole deck.
+### :book-open: Readable
+Share as an article.
 :::
 
 ---
@@ -540,34 +757,6 @@ Open-source maintainer · building tools for clear explanations.
 
 ::: notes
 A speaker card keeps a name, role, portrait and links together. The same Markdown becomes a compact author box in the article. The photo is optional.
-:::
-
----
-## Feature cards
-
-::: features
-### :zap: Fast
-Write Markdown.
-### :palette: Themed
-Change the whole deck.
-### :book-open: Readable
-Share as an article.
-:::
-
----
-id: w-chat
----
-## An agent at work
-
-::: chat
-**user:** Summarise the failing test.
-**assistant:** Running it first.
-**tool** `pytest -k auth` → 1 failed
-**assistant:** The token fixture expired.
-:::
-
-::: notes
-Press ↓ to reveal one message at a time. Expand Tool call to inspect the command and result. Article view shows the entire conversation, with tool details available on demand.
 :::
 
 ---
@@ -589,169 +778,6 @@ id: w-board
 
 ::: notes
 The first column starts revealed. Press ↓ to reveal the next column, or select its heading. Article view shows every card; phone columns stack in reading order.
-:::
-
----
-id: w-hotspots
----
-## Read the landscape
-
-::: hotspots
-![Mountain ridges at dusk](assets/dusk.svg)
-- [25%, 35%] **Sky:** warm light above the horizon
-- [62%, 60%] **Ridge:** a distant silhouette
-- [80%, 85%] **Foreground:** depth from overlapping layers
-:::
-
-::: notes
-Press ↓ to select the next numbered pin, or tap a pin to jump to its label. Percentages keep annotations attached as the image scales. The article shows the complete numbered legend below the image.
-:::
-
----
-id: w-links
----
-## Further reading
-
-::: links
-- [Talkdown](https://github.com/sambhav/talkdown) Markdown slides that read as articles.
-- [Writing a deck](https://sambhav.dev/talkdown/skills/talkdown/SKILL.md) Syntax, themes and examples for agents.
-- [Widget gallery](gallery.html) Every component, with its source a keypress away.
-- [The main demo](./) A short tour of the format and its navigation.
-:::
-
-::: notes
-Link cards use the title and description you write. They show the destination domain without fetching favicons or page metadata. The whole card is a link; on phones the cards form one readable column.
-:::
-
----
-id: w-sparkline
----
-## Trends at a glance
-
-| Service | p99 (ms) | Last six deploys |
-|---|---|---|
-| API | 480 | `spark:9,8,8,6,5,5` |
-| Search | 220 | `spark:3,4,3,5,6,7` |
-| Queue | 120 | `spark:4,4,4,4,4,4` |
-
-A first sample looks like `spark:5`; every trend inherits its text colour.
-
-::: notes
-Sparklines show the shape of a trend; the accessible label lists every authored value, in slides and the article.
-:::
-
----
-id: w-envdiff
----
-## Why does production differ?
-
-::: envdiff
-| Key | dev | staging | prod |
-|---|---|---|---|
-| `POOL` | 5 | 20 | **200** |
-| `TIMEOUT` | 30s | 30s | **5s** |
-| `LOG_LEVEL` | info | info | info |
-| `RETRIES` | 3 | 3 | 3 |
-:::
-
-::: notes
-Underlined, bold environment values mark rows that differ. Press ↓ or use Differences only to focus on those rows. Article view always includes the full table; narrow screens can scroll the table horizontally.
-:::
-
----
-## Explained table
-
-| Feature | Why it matters |
-|---|---|
-| Markdown | Easy to edit |
-| Widgets | Consistent visual output |
-| Static hosting | Simple publishing |
-{.explain}
-
----
-id: w-glossary
-glossary: inline
----
-## Explain jargon once
-
-Reduce TTFB before tuning p99. A faster TTFB makes the page feel ready sooner.
-
-::: glossary
-TTFB: Time to first byte: how long the browser waits for the response to begin.
-p99: The latency that 99% of requests beat.
-:::
-
-::: notes
-Hover, focus or tap an underlined term for its definition. The article ends with an expanded Glossary. Stage annotations require glossary: inline in the slide frontmatter.
-:::
-
----
-id: w-quiz
----
-## Check your understanding
-
-::: quiz
-### What does p99 measure?
-- [ ] Average latency
-- [x] Latency 99% of requests beat
-- [ ] Peak latency
-
-The tail matters because users notice the slow ones.
-:::
-
-::: notes
-Choose an answer or press ↓ to reveal it. In article view the answer and explanation stay readable; Reset clears your choice. Nothing is stored or sent.
-:::
-
----
-id: w-meter
----
-## Migration, on track
-
-::: meter value=72 max=100 label="Migration done" unit=%
-:::
-
-- **[1.2M]{count}** requests/day
-
-::: notes
-Press down to fill the migration meter, then again to count the daily traffic. Article readers see the final figures immediately.
-:::
-
----
-## Checklist
-
-- [x] Write Markdown
-- [x] Choose a theme
-- [x] Add a widget
-- [ ] Publish the presentation
-
-> [!TIP]
-> Press S on any slide to see the exact source.
-
----
-id: w-kbd
----
-## Keep your hands on the keyboard
-
-- Open the command palette with [[Mod+Shift+P]].
-- Search this project with [[Mod+K]], then press [[Enter]].
-- Zoom in with [[Ctrl+Plus]]; cancel with [[Esc]].
-
-::: notes
-Write shortcuts with double brackets, separating keys with plus signs. Mod adapts to the reader's platform: Command on Apple devices, Control elsewhere. Explicit Ctrl stays Control. The keycaps are the same in slides and articles; press S to inspect the Markdown.
-:::
-
----
-id: w-explore
----
-## How many workers?
-
-::: explorable
-With [qps=1000]{range=100..10000 step=100} requests/s at [ms=40]{range=5..200} ms, you need **{qps*ms/1000}** concurrent workers.
-:::
-
-::: notes
-Adjust request volume or latency to see how concurrency changes. Each slider also supports arrow keys; the article starts with the authored values.
 :::
 
 ---
@@ -777,63 +803,53 @@ One release appears per step. Article view keeps every release visible with a pe
 :::
 
 ---
-id: w-prompt
+id: w-links
 ---
-## Prompt → output
+## Further reading
 
-::: prompt model="any-model" temperature=0
-### Prompt
-Summarise this diff in one line:
-
-```diff
-- fetch(url)
-+ fetch(url, { signal: AbortSignal.timeout(5000) })
-```
-### Output
-Adds a **5s timeout** to `fetch()`.
+::: links
+- [Talkdown](https://github.com/sambhav/talkdown) Markdown slides that read as articles.
+- [Writing a deck](https://sambhav.dev/talkdown/skills/talkdown/SKILL.md) Syntax, themes and examples for agents.
+- [Widget gallery](gallery.html) Every component, with its source a keypress away.
+- [The main demo](./) A short tour of the format and its navigation.
 :::
 
 ::: notes
-Reveal the output with ↓ or the button. The article keeps the prompt and its complete output together; model and temperature are optional labels, with no model request made.
+Link cards use the title and description you write. They show the destination domain without fetching favicons or page metadata. The whole card is a link; on phones the cards form one readable column.
 :::
+
+---
+id: w-gallery
+---
+## A small visual collection
+
+::: gallery
+![Dusk: a quiet landscape](assets/dusk.svg)
+![Speaker portrait](assets/speaker.svg)
+![Talkdown mark](docs/logo.svg)
+:::
+
+::: notes
+Use ↓ to highlight each image, then open one to browse the collection at full size. Every caption remains visible in the article.
+:::
+
+---
+## Checklist
+
+- [x] Write Markdown
+- [x] Choose a theme
+- [x] Add a widget
+- [ ] Publish the presentation
+
+> [!TIP]
+> Press S on any slide to see the exact source.
 
 ---
 ## Pull quote
 
 > The best presentation is one people can still read afterwards.
-
----
-id: w-derive
----
-## Derive the total time
-
-$$ {steps}
-T &= N \cdot t \\
-  &= 10^6 \cdot 40\,\mu s \\
-  &= 40\,s \quad \text{(one million requests)}
-$$
-
-::: notes
-Multiply the number of requests by the time per request. Each ↓ reveals the next equation; article view includes the complete derivation and its explanation.
-:::
-
----
-## Maths
-
-A familiar equation: $E = mc^2$.
-
----
-id: w-timer
----
-## Time to try it
-
-::: timer 10m
-Pair up and sketch the smallest experiment that tests your assumption.
-:::
-
-::: notes
-Start the ten-minute exercise with ↓ or Start. Pause for questions, or Reset for another group.
-:::
+>
+> — The idea behind Talkdown
 
 ---
 id: w-ask
@@ -853,27 +869,10 @@ layout: center
 ---
 # Ready to build?
 
-[Main demo](./) · [README](https://github.com/sambhav/talkdown) · [Start a deck](https://github.com/sambhav/talkdown#-quick-start)
+[Main demo](./) · [README](https://github.com/sambhav/talkdown) · [Start a deck](https://github.com/sambhav/talkdown#quick-start)
 
 ::: notes
 This gallery showcases the common Markdown-native widgets. The main demo also covers image and video slides, recordings, custom HTML, layouts, source inspection, and other presentation features.
-:::
----
-id: w-endpoint
----
-## API endpoint
-
-::: endpoint GET /v1/users/{id}
-Returns one user, including their display name and account status.
-
-| Param | Type | Notes |
-|---|---|---|
-| id | integer | Required path parameter |
-| fields | string | Optional comma-separated fields |
-:::
-
-::: notes
-The endpoint keeps its full description and parameter table visible. Read view adds a permalink on the path; press S to see its Markdown.
 :::
 
 </script>
