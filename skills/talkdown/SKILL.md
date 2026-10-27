@@ -169,6 +169,7 @@ The article.
 - Flow / stack: `::: flow` or `::: stack` around a bulleted list, one box per item. `::: flow vertical` points down. Slide frontmatter `build: true` reveals every box on ↓; `{.step}` marks individual items. Article view shows all boxes; narrow screens stack flows vertically. No options besides `flow vertical`.
 - Device frames: `::: browser url="https://example.com/settings"`, `::: window title="Terminal"` or `::: phone` around an image, code or Markdown. URL/title are optional captions, not live embeds; full content expands in the article.
 - Stepped equations: `$$ {steps}` on its own line, TeX rows separated by `\\`, then `$$`. Use `&` to align cells and `\text{…}` for explanations. ↓ or **Next equation** reveals each row; article view shows every equation. Existing KaTeX loading and `data-math="off"` work unchanged.
+- Array stepper: a ` ```array ` fence. Line 1 is the data (`[1, 3, 5, 7]`, comma-separated, max 40 cells); each later line is one step of `name=index` pointers (0-based, in range), plus optional `*value` to mark found cells (the value must be in the data). ↓ moves the pointers; article is a table with one row per step. No options; bad input shows an error.
 
 ### Presentation components
 
