@@ -461,6 +461,7 @@ test('code groups keep each fence; a [label] after the language names its tab an
   assert.match(renderMarkdown('```terminal [Shell]\n$ ls\n```'), /^<div data-label="Shell" class="w-term"/);
   assert.match(renderMarkdown('```js\nconst a = [1]\n```'), /^<pre class="code" data-lang="js"><code>const a = \[1\]/);   // brackets in the code are code
   assert.match(renderMarkdown('```md [x](y)\n```'), /data-label="x"/);
+});
 test('stepped mermaid lists node ids per step, with optional notes, and fails visibly', () => {
   const ok = md('```mermaid {steps: a,b: First hop | b,c}\nflowchart LR\n  a --> b --> c\n```');
   assert.match(ok, /^<div class="w-stepped"><div class="w-diagram" data-steps="\[\[&quot;a&quot;,&quot;b&quot;\],\[&quot;b&quot;,&quot;c&quot;\]\]">/);
