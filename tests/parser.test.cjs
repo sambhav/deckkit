@@ -218,6 +218,27 @@ test('diff steps and brace options are validated; braces inside a quoted title a
   assert.match(renderMarkdown('```diff {steps: 1-2 | 3, 5}\n+a\n```'), /data-steps="1-2 \| 3, 5"/);
   assert.match(renderMarkdown('```diff title="{x}.py" {steps: hunks}\n+a\n```'), /<figcaption>\{x\}.py<\/figcaption>/);
 });
+test('tree fences nest by indentation, mark entries and keep notes', () => {
+  const html = md('```tree\nsrc/\n  deck.js   # the `runtime`\n  + new.js\n  - old.js\n* docs/\nREADME.md\n```');
+  assert.match(html, /^<div class="w-tree"><ul><li class="t-dir"><div class="t-row"><button type="button" class="t-item" aria-expanded="true">/);
+  assert.match(html, /<span class="t-name">deck.js<\/span><\/span><span class="t-note">the <code>runtime<\/code><\/span>/);
+  assert.match(html, /<li class="t-file t-add">.*?<ins class="t-name">new.js<\/ins>/);
+  assert.match(html, /<li class="t-file t-del">.*?<del class="t-name">old.js<\/del><span class="t-sr"> \(removed\)<\/span><\/span><\/div><\/li><\/ul><\/li>/);   // last child of src
+  assert.match(html, /<li class="t-dir t-hi"><div class="t-row"><span class="t-item">.*?<mark class="t-name">docs<\/mark>/);   // empty folder: no button
+  assert.equal((html.match(/<button/g) || []).length, 1);
+  assert.match(md('```tree {steps}\na/\n  b\n```'), /<div class="w-tree" data-steps>/);
+  assert.doesNotMatch(md('```tree\nissue#11.md\n#1-intro.md\n```'), /t-note|td-error/);   // a note needs a space before #
+  assert.match(html, /<ins class="t-name">new.js<\/ins><span class="t-sr"> \(added\)<\/span>/);
+});
+test('tree fences accept pasted tree output and fail visibly', () => {
+  const html = md('```tree\n.\n├── a\n│   └── b.js\n└── c\n\n1 directory, 2 files\n```');
+  assert.equal(md('```tree\n.\n|-- a\n|   `-- b.js\n`-- c\n```'), html);   // --charset=ascii draws the same tree
+  assert.doesNotMatch(html, /directory/);
+  assert.match(html, /t-name">a<\/span><\/button><\/div><ul><li class="t-file">.*?b.js.*?<\/ul><\/li><li class="t-file">.*?c</);
+  assert.match(md('```tree colour=red\na\n```'), /role="alert">tree: unknown option &quot;colour=red&quot;[^]*<pre class="code"><code>a<\/code>/);
+  assert.match(md('```tree\n```'), /role="alert">tree: the block is empty/);
+  assert.match(md('```tree\na\n  # just a note\n```'), /role="alert">tree: line 2 has no file or folder name/);
+});
 
 
 test('HTTP fences pair a request and response and preserve escaped message bodies', () => {

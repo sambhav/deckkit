@@ -47,6 +47,8 @@ import { citeFormats } from './cite.js';
  *   ::: quiz                            ### question, task-list choices (one [x]); ↓ reveals answer and explanation
  *   ::: prompt model="any-model" temperature=0   ### Prompt / ### Output; ↓ reveals the output
  *   ::: versus                          ### models side by side (2-4), optional > prompt quote and ### Verdict; ↓ adds one column
+ *   ```tree {steps}                     a file tree: indent to nest, "dir/" for folders, "+ " "- " "* " added / removed / highlighted,
+ *                                       "  # note" after a name; folders open and close, {steps} opens one per ↓
  *   ::: flip                            ### front, the rest is the back
  *   ::: flow / ::: stack               bulleted boxes; flow vertical changes direction; build: true or {.step} reveals items
  *   ::: changelog                       ### version · YYYY-MM-DD releases, #### group labels; one release per step, all in articles
@@ -345,6 +347,7 @@ import { citeFormats } from './cite.js';
     c.querySelectorAll('.w-cite').forEach(cite);
     c.querySelectorAll('.w-term:not(.w-cast)').forEach(terminal);
     c.querySelectorAll('.w-cast').forEach(cast);
+    c.querySelectorAll('.w-tree').forEach(tree);
     c.querySelectorAll('.qr').forEach(b => { b.className = 'w w-qr'; b.dataset.url = b.textContent.trim(); b.textContent = ''; });
     c.querySelectorAll('.agenda').forEach(b => b.className = 'w w-agenda');
   }
@@ -1633,6 +1636,17 @@ import { citeFormats } from './cite.js';
     box.insertBefore(status, answer); box.append(reveal, reset);
   }
 
+  // ```tree: each folder with children is a button that opens and closes it; {steps} opens one folder per ↓, in order
+  function tree(w) {
+    const folds = [...w.querySelectorAll('button.t-item')], open = b => b.getAttribute('aria-expanded') === 'true';
+    const set = (b, on) => { b.setAttribute('aria-expanded', on); b.closest('li').classList.toggle('t-shut', !on); };
+    w.addEventListener('keydown', e => { if (e.key === ' ' && folds.includes(e.target)) e.stopPropagation(); });   // Space toggles, not next slide
+    // without {steps} every folder starts open, and opens again on entering the slide or the article
+    const n = 'steps' in w.dataset ? folds.length + 1 : 1;
+    steps(w, n, i => folds.forEach((b, j) => set(b, n === 1 || j < i)), { read: 'end' });
+    folds.forEach(b => b.addEventListener('click', () => set(b, !open(b))));   // a click toggles just that folder
+  }
+
   // ::: flip — the ### heading is the front, the rest is the back
   function flip(box) {
     const w = document.createElement('div');
@@ -2456,7 +2470,7 @@ import { citeFormats } from './cite.js';
       if (done(s)) setAt(s, 0); else stepsOf(s).some(st => st.next());
     }));
     // a clicked button keeps focus, so Space / Enter would press it again; hand the keys back to the deck
-    document.addEventListener('click', e => { const b = e.target.closest('#stage button'); if (b && !b.matches('.glossary-button') && !b.closest('.w-quiz, .w-timer-controls, .w-log, .w-envdiff, .w-prompt')) b.blur(); });
+    document.addEventListener('click', e => { const b = e.target.closest('#stage button'); if (b && !b.matches('.glossary-button') && (e.detail || !b.matches('.w-tree .t-item')) && !b.closest('.w-quiz, .w-timer-controls, .w-log, .w-envdiff, .w-prompt')) b.blur(); });
     // [text](#id) links to the slide with that id; [text](?theme=rose#id) and ?mode=dark restyle this page in place,
     // so the slide and step you're on stay put
     document.addEventListener('click', e => {

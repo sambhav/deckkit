@@ -270,6 +270,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Regex explainer** | A ` ```regex ` block: a pattern line, then `test: text` lines (or `/pattern/flags`). Each part is coloured and explained; ↓ spotlights one part at a time, tests show match or no match with captured groups |
 | **Logs** | ` ```log {steps: 3 \| 5-6} ` numbers log lines, dims timestamps and styles levels. ↓ highlights line groups; Copy keeps the raw log |
 | **Diffs** | ` ```diff {steps: hunks} title="api.py" ` tints changes and highlights each `@@` hunk on ↓. `view=split` shows old beside new; **Copy** takes the new code |
+| **File tree** | ` ```tree ` with one name per line, indented to nest: `dir/` for folders, `+ ` `- ` `* ` for added, removed and highlighted, `# note` after a name. `{steps}` opens one folder per ↓ |
 | **HTTP exchange** | A ` ```http ` fence: request and headers, a blank line, then `HTTP/1.1 200 OK` and the response. ↓ reveals the response |
 | **Bit layout** | A ` ```bitfield bits=32 ` fence with one `0-3 Version` (or `7 Flag`) line per field: packet headers, registers, structs. Rows wrap at `bits`; ↓ highlights each field; the article adds an offset and width table |
 | **API endpoint** | `::: endpoint GET /v1/users/{id}` around a description and parameter table; path parameters are highlighted, with a permalink in the article |
