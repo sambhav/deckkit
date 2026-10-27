@@ -45,6 +45,7 @@ import { environmentDifferences } from './envdiff.js';
  *   ::: timeline                        ### milestones; ↓ walks them; vertical on phones and in read view
  *   ::: quadrant x="Effort" y="Impact"  four ### quadrant labels, then optional - Label [0.2, 0.8] points
  *   ::: chat                            **user:** / **assistant:** / **system:** / **tool** messages; ↓ reveals messages; tool rows expand
+ *   ```sequence                         A -> B: msg / A --> B: reply / note: text; ↓ draws the next message; articles add a numbered list
  *   ::: gallery                         Markdown images become a grid; ↓ highlights each, click opens a captioned lightbox
  *   ::: board                           ### columns with lists of cards; ↓ reveals each column, all shown in read view
  *   ::: glossary                       Term: Definition lines; first use tooltips in articles, glossary: inline opts slides in
@@ -262,6 +263,7 @@ import { environmentDifferences } from './envdiff.js';
     c.querySelectorAll('.w-array[data-array]').forEach(arrayStepper);
     c.querySelectorAll('.w-bitfield').forEach(bitfield);
     c.querySelectorAll('.w-bench').forEach(benchDownload);
+    c.querySelectorAll('.w-seq').forEach(sequence);
     c.querySelectorAll('pre.code').forEach(copyable);
     c.querySelectorAll('.compare').forEach(box => beforeAfter(box, steps));
     [...c.querySelectorAll('.code-group')].reverse().forEach(codeGroup);
@@ -824,6 +826,15 @@ import { environmentDifferences } from './envdiff.js';
     w.style.setProperty('--n', lis.length);
     const st = steps(w, lis.length, i => lis.forEach((li, j) => { li.classList.toggle('on', j === i); li.classList.toggle('done', j < i); }));
     lis.forEach((li, j) => li.addEventListener('click', () => st.go(j)));
+  }
+
+  // ```sequence — each ↓ draws the next message; the article view shows the whole diagram and its numbered list.
+  function sequence(box) {
+    const rows = [...box.querySelectorAll('.w-seq-step')];
+    steps(box, rows.length, i => rows.forEach((row, j) => {
+      row.classList.toggle('shown', j <= i);
+      row.classList.toggle('current', j === i);
+    }), { read: 'end' });
   }
 
   function chat(box) {

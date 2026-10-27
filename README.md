@@ -276,6 +276,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Maths** | `$x^2$` inline or a `$$ … $$` block, typeset by [KaTeX](https://katex.org/) |
 | **Stepped equations** | `$$ {steps}`, TeX rows separated by `\\`, then `$$`. Align with `&`, explain with `\text{…}`; ↓ reveals one row at a time |
 | **Array stepper** | ` ```array `: the first line is the data (`[1, 3, 5, 7]`), each later line one step of pointers (`lo=0 hi=3 mid=1`), and `*7` marks a found value. ↓ moves the pointers; the article is a table with one row per step |
+| **Sequence diagram** | ` ```sequence ` with `Browser -> Server: Hello` lines; `-->` is a reply, `note: text` adds a note, `note over A,B: text` spans lifelines. ↓ draws the next message; articles add a numbered list |
 
 ### Presentation components
 
