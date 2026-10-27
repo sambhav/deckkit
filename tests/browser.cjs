@@ -247,6 +247,19 @@ async function verify(page, base) {
   check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'HTTP article must fit a small phone');
   await page.evaluate(() => Deck.setView('present'));
   check(!(await response.isVisible()), 'Returning to slides must restore the request step');
+  // Array steppers move named pointers on ↓; the article is a step table.
+  const arrayDeck = '## Array\n```array\n[1, 3, 5, 7]\nlo=0 hi=3\nlo=2 hi=3 *5\n```';
+  await page.route('**/array-stepper.html*', r => r.fulfill({ contentType: 'text/html', body:
+    '<!doctype html><html data-fonts="off" data-highlight="off"><head><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + arrayDeck + '</script></body></html>' }));
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(base + '/array-stepper.html?view=present');
+  await page.waitForFunction(() => window.Deck?.slides.length === 1);
+  const cellsAt = name => page.locator('.w-array-cell').evaluateAll((cs, n) => cs.map(c => [...c.querySelectorAll('.w-array-p b')].some(b => b.textContent === n)), name);
+  check(JSON.stringify(await cellsAt('lo')) === '[true,false,false,false]' && !(await page.locator('.w-array-table').isVisible()), 'Array must start at the first step without the table');
+  await page.keyboard.press('ArrowDown');
+  check(JSON.stringify(await cellsAt('lo')) === '[false,false,true,false]' && await page.locator('.w-array-cell.found').count() === 1, 'Down must move the pointers and mark the found value');
+  await page.evaluate(() => Deck.setView('read'));
+  check(await page.locator('.w-array-table tbody tr').count() === 2 && await page.locator('.w-array-table').isVisible(), 'Article must list every array step');
   // Exercise multiple asynchronous references.
   for (const assets of ['']) {
     const source = '## External\n\n```html\n<script>hello</script>\n```';

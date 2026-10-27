@@ -523,6 +523,23 @@ td.mk-only, th.mk-only { text-align: center; }
 :root:not([data-view=read]) .md .w-http pre.code { max-height: calc(var(--t-code) * 13); }
 .w-http-response.pending { visibility: hidden; }
 :is([data-view=read], [data-tall]) .md .w-http { grid-template-columns: minmax(0, 1fr); }
+/* ```array: cells with pointer chips that move per step; the step table is the article view */
+.md .w-array { margin-inline: 0; }
+.md .w-array-cells { display: flex; flex-wrap: wrap; gap: .35em; list-style: none; margin: 0 0 var(--t-gap); padding: 0 0 .2em; justify-content: center; }
+.md .w-array-cell { display: flex; flex-direction: column; align-items: center; min-width: 3.4em; margin: 0; padding: 0; }
+.w-array-v { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 2.4em; padding: 0 .5em; box-sizing: border-box; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--fg); font: 600 var(--t-card)/1.2 var(--mono); }
+.w-array-i { margin-top: .25em; font: .8em/1.2 var(--mono); color: var(--muted); }
+.w-array-p { display: flex; flex-direction: column; align-items: center; gap: .2em; min-height: 2.4em; margin-top: .3em; }
+.w-array-p b { padding: .1em .55em; border-radius: var(--radius); background: var(--accent); color: var(--on-accent); font: 600 .85em/1.4 var(--mono); }
+.w-array-p b::before { content: "\25B2\00a0"; font-size: .7em; }
+.w-array-cell.on .w-array-v { border-color: var(--accent); background: var(--accent-soft); }
+.w-array-cell.found .w-array-v { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.w-array-table { margin-top: var(--t-gap); }
+.w-array-table th, .w-array-table td { text-align: center; font-variant-numeric: tabular-nums; }
+.w-array-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+:root:not([data-view=read]) .w-array.live .w-array-table { display: none; }
+:root[data-view=read] .w-array.live .w-array-p { display: none; }
+:root[data-view=read] .w-array.live .w-array-cell :is(.w-array-v) { background: var(--surface); color: var(--fg); border-color: var(--line); }
 /* ```diff: +/- lines tinted with the theme's green and red; a split view sets old beside new on the stage */
 .md .w-diff { position: relative; margin-inline: 0; margin-bottom: 0; }
 .md .w-diff > figcaption { margin: 0 0 .5em; font: 500 calc(var(--t-code) * .85)/1.5 var(--mono); color: var(--muted); }
