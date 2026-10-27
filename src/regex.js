@@ -41,13 +41,12 @@ function escape(s, i, inClass) {
 
 function charClass(s, i) {
   let j = i + 1; const negate = s[j] === '^'; if (negate) j++;
-  const items = []; let first = true;
+  const items = []; 
   const one = () => {
     if (s[j] === '\\') { const [len, , label] = escape(s, j, true); const t = s.slice(j, j + len); j += len; return { t, label: label.replace(/^the literal character /, '').replace(/^a /, '') }; }
     const t = String.fromCodePoint(s.codePointAt(j)); j += t.length; return { t, label: q(t) };
   };
-  while (j < s.length && (s[j] !== ']' || first)) {
-    first = false;
+  while (j < s.length && s[j] !== ']') {
     const a = one();
     if (s[j] === '-' && s[j + 1] !== ']' && j + 1 < s.length && !CLASSES[a.t[1]]) {
       j++; const b = one();
@@ -55,7 +54,8 @@ function charClass(s, i) {
     } else items.push(a.label);
   }
   if (j >= s.length) throw new Error('unterminated character class');
-  return { end: j + 1, label: `any one character ${negate ? 'except ' : 'from '}${items.join(', ')}` };
+  if (!items.length) return { end: j + 1, label: negate ? 'any character, including a newline' : 'nothing (an empty class never matches)' };
+  return { end: j + 1, label:`any one character ${negate ? 'except ' : 'from '}${items.join(', ')}` };
 }
 
 function parseSeq(s, i, flags, st, nested) {
@@ -78,11 +78,11 @@ function parseSeq(s, i, flags, st, nested) {
       else if (c === '\\') { const [l, kind, label] = escape(s, i); node = { kind, src: s.slice(i, i + l), label }; len = l; }
       else if (c === '[') { const cc = charClass(s, i); node = { kind: 'class', src: s.slice(i, cc.end), label: cc.label }; len = cc.end - i; }
       else if (c === '(') {
-        const head = s.slice(i).match(/^\(\?(?::|=|!|<=|<!|<[A-Za-z_$][\w$]*>)?/)?.[0] || '(';
+        const head = s.slice(i).match(/^\(\?(?:[a-z]*(?:-[a-z]+)?:|=|!|<=|<!|<[A-Za-z_$][\w$]*>)?/)?.[0] || '(';
         const name = head.match(/^\(\?<([^=!].*)>$/)?.[1];
         const label = head === '(' ? `capture group ${++st.n}` : name ? `capture group ${(st.names[++st.n] = name, st.n)}, named ${q(name)}`
           : head === '(?:' ? 'non-capturing group' : head === '(?=' ? 'lookahead: must be followed by' : head === '(?!' ? 'negative lookahead: must not be followed by'
-          : head === '(?<=' ? 'lookbehind: must be preceded by' : head === '(?<!' ? 'negative lookbehind: must not be preceded by' : 'group';
+          : head === '(?<=' ? 'lookbehind: must be preceded by' : head === '(?<!' ? 'negative lookbehind: must not be preceded by' : `group with flags ${q(head.slice(2, -1))}`;
         const inner = parseSeq(s, i + head.length, flags, st, true);
         if (s[inner.end] !== ')') throw new Error('missing )');
         node = { kind: /^\(\?<?[=!]/.test(head) ? 'anchor' : 'group', head, src: s.slice(i, inner.end + 1), label, children: inner.nodes }; len = inner.end + 1 - i;
@@ -126,7 +126,8 @@ function testHtml(re, text, names) {
 export function regexBlock(source, escapeHtml = esc) {
   const fail = message => `<p class="td-error" role="alert">regex: ${escapeHtml(message)}</p><pre class="code"><code>${escapeHtml(source)}</code></pre>`;
   const tests = [], pats = [];
-  for (const l of source.split('\n')) { const t = l.match(/^test:(?: |$)(.*)$/); if (t) tests.push(t[1]); else if (l.trim()) pats.push(l.trim()); }
+  for (const l of source.split(/\r?\n/)) { const t = l.match(/^test:(?: |$)(.*)$/); if (t) tests.push(t[1]); else if (l.trim()) pats.push(l.trim()); }
+  if (tests.some(t => t.length > 200)) return fail('test strings are limited to 200 characters.');
   if (pats.length !== 1) return fail(pats.length ? 'use one pattern line, then "test: text" lines.' : 'add a pattern line.');
   const [, pattern, flags] = pats[0].match(/^\/(.+)\/([a-z]*)$/) || [0, pats[0], ''];
   let re, nodes;

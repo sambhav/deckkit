@@ -19,6 +19,7 @@ module.exports = async function verifyRegex(page, base) {
   await page.keyboard.press('Escape');
   await page.evaluate(() => Deck.setView('read'));
   assert.equal(await w.locator('.rx-part > ul:visible').count(), 2, 'article shows every part');
+  await page.waitForTimeout(500);
   assert.equal(await w.locator('.rx-part:visible').evaluateAll(els => els.every(e => getComputedStyle(e).opacity === '1')), true);
   await page.setViewportSize({ width: 320, height: 740 });
   assert.equal(await w.evaluate(el => el.scrollWidth <= el.clientWidth + 1), true, 'fits phone');
