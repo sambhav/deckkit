@@ -232,6 +232,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Stats** | `::: stats` around a list like `- **42%** faster first response` |
 | **Meter / counter** | `::: meter value=72 max=100 label="Migration done" unit=%` (empty block) or `[1.2M]{count}` in text. ↓ animates once; articles show final values. `max` defaults to 100 |
 | **Sparklines** | A code span like `spark:9,8,8,6,5,5` draws an inline trend in prose or tables |
+| **Benchmark** | A ` ```bench unit=ms ` fence of `name  12.1 ± 0.4` lines (or hyperfine `--export-json`): ranked bars, whiskers and "N× slower" labels; `better=higher` for throughput. The article adds a table and CSV download |
 | **Marks** | ✓ ◐ ✗ at the start of a cell become icons in the theme's green, accent and red |
 
 ### Interactive content

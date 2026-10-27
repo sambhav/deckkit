@@ -54,6 +54,7 @@ import { environmentDifferences } from './envdiff.js';
  *   ::: timer 10m                     countdown started with ↓ or Start; pause/reset controls, duration text in articles
  *   ::: meter value=72 max=100 label="Done" unit=% / [1.2M]{count}   animated on ↓, final values in read view
  *   `spark:9,8,8,6,5,5`                inline SVG trend in prose or tables; accessible values, same in both views
+ *   ```bench unit=ms                    lines of "name  12.1 ± 0.4" (or hyperfine JSON): ranked bars, whiskers, "N× slower"; table and CSV in read view
  *   ::: envdiff                         a normal table: key then environment columns; ↓ or toggle shows differing rows only
  *   ::: stats                           big numbers: "- **42%** faster first response"
  *   > [!NOTE] / [!TIP] / [!WARNING]     callouts (also [!IMPORTANT], [!CAUTION])
@@ -260,6 +261,7 @@ import { environmentDifferences } from './envdiff.js';
     c.querySelectorAll('.w-log').forEach(logBlock);
     c.querySelectorAll('.w-array[data-array]').forEach(arrayStepper);
     c.querySelectorAll('.w-bitfield').forEach(bitfield);
+    c.querySelectorAll('.w-bench').forEach(benchDownload);
     c.querySelectorAll('pre.code').forEach(copyable);
     c.querySelectorAll('.compare').forEach(box => beforeAfter(box, steps));
     [...c.querySelectorAll('.code-group')].reverse().forEach(codeGroup);
@@ -491,6 +493,14 @@ import { environmentDifferences } from './envdiff.js';
     const a = Math.max(1, +m[1]), b = Math.min(max, +(m[2] || m[1]));
     return Array.from({ length: Math.max(0, b - a + 1) }, (_, k) => a + k);
   }));
+  // ```bench is rendered by the parser; only the CSV download needs the runtime.
+  function benchDownload(fig) {
+    const csv = fig.dataset.csv; delete fig.dataset.csv;
+    fig.querySelector('.w-bench-download').addEventListener('click', () => {
+      const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })), a = document.createElement('a');
+      a.href = url; a.download = 'benchmark.csv'; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+  }
   function logBlock(pre) {
     sources.set(pre, pre.dataset.source); delete pre.dataset.source;
     // Keep Space native for scrolling and activating Copy when the log owns focus.
