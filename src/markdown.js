@@ -9,6 +9,7 @@ import { quadrant } from './quadrant.js';
 
 import { shortcut } from './keyboard-shortcuts.js';
 import { chatTranscript } from './chat.js';
+import { sequenceHTML } from './sequence.js';
 import { parseGlossary } from './glossary.js';
 import { derivation } from './derive.js';
 import { timerDuration, timerLabel } from './timer.js';
@@ -453,6 +454,7 @@ function fence(token) {
   const info = token.info.trim().replace(/^([\w+-]+)\s+\[[^\]\n]+\]/, '$1'), lang = info.match(/^[\w+-]+/)?.[0] || '';
   const source = token.content.replace(/\n$/, ''), code = escape(source);
   if (lang === 'log') return logBlock(token.content, info);
+  if (lang === 'sequence') return sequenceHTML(source);
   if (lang === 'diff') return diff(source, info);
   if (lang === 'http') return httpExchange(source, info);
   if (lang === 'array') return arrayBlock(source, info);

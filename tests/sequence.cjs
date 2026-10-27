@@ -1,0 +1,20 @@
+module.exports = async function verifySequence(page, base) {
+  const check = (ok, message) => { if (!ok) throw new Error(message); };
+  const source = 'id: seq\n---\n## Handshake\n```sequence\nA -> B: one\nB --> A: two\nnote: noted\nA -> A: three\n```\n---\n## Next';
+  await page.route('**/sequence-fixture.html*', route => route.fulfill({ contentType: 'text/html; charset=utf-8', body: '<!doctype html><html data-fonts="off" data-highlight="off" data-icons="off"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + source + '</script></body></html>' }));
+  await page.goto(base + '/sequence-fixture.html?view=present');
+  await page.waitForFunction(() => window.Deck?.slides.length === 2);
+  const shown = () => page.locator('.w-seq-step.shown').count();
+  const visible = () => page.locator('.w-seq-msg:visible, .w-seq-self:visible').evaluateAll(els => els.filter(el => getComputedStyle(el).visibility === 'visible').length);
+  check(await shown() === 1 && await visible() === 1, 'First step must draw only the first message');
+  check(await page.locator('.w-seq-list').isHidden(), 'The numbered list is for articles only');
+  await page.keyboard.press('ArrowDown');
+  check(await shown() === 2 && await page.locator('.w-seq-note').evaluate(el => getComputedStyle(el).visibility) === 'visible', 'Down must draw the reply with its note');
+  await page.keyboard.press('ArrowDown');
+  check(await shown() === 3, 'Down must draw the last message');
+  await page.keyboard.press('ArrowDown');
+  check(await page.evaluate(() => Deck.cur) === 1, 'Down after the last step must advance the slide');
+  await page.goto(base + '/sequence-fixture.html?view=read');
+  await page.waitForFunction(() => window.Deck?.slides.length === 2);
+  check(await shown() === 3 && await page.locator('.w-seq-list li').count() === 3 && await page.locator('.w-seq-list').isVisible(), 'Articles show every message and the numbered list');
+};
