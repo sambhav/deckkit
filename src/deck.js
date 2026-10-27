@@ -74,6 +74,7 @@ import { environmentDifferences } from './envdiff.js';
  *   ```log {steps: 3 | 5-6}          numbered logs with timestamps, severity and stepped highlights
  *   ```array                            [1, 3, 5] then lines like lo=0 hi=2 *5: ↓ moves the named pointers; *v marks a found value; article is a step table
  *   ```terminal                         "$ command" lines type out one per ↓, the rest is their output
+ *   ```bitfield bits=32                 "0-3 Version" lines draw a packet/register layout; ↓ highlights each field; the article adds a field table
  *   ::: endpoint GET /users/{id}        method badge, highlighted path parameters and Markdown reference; article path is a permalink
  *   ```http                             request then a blank line and HTTP status; ↓ reveals the response; article shows both
  *   ![title](demo.cast) or ```cast     plays an asciinema recording (a file needs the page served over http; a ```cast block plays anywhere); ![](youtube / vimeo / .mp4 link) embeds a video
@@ -258,6 +259,7 @@ import { environmentDifferences } from './envdiff.js';
     c.querySelectorAll('.w-http').forEach(httpExchange);
     c.querySelectorAll('.w-log').forEach(logBlock);
     c.querySelectorAll('.w-array[data-array]').forEach(arrayStepper);
+    c.querySelectorAll('.w-bitfield').forEach(bitfield);
     c.querySelectorAll('pre.code').forEach(copyable);
     c.querySelectorAll('.compare').forEach(box => beforeAfter(box, steps));
     [...c.querySelectorAll('.code-group')].reverse().forEach(codeGroup);
@@ -475,6 +477,12 @@ import { environmentDifferences } from './envdiff.js';
       trs.forEach((tr, k) => tr.classList.toggle('on', k === i));
       live.textContent = `Step ${i + 1}: ` + Object.entries(r.p).map(([n, k]) => `${n} at ${k}`).concat(r.f.map(v => `found ${v}`)).join(', ');
     }, { read: 'end' });
+  }
+  function bitfield(fig) {
+    const n = +fig.dataset.fields, cells = [...fig.querySelectorAll('[data-field]')];
+    if (n < 2) return;
+    const st = steps(fig, n, i => cells.forEach(c => c.classList.toggle('on', +c.dataset.field === i)), { read: 'end' });
+    cells.forEach(c => c.addEventListener('click', () => st.go(+c.dataset.field)));
   }
   // "2, 4-6" -> {2, 4, 5, 6}
   const rangeSet = (g, max = 1e4) => new Set(g.split(',').flatMap(r => {

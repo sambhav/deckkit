@@ -827,6 +827,28 @@ Each line after the data is one step of named pointers. Press ↓ to move them; 
 :::
 
 ---
+id: w-bitfield
+---
+## An IPv4 header
+
+```bitfield bits=32
+0-3 Version
+4-7 IHL
+8-15 DSCP/ECN
+16-31 Total length
+32-47 Identification
+48-50 Flags
+51-63 Fragment offset
+64-71 TTL
+72-79 Protocol
+80-95 Header checksum
+```
+
+::: notes
+Each line is a bit range and a name. Press ↓ to highlight one field at a time; the article adds a table of exact offsets and widths.
+:::
+
+---
 section: Presentation components
 id: content
 ---
