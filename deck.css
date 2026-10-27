@@ -978,6 +978,16 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
   [data-view=read] .sn-mark { cursor: default; pointer-events: none; }
   [data-view=read] .sn-body { display: block; float: right; clear: right; width: 220px; margin: .2em -250px .6em 0; padding: 0 0 0 .8em; background: none; border-left: 2px solid var(--line); font-size: var(--t-small); color: var(--muted); line-height: 1.45; }
 }
+/* citations: [@key] and a "::: references" list */
+.md .cite { font: 600 .7em var(--mono); letter-spacing: 0; white-space: nowrap; color: var(--muted); }
+.md .cite a.cite-link { padding: .5em .25em; margin: -.5em 0; color: var(--accent-ink); background: none; }
+.md .cite a.cite-link.td-error { padding: 0; margin: 0; }
+.md .cite a.cite-link:is(:hover, :focus-visible) { background: var(--accent-soft); border-radius: .3em; }
+.md .cite a.cite-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.md ol.w-references { font-size: calc(var(--t-body) * .8); }
+.md ol.w-references > li { padding-left: calc(var(--t-bullet) * 2.6); overflow-wrap: anywhere; }
+.md ol.w-references > li[data-n]::before { content: "[" attr(data-n) "]"; font-size: .75em; }
+.md ol.w-references > li:target { background: var(--accent-soft); }
 
 /* maths (KaTeX) */
 .md .math-block { font-size: calc(var(--t-body) * 1.15); overflow-x: auto; }

@@ -11,6 +11,7 @@ import { shortcut } from './keyboard-shortcuts.js';
 import { chatTranscript } from './chat.js';
 import { sequenceHTML } from './sequence.js';
 import { parseGlossary } from './glossary.js';
+import { parseReferences } from './citations.js';
 import { derivation } from './derive.js';
 import { timerDuration, timerLabel } from './timer.js';
 
@@ -140,6 +141,7 @@ md.inline.ruler.before('emphasis', 'talkdown_inline', (state, silent) => {
     else html = `<span class="ink ink-${kinds[0]}"${names.includes('step') ? ' data-mark-step' : ''}>${md.renderInline(match[1])}</span>`;
   }
   else if ((match = text.match(/^\[\^([\w-]+)\]/))) html = `<sup class="fn">${escape(match[1])}</sup>`;
+  else if ((match = text.match(/^\[@([\w.:-]+(?:;\s*@[\w.:-]+)*)\]/))) html = '<span class="cite">[' + match[1].split(/;\s*@/).map(k => `<a class="cite-link" data-cite="${escape(k)}">${escape(k)}</a>`).join(', ') + ']</span>';
   else if ((match = text.match(/^:([a-z][a-z0-9]*(?:-[a-z0-9]+)*):/))) html = `<i class="ico" data-icon="${match[1]}" aria-hidden="true"></i>`;
   else if ((match = text.match(/^==(?=\S)(.+?)==/))) html = `<mark>${md.renderInline(match[1])}</mark>`;
   else if ((match = text.match(/^\$(?=[^\s$])([^$\n]*?\S)\$(?![\w$])/))) html = `<span class="math">${escape(match[1])}</span>`;
@@ -689,6 +691,13 @@ function compile(tokens, env) {
             const entries = parseGlossary(source);
             html += '<dl class="w-glossary">' + entries.map(([term, definition]) => `<dt>${escape(term)}</dt><dd>${escape(definition)}</dd>`).join('') + '</dl>';
           } catch (error) { html += `<p class="td-error" role="alert">Glossary: ${escape(error.message)}</p>` + compile(body, env); }
+        }
+        else if (name === 'references') {
+          try {
+            if (Object.keys(options).length || classes.length || body.some(t => !['bullet_list_open', 'bullet_list_close', 'list_item_open', 'list_item_close', 'paragraph_open', 'paragraph_close', 'inline'].includes(t.type)) || body.filter(t => t.type === 'bullet_list_open').length > 1) throw new Error('use one flat list of "- key: Reference" items, without options');
+            const entries = parseReferences(body.filter(t => t.type === 'inline').map(t => t.content));
+            html += '<ol class="w-references">' + entries.map(([key, text]) => `<li data-key="${escape(key)}">${md.renderInline(text.replace(/(^|\s)(https?:\/\/[^\s<>]*[^\s<>.,;:)])/g, '$1<$2>'), env)}</li>`).join('') + '</ol>';
+          } catch (error) { html += `<p class="td-error" role="alert">References: ${escape(error.message)}</p>` + compile(body, env); }
         }
         else if (name === 'explorable') { html += explorable(body, options, classes, md, escape, env); }
         else if (name === 'quiz') { html += quiz(body, options, classes, env); }
