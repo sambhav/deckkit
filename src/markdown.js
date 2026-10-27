@@ -461,6 +461,10 @@ function fence(token) {
   if (lang === 'bitfield') return bitfield(source, info);
   if (lang === 'bench') return benchBlock(source, info);
   if (/^(cast|asciicast)$/.test(lang)) return `<div class="w-term w-cast" data-inline="${code}"></div>`;
+  if (/\{\s*run\s*\}/.test(info)) {
+    if (!/^(js|javascript)$/.test(lang)) return `<p class="td-error" role="alert">run: only js blocks can run, as in \`\`\`js {run}</p><pre class="code"><code>${code}</code></pre>`;
+    return `<div class="w w-run"><pre class="code"><code>${code}</code></pre></div>`;
+  }
   if (lang === 'terminal') return `<div class="w-term" data-lines="${escape(JSON.stringify(source ? source.split('\n') : []))}"></div>`;
   const diagram = `<div class="w-diagram"><pre class="code w-diagram-src">${code}</pre></div>`;
   if (lang === 'mermaid') return /\{\s*source\s*\}/.test(info) ? `<div class="w-with-source"><pre class="code"><code>${code}</code></pre>${diagram}</div>` : diagram;
@@ -496,6 +500,22 @@ function endpoint(signature, tokens, env) {
   if (/[{}]/.test(path.replace(/\{[A-Za-z_][\w.-]*\}/g, ''))) return fail('path parameters must use {name}, with balanced braces.');
   const label = path.split(/(\{[A-Za-z_][\w.-]*\})/g).map(part => part.startsWith('{') ? `<span class="w-endpoint-param">${escape(part)}</span>` : escape(part)).join('');
   return `<section class="w w-endpoint" aria-label="${escape(method + ' ' + path)}"><header class="w-endpoint-header"><strong class="w-endpoint-method">${method}</strong><a class="w-endpoint-path"><code>${label}</code></a></header><div class="w-endpoint-body">${content}</div></section>`;
+}
+
+// ::: live holds ```html, ```css and ```js fences, one of each at most; the runtime turns them into editors beside a sandboxed preview.
+function liveCode(tokens, options, classes, env) {
+  const fail = message => `<p class="td-error" role="alert">live: ${escape(message)}</p>${compile(tokens, env)}`;
+  if (Object.keys(options).length || classes.length) return fail('no options are supported; use ```html, ```css and ```js fences.');
+  const langs = [], panes = [];
+  for (const t of tokens) {
+    if (t.type !== 'fence') return fail('use only ```html, ```css and ```js fences inside.');
+    const lang = { html: 'html', css: 'css', js: 'js', javascript: 'js' }[t.info.trim().match(/^[\w+-]+/)?.[0]];
+    if (!lang || /\{/.test(t.info)) return fail('use only ```html, ```css and ```js fences, without options.');
+    if (langs.includes(lang)) return fail(`there is more than one ${lang} fence.`);
+    langs.push(lang); panes.push(`<div class="w-live-pane" data-lang="${lang}"><pre class="code"><code>${escape(t.content.replace(/\n$/, ''))}</code></pre></div>`);
+  }
+  if (!panes.length) return fail('add at least one ```html, ```css or ```js fence.');
+  return `<div class="w w-live">${panes.join('')}</div>`;
 }
 
 // ::: links keeps ordinary Markdown as its fallback; all card text is authored, never fetched.
@@ -687,6 +707,7 @@ function compile(tokens, env) {
           try { html += changelogHTML(body, ts => compile(ts, env), options, classes); }
           catch (error) { html += `<p class="td-error" role="alert">changelog: ${escape(error.message)}</p>` + compile(body, env); }
         }
+        else if (name === 'live') { html += liveCode(body, options, classes, env); }
         else if (name === 'links') { html += linkCards(body, options, classes, env); }
         else if (['notes', 'say', 'read'].includes(name) && env.collectNotes) {
           const content = compile(body, { ...env, collectNotes: false });

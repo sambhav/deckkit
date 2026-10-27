@@ -7,6 +7,7 @@ import { gallery } from './gallery.js';
 import { visualTypes, visualChart } from './visual-charts.js';
 import { beforeAfter } from './before-after.js';
 import { environmentDifferences } from './envdiff.js';
+import { runCell, liveCode } from './runnable.js';
 
 /* talkdown — slide decks written in Markdown (or HTML), presented on a 16:9 stage, read like an article on a phone.
  *
@@ -75,6 +76,8 @@ import { environmentDifferences } from './envdiff.js';
  *                                       Copy takes the new code
  *   ```log {steps: 3 | 5-6}          numbered logs with timestamps, severity and stepped highlights
  *   ```array                            [1, 3, 5] then lines like lo=0 hi=2 *5: ↓ moves the named pointers; *v marks a found value; article is a step table
+ *   ```js {run}                         editable JavaScript with a Run button (↓ runs it) and its console output; runs in a sandboxed iframe
+ *   ::: live                            ```html / ```css / ```js fences: editors beside a sandboxed preview that redraws as you type (stacked in read view)
  *   ```terminal                         "$ command" lines type out one per ↓, the rest is their output
  *   ```bitfield bits=32                 "0-3 Version" lines draw a packet/register layout; ↓ highlights each field; the article adds a field table
  *   ::: endpoint GET /users/{id}        method badge, highlighted path parameters and Markdown reference; article path is a permalink
@@ -273,6 +276,8 @@ import { environmentDifferences } from './envdiff.js';
     c.querySelectorAll('.accordion').forEach(accordion);
     c.querySelectorAll('.features').forEach(features);
     c.querySelectorAll('.speaker').forEach(speaker);
+    c.querySelectorAll('.w-run').forEach(w => runCell(w, { steps, reading, widgetId: () => ++widgetId }));
+    c.querySelectorAll('.w-live').forEach(w => liveCode(w, { root }));
     c.querySelectorAll('.w-term:not(.w-cast)').forEach(terminal);
     c.querySelectorAll('.w-cast').forEach(cast);
     c.querySelectorAll('.qr').forEach(b => { b.className = 'w w-qr'; b.dataset.url = b.textContent.trim(); b.textContent = ''; });
