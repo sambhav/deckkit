@@ -58,6 +58,7 @@ import { runCell, liveCode } from './runnable.js';
  *   [@key] and ::: references          "- key: Reference" list; [@key] becomes a numbered [1] link, hover shows the entry
  *   ::: glossary                       Term: Definition lines; first use tooltips in articles, glossary: inline opts slides in
  *   ::: speaker                         optional photo, ### name, role and Markdown links; compact author box in read view
+ *   author: date: tags: [a, b]          slide frontmatter: a byline under the title in the article, with reading time and <meta> / OpenGraph tags
  *   ::: links                           a list of [Title](URL) descriptions becomes further-reading cards; no network fetches
  *   ::: hotspots                        image + - [12%, 30%] Label; ↓ selects each numbered pin; article shows a legend
  *   ::: timer 10m                     countdown started with ↓ or Start; pause/reset controls, duration text in articles
@@ -198,7 +199,7 @@ import { runCell, liveCode } from './runnable.js';
   const inline = renderInline;
 
   /* a Markdown deck: slides split by ---; a chunk of only `key: value` lines is the next slide's frontmatter */
-  const META = /^(section|name|layout|kicker|build|class|takeaway|id|image|read|present|glossary):\s*(.*)$/;
+  const META = /^(section|name|layout|kicker|build|class|takeaway|id|image|read|present|glossary|author|date|tags):\s*(.*)$/;
   let section = '', part = 0;
   const sourceOf = new WeakMap();   // slide element -> its Markdown as written, for view source
   function mdSlides(src) {
@@ -237,6 +238,7 @@ import { runCell, liveCode } from './runnable.js';
     if (meta.image) { el.style.setProperty('--image', `url("${new URL(meta.image, document.baseURI).href.replace(/"/g, '%22')}")`); el.classList.add('has-image'); }
     const c = el.firstChild;
     widgets(c);
+    if (meta.author || meta.date || meta.tags) byline(c, meta);
     if (meta.build && meta.build !== 'false') {
       // every block after the title builds in; lists build item by item
       const kids = [...c.querySelectorAll(':scope > *, :scope > .cols > div > *')].filter(k => !k.matches('.kicker, .num, .cols, h1, h2'));
@@ -245,6 +247,43 @@ import { runCell, liveCode } from './runnable.js';
     const marked = c.querySelectorAll('.step');
     if (marked.length) { c.setAttribute('data-build', ''); marked.forEach((s, i) => s.dataset.step ??= i + 1); }
     return el;
+  }
+
+  // author: / date: / tags: frontmatter: a byline under the slide's title, shown in both views; reading time is filled in by assemble()
+  function byline(c, meta) {
+    const box = document.createElement('p'); box.className = 'w w-byline byline';
+    const part = (cls, html) => `<span class="${cls}">${html}</span>`;
+    const bad = meta.date && !(/^\d{4}-\d{2}-\d{2}$/.test(meta.date) && !isNaN(Date.parse(meta.date)));
+    const tags = (meta.tags || '').replace(/^\[|\]$/g, '').split(',').map(t => t.trim()).filter(Boolean);
+    box.innerHTML = [
+      meta.author && part('by', `By <b>${esc(meta.author)}</b>`),
+      meta.date && !bad && `<time datetime="${meta.date}">${esc(new Date(meta.date + 'T00:00:00Z').toLocaleDateString('en', { dateStyle: 'long', timeZone: 'UTC' }))}</time>`,
+      part('rt', ''),
+      tags.length && `<span class="tags">${tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</span>`,
+    ].filter(Boolean).join('');
+    if (bad) box.insertAdjacentHTML('afterbegin', `<span class="td-error" role="alert">date: use YYYY-MM-DD, not "${esc(meta.date)}".</span>`);
+    box.dataset.tags = tags.join(',');
+    const h1 = c.querySelector('h1'); if (h1) h1.after(box); else c.prepend(box);
+  }
+  // read view: minutes from the words of the article, plus the matching <meta> and OpenGraph tags
+  function bylineMeta() {
+    const box = document.querySelector('.byline'); if (!box) return;
+    let words = 0;
+    for (const f of document.querySelectorAll('.frame')) {
+      if (f.dataset.read === 'hide') continue;
+      for (const part of f.querySelectorAll(f.dataset.read === 'text' ? '.prose' : '.content, .prose')) {
+        const clone = part.cloneNode(true); clone.querySelectorAll('.byline').forEach(b => b.remove());
+        words += (clone.textContent.match(/\S+/g) || []).length;
+      }
+    }
+    const mins = Math.max(1, Math.round(words / 220));
+    document.querySelectorAll('.byline .rt').forEach(e => { e.textContent = `${mins} min read`; });
+    const author = box.querySelector('.by b')?.textContent, date = box.querySelector('time')?.dateTime;
+    const add = (key, value, prop) => { if (!value) return; const m = document.createElement('meta'); m.setAttribute(prop ? 'property' : 'name', key); m.content = value; document.head.append(m); };
+    add('og:type', 'article', 1); add('og:title', document.title, 1);
+    add('author', author); add('article:author', author, 1); add('article:published_time', date, 1);
+    for (const t of box.dataset.tags.split(',').filter(Boolean)) add('article:tag', t, 1);
+    if (box.dataset.tags) add('keywords', box.dataset.tags);
   }
 
   /* ================= widgets, built from Markdown ================= */
@@ -2023,6 +2062,7 @@ import { runCell, liveCode } from './runnable.js';
       }
     });
     finishGlossary?.();
+    bylineMeta();
     frames = [...document.querySelectorAll('.frame')];
     buildRail();
 
