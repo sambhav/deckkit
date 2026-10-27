@@ -231,6 +231,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Quadrant** | `::: quadrant x="Effort" y="Impact"`, four `###` headings (top-left, top-right, bottom-left, bottom-right), then optional `- Label [0.2, 0.8]` points on 0–1 axes. ↓ reveals points; the article groups them by quadrant |
 | **Stats** | `::: stats` around a list like `- **42%** faster first response` |
 | **Meter / counter** | `::: meter value=72 max=100 label="Migration done" unit=%` (empty block) or `[1.2M]{count}` in text. ↓ animates once; articles show final values. `max` defaults to 100 |
+| **Magnitude** | `::: magnitude unit=s` around a table of label and positive number (`0.5e-9`, `150e-6`). Log-scale bars with readable ns/µs/ms/s labels; ↓ reveals rows, articles add the table |
 | **Sparklines** | A code span like `spark:9,8,8,6,5,5` draws an inline trend in prose or tables |
 | **Benchmark** | A ` ```bench unit=ms ` fence of `name  12.1 ± 0.4` lines (or hyperfine `--export-json`): ranked bars, whiskers and "N× slower" labels; `better=higher` for throughput. The article adds a table and CSV download |
 | **Marks** | ✓ ◐ ✗ at the start of a cell become icons in the theme's green, accent and red |

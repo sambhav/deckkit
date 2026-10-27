@@ -3,6 +3,7 @@ import { renderMarkdown, renderInline, slideChunks } from './markdown.js';
 import { glossary } from './glossary.js';
 import { timerRemaining } from './timer.js';
 import { parseCSV, chartDataset, csvDownload } from './data.js';
+import { magnitudeModel } from './magnitude.js';
 import { gallery } from './gallery.js';
 import { visualTypes, visualChart } from './visual-charts.js';
 import { beforeAfter } from './before-after.js';
@@ -58,6 +59,7 @@ import { runCell, liveCode } from './runnable.js';
  *   `spark:9,8,8,6,5,5`                inline SVG trend in prose or tables; accessible values, same in both views
  *   ```bench unit=ms                    lines of "name  12.1 ± 0.4" (or hyperfine JSON): ranked bars, whiskers, "N× slower"; table and CSV in read view
  *   ::: envdiff                         a normal table: key then environment columns; ↓ or toggle shows differing rows only
+ *   ::: magnitude unit=s                a table of label | value drawn as log-scale bars (ns..days); ↓ reveals rows, table shown in articles
  *   ::: stats                           big numbers: "- **42%** faster first response"
  *   > [!NOTE] / [!TIP] / [!WARNING]     callouts (also [!IMPORTANT], [!CAUTION])
  *   ```mermaid                          diagrams (Mermaid, fetched only if the deck has one; <html data-diagrams="off"> to skip);
@@ -249,6 +251,7 @@ import { runCell, liveCode } from './runnable.js';
     c.querySelectorAll('.w-quadrant').forEach(quadrantSteps);
     c.querySelectorAll('.gallery').forEach(b => gallery(b, steps));
     c.querySelectorAll('.stats').forEach(stats);
+    c.querySelectorAll('.magnitude').forEach(magnitude);
     c.querySelectorAll('.w-hotspots').forEach(hotspots);
     c.querySelectorAll('.w-explore').forEach(activateExplorable);
     c.querySelectorAll('.timer').forEach(countdown);
@@ -1043,6 +1046,29 @@ import { runCell, liveCode } from './runnable.js';
     // Let native button activation finish without Space / Enter navigating the deck.
     button.addEventListener('keydown', e => { if ([' ', 'Enter'].includes(e.key)) e.stopPropagation(); });
     button.addEventListener('keyup', e => { if ([' ', 'Enter'].includes(e.key)) e.stopPropagation(); });
+  }
+
+  // ::: magnitude: one table, bars on a log scale so nine orders of magnitude share a row of bars; ↓ reveals row by row
+  function magnitude(box) {
+    const table = box.querySelector(':scope > table');
+    const fail = message => { box.insertAdjacentHTML('beforebegin', `<p class="td-error" role="alert">magnitude: ${esc(message)}</p>`); box.classList.remove('magnitude'); };
+    try {
+      const unknown = [...box.attributes].find(a => a.name.startsWith('data-') && a.name !== 'data-unit');
+      if (unknown) throw new Error('unknown option: ' + unknown.name.slice(5));
+      if (!table) throw new Error('write a Markdown table, label then value, like | L1 hit | 0.5e-9 |');
+      const headers = [...(table.tHead?.rows[0]?.cells || [])].map(cell => cell.textContent);
+      const rows = [...(table.tBodies[0]?.rows || [])].map(row => [...row.cells].map(cell => cell.textContent));
+      const unit = box.dataset.unit || '', m = magnitudeModel(headers, rows, unit);
+      const w = document.createElement('div'); w.className = 'w w-magnitude'; if (box.id) w.id = box.id;
+      w.setAttribute('role', 'group'); w.setAttribute('aria-label', `${headers[1] || 'Values'}, log scale over ${m.decades} orders of magnitude`);
+      const items = m.items.map(it => `<li><span class="w-mag-label">${esc(it.label)}</span><span class="w-mag-track" aria-hidden="true"><span class="w-mag-bar" style="width:${(it.at * 100).toFixed(2)}%"></span></span><strong class="w-mag-value">${esc(it.text)}</strong></li>`).join('');
+      w.innerHTML = `<ol class="w-mag-rows">${items}</ol><div class="w-mag-axis" aria-hidden="true">${m.ticks.map(t => `<span style="left:${(t.at * 100).toFixed(2)}%">${esc(t.text)}</span>`).join('')}</div><p class="w-mag-note">Log scale: each tick is ten times the last.</p>`;
+      table.classList.add('w-mag-table'); w.append(table);
+      box.replaceWith(w);
+      const lis = [...w.querySelectorAll('.w-mag-rows > li')];
+      const st = steps(w, lis.length, i => lis.forEach((li, j) => { li.classList.toggle('on', j === i); li.classList.toggle('shown', j <= i); }), { read: 'end' });
+      lis.forEach((li, j) => li.addEventListener('click', () => st.go(j)));
+    } catch (e) { fail(e.message); }
   }
 
   function stats(box) {
