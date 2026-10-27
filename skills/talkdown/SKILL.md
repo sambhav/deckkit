@@ -77,6 +77,7 @@ Frontmatter keys:
 | `image` | Background picture |
 | `read` | `hide` (not in the article) or `text` (only its notes) |
 | `present` | `hide` (article-only slide) |
+| `glossary` | `inline`: annotate glossary terms on the slide too |
 
 Other syntax: `|||` starts a column (text before the first one spans the slide); `::: name` ... `:::` wraps blocks in `<div class="name">` (`::: card`, `::: grid`); `{.step}` at the end of a block reveals it on a step; `{.class #id}` styles a block (alone on a line it applies to the block above); `==text==` is accent-coloured.
 
@@ -111,36 +112,10 @@ Notes can span lines. Timing cues like `[~60s]` are dropped from the article. Co
 
 ## Widgets (plain Markdown)
 
-- Stepped equations: `$$ {steps}` on its own line, TeX rows separated by `\\`, then `$$`. Use `&` to align cells and `\text{…}` for explanations. ↓ or **Next equation** reveals each row; article view shows every equation. Existing KaTeX loading and `data-math="off"` work unchanged.
-- `::: meter value=72 max=100 label="Migration done" unit=%` (empty container) and `[1.2M]{count}`: ↓ animates each value once on cue; articles and reduced motion show final values. Meter max defaults to 100, requires 0 ≤ value ≤ max and a label; unit is optional short plain text. Counters accept signed decimals with optional k/M/B and %.
+Stateful widgets step with ↓ and expand in the article; charts follow their `view` setting. Groups match the gallery.
 
-Stateful widgets step with ↓ and expand in the article; charts follow their `view` setting.
+### Visual charts
 
-- Image hotspots: `::: hotspots` around one `![Alt text](image.png)` followed by `- [12%, 30%] Label` bullets. Coordinates are x from the left and y from the top, each 0–100%. No options; labels accept inline formatting and links. The first pin starts selected; ↓ or a pin button selects the next label. Article view shows the image with all pins and a numbered legend.
-
-- Quadrant: `::: quadrant x="Effort" y="Impact"`, four consecutive `###` headings in top-left, top-right, bottom-left, bottom-right order, then optional `- Label [0.2, 0.8]` points. Coordinates range from 0 to 1, increasing right/up; 0.5 belongs to the right/top. ↓ reveals points (or quadrants when empty). Article shows the full matrix and points grouped by quadrant. Keep labels short and use a few points per slide. Axis labels default to X/Y; no other options.
-
-- Chat: `::: chat` with `**user:** Text`, `**assistant:** Text`, `**system:** Text` or ``**tool** `command` → result`` on separate lines. Blank lines, lists and fences continue the preceding message. ↓ reveals one message per step; articles show all messages with expandable tool calls. Keep slide transcripts short. No options.
-- Image gallery: `::: gallery` around `![Caption](image.png)` lines. No options. ↓ highlights each image; click or Enter opens a lightbox, ← → browse, Escape closes and restores focus. Article view shows a responsive grid with every alt-text caption.
-- Timer: `::: timer 10m` around exercise or break instructions. Use ordered integer `h`, `m`, `s` units (`30s`, `1h30m`), 1 second–24 hours. ↓ or Start begins; Pause/Resume and Reset work with keyboard/touch. Presenter windows share the countdown; article shows duration text only. No options.
-- Sparklines: an inline code span `spark:9,8,8,6,5,5` renders a text-sized SVG trend in prose or table cells, in the current text colour. Comma-separated finite decimal numbers (including negatives and exponents); one value is a dot, constant values a flat line. The accessible label lists all values in both views. Invalid input stays as code with a visible diagnostic.
-
-- Board: `::: board`, a `### Column` heading per column and a Markdown list per column (each top-level item is a card). ↓ reveals each column; article view shows every card, stacking columns on phones. Keep slides to 2–4 short columns; use a new slide for more. No options.
-
-- Flow / stack: `::: flow` or `::: stack` around a bulleted list, one box per item. `::: flow vertical` points down. Slide frontmatter `build: true` reveals every box on ↓; `{.step}` marks individual items. Article view shows all boxes; narrow screens stack flows vertically. No options besides `flow vertical`.
-- Changelog: `::: changelog`, `### v0.4.0 · 2026-10-25` per release and `#### Added` / `#### Fixed` group labels, followed by Markdown notes. No options; dates must be valid `YYYY-MM-DD`. One release per ↓ step; article view shows all with links. Give the slide an `id:` to keep release links stable when slides move.
-
-- Prompt / output: `::: prompt model="any-model" temperature=0`, then exactly `### Prompt` and `### Output`, both with content. Optional `model` is a nonempty label; optional `temperature` is a finite non-negative number. Nested Markdown/code is preserved; use `####` for subheadings. ↓ or Reveal output shows the full output immediately; the article stacks both cards.
-- Tabs: `::: tabs` then a `### Heading` per tab. `::: toggle`, `::: steps` (walkthrough), `::: accordion`, `::: timeline`, `::: features` (cards) use the same shape.
-```md
-::: tabs
-### Present
-The stage.
-### Read
-The article.
-:::
-```
-- Explained table: `{.explain}` on the line after a table; the last column is the detail for the selected row. Cells starting `✓ ◐ ✗` become marks.
 - Chart: `::: chart` around a table or a ` ```csv ` block; column one = labels, other columns = plain numbers (units go in `title`). Options: `type=bar|hbar|line|donut` (or one of the native SVG types below), `view=auto|chart|table|both`, `title="…"`, `series="Column"` (donuts need one series). Readers can inspect the data, download CSV and click a chart to open it full screen; never duplicate the dataset to make a separate table.
 ````md
 ::: chart type=line title="Users per quarter"
@@ -151,27 +126,58 @@ Q2,340
 ```
 :::
 ````
-- Stepped code: ` ```python {steps: 1-2 | 3} ` highlights those lines, one group per step.
-- Annotated code: ` ```python {annotate} ` with a `# (1)` (or `// (1)`, `-- (1)`, `/* (1) */`, `<!-- (1) -->`) comment ending a line, then a `1.` `2.` list right after the fence, one item per number. Pins replace the comments; each step lights one line and its note; the article puts the notes beside the code (below it on phones).
-- Log viewer: a ` ```log {steps: 3 | 5-6} ` fence shows line numbers, dim timestamps and theme-native severity labels (TRACE, DEBUG, INFO, WARN, WARNING, ERROR, FATAL, CRITICAL). Optional steps accept 1-based line ranges and comma groups; all ranges must fit the log. Long logs scroll on slides; articles expand and mark every selected line. Copy preserves the raw fence content.
-- Diff: a ` ```diff ` fence of `+`/`-`/` ` lines, tinted green and red; `@@ label` starts a hunk. Options: `{steps: hunks}` highlights one hunk per step (or `{steps: 1-2 | 3}` by line), `title="api.py"` (default: the `+++` file name), `view=split` for old beside new on the slide (unified on phones and in the article). Copy takes the new code.
-- API endpoint: `::: endpoint GET /v1/users/{id}` around any Markdown description and parameter table. Use an uppercase HTTP method and a slash-prefixed path; `{name}` highlights path parameters. No options. Both views show all content; the article path is a permalink. Use a `http` fence inside for a request/response example.
-- HTTP exchange: a ` ```http ` fence with a request (`GET /users HTTP/1.1`), headers/body, a blank line, then the response (`HTTP/1.1 200 OK`) and its headers/body. No options. ↓ reveals the response; the article stacks both; each message has Copy.
-- Glossary: `::: glossary` with plain `Term: Definition` lines (one per line, unique case-sensitive terms, no options). First whole-word use per slide gets a hover/focus/tap definition in articles; `glossary: inline` in slide frontmatter opts the stage in. Articles end with every definition expanded. Links, code and speaker-only notes are skipped.
-- Speaker: `::: speaker` around an optional `![Portrait](photo.jpg)`, one `### Name`, role text and Markdown links. Links get icons; the article shows a compact author box.
-- Environment diff: `::: envdiff` around one ordinary Markdown table, key column then at least two named environments. Compare trimmed, case-sensitive rendered text; empty values are allowed. Differing rows have bold, dotted-underlined environment values; ↓ or the Differences only toggle hides identical rows. Article view always shows the full table. Narrow tables scroll horizontally. No options.
-- Link cards: `::: links` around a bulleted list of `- [Title](URL) Description` items. Shows title, domain and authored description; no options, no metadata requests. Use HTTP(S), relative URLs or `#section` links; descriptions can use inline emphasis/code but no additional links, HTML or images. Cards stack on phones.
-- Explorable numbers: `::: explorable` around prose or lists with `[qps=1000]{range=100..10000}` and `{qps*40/1000}` results. Optional `step=100` inside range braces (default 1). Values are local to the container; use unique names, finite increasing ranges and a starting value on the step grid. Expressions support numbers, local names, parentheses and `+ - * / %`, with ordinary precedence; no JavaScript, functions or property access. Native sliders support touch and arrow keys in both views; articles start at the author values. No preset steps or container options. Keep code and nested widgets outside.
+- Quadrant: `::: quadrant x="Effort" y="Impact"`, four consecutive `###` headings in top-left, top-right, bottom-left, bottom-right order, then optional `- Label [0.2, 0.8]` points. Coordinates range from 0 to 1, increasing right/up; 0.5 belongs to the right/top. ↓ reveals points (or quadrants when empty). Article shows the full matrix and points grouped by quadrant. Keep labels short and use a few points per slide. Axis labels default to X/Y; no other options.
 - Stats: `::: stats` around `- **42%** faster first response`.
-- Callout: `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]`.
-- Pull quote: a `>` quote whose last line is `> — Name`.
+- Meter / counter: `::: meter value=72 max=100 label="Migration done" unit=%` (empty container) and `[1.2M]{count}`: ↓ animates each value once on cue; articles and reduced motion show final values. Meter max defaults to 100, requires 0 ≤ value ≤ max and a label; unit is optional short plain text. Counters accept signed decimals with optional k/M/B and %.
+- Sparklines: an inline code span `spark:9,8,8,6,5,5` renders a text-sized SVG trend in prose or table cells, in the current text colour. Comma-separated finite decimal numbers (including negatives and exponents); one value is a dot, constant values a flat line. The accessible label lists all values in both views. Invalid input stays as code with a visible diagnostic.
+
+### Interactive content
+
+- Tabs: `::: tabs` then a `### Heading` per tab. `::: toggle`, `::: steps` (walkthrough), `::: accordion`, `::: timeline`, `::: features` (cards) use the same shape.
+```md
+::: tabs
+### Present
+The stage.
+### Read
+The article.
+:::
+```
+- Explained table: `{.explain}` on the line after a table; the last column is the detail for the selected row. Cells starting `✓ ◐ ✗` become marks.
 - Image comparison: `::: compare` around exactly two `![Caption](image.png)` images, before then after. No options. Drag the divider or focus the range and use arrows / Home / End; ↓ reveals 0%, 50%, 100%. Articles show both images and captions side by side, stacked on phones. Use images with matching dimensions for an aligned wipe.
+- Image hotspots: `::: hotspots` around one `![Alt text](image.png)` followed by `- [12%, 30%] Label` bullets. Coordinates are x from the left and y from the top, each 0–100%. No options; labels accept inline formatting and links. The first pin starts selected; ↓ or a pin button selects the next label. Article view shows the image with all pins and a numbered legend.
 - Quiz: `::: quiz`; one `###` question, at least two `- [ ]` choices, exactly one `- [x]` correct answer; blank line before optional explanation. No options. ↓ reveals answer/explanation; article shows full prose plus interactive choices and Reset. Nothing stored or sent.
 - Flip card: `::: flip`; the `###` is the front, the rest the back.
-- Diagram: a ` ```mermaid ` fence (add `{source}` to show the text beside it). Readers can click it to open it full screen and zoom, so dense diagrams are fine.
-- Device frames: `::: browser url="https://example.com/settings"`, `::: window title="Terminal"` or `::: phone` around an image, code or Markdown. URL/title are optional captions, not live embeds; full content expands in the article.
+- Explorable numbers: `::: explorable` around prose or lists with `[qps=1000]{range=100..10000}` and `{qps*40/1000}` results. Optional `step=100` inside range braces (default 1). Values are local to the container; use unique names, finite increasing ranges and a starting value on the step grid. Expressions support numbers, local names, parentheses and `+ - * / %`, with ordinary precedence; no JavaScript, functions or property access. Native sliders support touch and arrow keys in both views; articles start at the author values. No preset steps or container options. Keep code and nested widgets outside.
+- Glossary: `::: glossary` with plain `Term: Definition` lines (one per line, unique case-sensitive terms, no options). First whole-word use per slide gets a hover/focus/tap definition in articles; `glossary: inline` in slide frontmatter opts the stage in. Articles end with every definition expanded. Links, code and speaker-only notes are skipped.
+- Timer: `::: timer 10m` around exercise or break instructions. Use ordered integer `h`, `m`, `s` units (`30s`, `1h30m`), 1 second–24 hours. ↓ or Start begins; Pause/Resume and Reset work with keyboard/touch. Presenter windows share the countdown; article shows duration text only. No options.
+
+### Code and diagrams
+
+- Stepped code: ` ```python {steps: 1-2 | 3} ` highlights those lines, one group per step.
+- Annotated code: ` ```python {annotate} ` with a `# (1)` (or `// (1)`, `-- (1)`, `/* (1) */`, `<!-- (1) -->`) comment ending a line, then a `1.` `2.` list right after the fence, one item per number. Pins replace the comments; each step lights one line and its note; the article puts the notes beside the code (below it on phones).
 - Terminal: a ` ```terminal ` fence; each `$ cmd` line types out per step, then its output.
+- Log viewer: a ` ```log {steps: 3 | 5-6} ` fence shows line numbers, dim timestamps and theme-native severity labels (TRACE, DEBUG, INFO, WARN, WARNING, ERROR, FATAL, CRITICAL). Optional steps accept 1-based line ranges and comma groups; all ranges must fit the log. Long logs scroll on slides; articles expand and mark every selected line. Copy preserves the raw fence content.
+- Diff: a ` ```diff ` fence of `+`/`-`/` ` lines, tinted green and red; `@@ label` starts a hunk. Options: `{steps: hunks}` highlights one hunk per step (or `{steps: 1-2 | 3}` by line), `title="api.py"` (default: the `+++` file name), `view=split` for old beside new on the slide (unified on phones and in the article). Copy takes the new code.
+- HTTP exchange: a ` ```http ` fence with a request (`GET /users HTTP/1.1`), headers/body, a blank line, then the response (`HTTP/1.1 200 OK`) and its headers/body. No options. ↓ reveals the response; the article stacks both; each message has Copy.
+- API endpoint: `::: endpoint GET /v1/users/{id}` around any Markdown description and parameter table. Use an uppercase HTTP method and a slash-prefixed path; `{name}` highlights path parameters. No options. Both views show all content; the article path is a permalink. Use a `http` fence inside for a request/response example.
+- Prompt / output: `::: prompt model="any-model" temperature=0`, then exactly `### Prompt` and `### Output`, both with content. Optional `model` is a nonempty label; optional `temperature` is a finite non-negative number. Nested Markdown/code is preserved; use `####` for subheadings. ↓ or Reveal output shows the full output immediately; the article stacks both cards.
+- Chat: `::: chat` with `**user:** Text`, `**assistant:** Text`, `**system:** Text` or ``**tool** `command` → result`` on separate lines. Blank lines, lists and fences continue the preceding message. ↓ reveals one message per step; articles show all messages with expandable tool calls. Keep slide transcripts short. No options.
+- Environment diff: `::: envdiff` around one ordinary Markdown table, key column then at least two named environments. Compare trimmed, case-sensitive rendered text; empty values are allowed. Differing rows have bold, dotted-underlined environment values; ↓ or the Differences only toggle hides identical rows. Article view always shows the full table. Narrow tables scroll horizontally. No options.
 - Keyboard shortcuts: `[[Ctrl+Shift+P]]` or `[[Enter]]`; `Mod` becomes ⌘ on Apple platforms and Ctrl elsewhere. Use `Plus` for the + key. Inline keycaps stay visible in both views.
+- Diagram: a ` ```mermaid ` fence (add `{source}` to show the text beside it). Readers can click it to open it full screen and zoom, so dense diagrams are fine.
+- Flow / stack: `::: flow` or `::: stack` around a bulleted list, one box per item. `::: flow vertical` points down. Slide frontmatter `build: true` reveals every box on ↓; `{.step}` marks individual items. Article view shows all boxes; narrow screens stack flows vertically. No options besides `flow vertical`.
+- Device frames: `::: browser url="https://example.com/settings"`, `::: window title="Terminal"` or `::: phone` around an image, code or Markdown. URL/title are optional captions, not live embeds; full content expands in the article.
+- Stepped equations: `$$ {steps}` on its own line, TeX rows separated by `\\`, then `$$`. Use `&` to align cells and `\text{…}` for explanations. ↓ or **Next equation** reveals each row; article view shows every equation. Existing KaTeX loading and `data-math="off"` work unchanged.
+
+### Presentation components
+
+- Speaker: `::: speaker` around an optional `![Portrait](photo.jpg)`, one `### Name`, role text and Markdown links. Links get icons; the article shows a compact author box.
+- Board: `::: board`, a `### Column` heading per column and a Markdown list per column (each top-level item is a card). ↓ reveals each column; article view shows every card, stacking columns on phones. Keep slides to 2–4 short columns; use a new slide for more. No options.
+- Changelog: `::: changelog`, `### v0.4.0 · 2026-10-25` per release and `#### Added` / `#### Fixed` group labels, followed by Markdown notes. No options; dates must be valid `YYYY-MM-DD`. One release per ↓ step; article view shows all with links. Give the slide an `id:` to keep release links stable when slides move.
+- Link cards: `::: links` around a bulleted list of `- [Title](URL) Description` items. Shows title, domain and authored description; no options, no metadata requests. Use HTTP(S), relative URLs or `#section` links; descriptions can use inline emphasis/code but no additional links, HTML or images. Cards stack on phones.
+- Image gallery: `::: gallery` around `![Caption](image.png)` lines. No options. ↓ highlights each image; click or Enter opens a lightbox, ← → browse, Escape closes and restores focus. Article view shows a responsive grid with every alt-text caption.
+- Callout: `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]`.
+- Pull quote: a `>` quote whose last line is `> — Name`.
 - Audience questions: `::: ask url="https://example.com/questions"` + closing `:::` (empty block). Absolute HTTP(S) URL, without credentials. Large QR and destination in slides; plain “Ask a question” link in articles. Link remains usable if QR loading fails.
 - Also: `- [x]` checklists, `text[^1]` + `[^1]: source` footnotes, `$x^2$` / `$$..$$` maths, `:rocket:` Lucide icons, `::: agenda` (links every section), `::: qr` (QR of the deck URL), `![](youtube-or-.mp4-link)` video, `![](demo.cast)` recording.
 
