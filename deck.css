@@ -1704,10 +1704,10 @@ aside.article { display: none; }
 
 /* ::: venn — two or three circles, region text in the overlaps; ↓ reveals each region's text. Articles add a list of regions. */
 .w-venn { margin: 0 auto; width: 100%; max-width: 620px; color: var(--fg); }
-.w-venn-plot { position: relative; aspect-ratio: 400 / 320; container-type: inline-size; font-size: clamp(12px, 3.3cqw, var(--t-small)); }
+.w-venn-plot { position: relative; aspect-ratio: 400 / 320; container-type: inline-size; }
 .w-venn-circle { position: absolute; border-radius: 50%; border: 2px solid var(--c); background: color-mix(in srgb, var(--c) 22%, transparent); }
 .w-venn-circle.c0 { --c: var(--chart-1, var(--accent)); } .w-venn-circle.c1 { --c: var(--chart-2, var(--accent-ink)); } .w-venn-circle.c2 { --c: var(--chart-3, var(--muted)); }
-.w-venn-label { position: absolute; transform: translate(-50%, -50%); width: 25cqw; display: grid; gap: .15em; text-align: center; line-height: 1.2; overflow-wrap: anywhere; transition: opacity .2s; }
+.w-venn-label { position: absolute; font-size: clamp(12px, 3.3cqw, var(--t-small)); transform: translate(-50%, -50%); width: 25cqw; display: grid; gap: .15em; text-align: center; line-height: 1.2; overflow-wrap: anywhere; transition: opacity .2s; }
 .w-venn[data-sets="2"] .w-venn-label { width: 28cqw; }
 .w-venn-label b { font-size: 1.1em; }
 .md .w-venn-list { display: none; margin: 0; padding: 0; list-style: none; }

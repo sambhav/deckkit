@@ -49,5 +49,5 @@ export function venn(tokens, options, classes) {
   const order = new Map(stepped.map((l, n) => [l, n + 1]));
   const spots = labels.map(l => `<div class="w-venn-label" style="left:${l.spot[0]}%;top:${l.spot[1]}%"${order.has(l) ? ` data-region="${order.get(l)}"` : ''}>${l.html}</div>`).join('');
   const list = [...regions.values()].map(r => `<li><strong>${r.ids.map(k => escape(names[k])).join(' &amp; ')}</strong>: ${r.html}</li>`).join('');
-  return `<figure class="w w-venn" data-sets="${names.length}" data-regions="${stepped.length}" role="img" aria-label="${escape('Venn diagram of ' + names.join(', ') + [...regions.values()].map(r => '. ' + r.ids.map(k => names[k]).join(' and ') + ': ' + r.text).join(''))}"><div class="w-venn-plot" aria-hidden="true">${circles}${spots}</div><ul class="w-venn-list">${list || names.map(n => `<li>${escape(n)}</li>`).join('')}</ul></figure>`;
+  return `<figure class="w w-venn" data-sets="${names.length}" data-regions="${stepped.length}" role="group" aria-label="${escape('Venn diagram of ' + names.join(', ') + [...regions.values()].map(r => '. ' + r.ids.map(k => names[k]).join(' and ') + ': ' + r.text).join(''))}"><div class="w-venn-plot" aria-hidden="true">${circles}${spots}</div><ul class="w-venn-list">${list || names.map(n => `<li>${escape(n)}</li>`).join('')}</ul></figure>`;
 }
