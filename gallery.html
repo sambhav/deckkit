@@ -729,6 +729,20 @@ flowchart LR
 ```
 
 ---
+id: w-stepped-mermaid
+---
+## A request, one hop at a time
+
+```mermaid {steps: client,edge: The browser asks the edge | edge,origin: A cache miss goes to the origin | origin,db: The origin reads the database}
+flowchart LR
+  client[Browser] --> edge[Edge cache] --> origin[App server] --> db[(Database)]
+```
+
+::: notes
+Each press of ↓ lights the listed nodes and the edges between them and dims the rest. The article shows the whole diagram, with the notes as numbered stages.
+:::
+
+---
 id: w-flow
 build: true
 ---

@@ -68,6 +68,7 @@ import { runCell, liveCode } from './runnable.js';
  *   > [!NOTE] / [!TIP] / [!WARNING]     callouts (also [!IMPORTANT], [!CAUTION])
  *   ```mermaid                          diagrams (Mermaid, fetched only if the deck has one; <html data-diagrams="off"> to skip);
  *                                       ```mermaid {source} sets the source beside the diagram; a click opens it full screen to zoom
+ *                                       ```mermaid {steps: a,b: note | b,c} lights each step's nodes (and the edges between them) on ↓, notes become numbered stages
  *   [text](#id)                         link to the slide whose frontmatter says id: …
  *   ::: chart type=line                 a chart around a table or ```csv block: bar, hbar, line, donut, heatmap, scatter, bubble,
  *                                       waterfall, timeline, sankey, treemap, range. First column: labels; others: series
@@ -712,6 +713,7 @@ import { runCell, liveCode } from './runnable.js';
     const boxes = [...document.querySelectorAll('.w-diagram')], opt = root.dataset.diagrams;
     if (!boxes.length || opt === 'off') return;
     boxes.forEach(b => b.dataset.src = b.textContent);
+    boxes.forEach(b => b.dataset.steps && diagramSteps(b));
     let n = 0, queued;
     const draw = async () => {
       const v = k => getComputedStyle(root).getPropertyValue(k).trim(), font = v('--sans');
@@ -733,7 +735,7 @@ import { runCell, liveCode } from './runnable.js';
           archEdgeColor: v('--muted'), archEdgeArrowColor: v('--muted'), archEdgeWidth: '2', archGroupBorderColor: v('--muted'), archGroupBorderWidth: '1.5px',
           labelBoxBkgColor: v('--surface'), labelBoxBorderColor: v('--accent'), labelTextColor: v('--fg'), loopTextColor: v('--fg') } });
       for (const b of boxes) {
-        try { const { svg } = await mermaid.render(`dk-diagram-${++n}`, b.dataset.src); b.innerHTML = svg; b.classList.add('drawn'); themeIcons(b);
+        try { const { svg } = await mermaid.render(`dk-diagram-${++n}`, b.dataset.src); b.innerHTML = svg; b.classList.add('drawn'); themeIcons(b); b.mark?.();
           Object.assign(b, { tabIndex: 0, title: 'Open full screen' }); b.setAttribute('role', 'button'); b.setAttribute('aria-label', 'Diagram: open full screen'); }
         catch { b.innerHTML = `<pre class="code w-diagram-src">${esc(b.dataset.src)}</pre>`; b.classList.remove('drawn'); b.removeAttribute('tabindex'); b.removeAttribute('role'); }
       }
@@ -746,6 +748,35 @@ import { runCell, liveCode } from './runnable.js';
       if (st.stroke === 'rgb(255, 255, 255)') { st.stroke = ''; el.classList.add('dk-ink'); }
       if (st.fill === 'rgb(255, 255, 255)') { st.fill = ''; el.classList.add('dk-ink-fill'); }
     });
+    // ```mermaid {steps: a,b | b,c}: ↓ lights each group's nodes and the edges between them, and dims the rest. Mermaid's own ids are
+    // the handle: a node is g.node#<svg>-<kind>-<id>-<n> and an edge path is <svg>-L_<from>_<to>_<n>. The article shows it all.
+    function diagramSteps(b) {
+      const groups = JSON.parse(b.dataset.steps), stage = b.closest('.w-stepped'), notes = [...stage.querySelectorAll('.w-diagram-notes li')];
+      const idOf = g => g.id.replace(/^.*?-(?:flowchart|state|class|classId|entity|er)-/, '').replace(/-\d+$/, '');
+      // an edge path is <svg>-L_<from>_<to>_<n> (ids may hold underscores, so match against the step's own pairs)
+      const edgeKey = id => id.replace(/^dk-diagram-\d+-/, '').replace(/^L_|_\d+$/g, '');
+      const st = steps(stage, groups.length, i => {
+        const svg = b.querySelector('svg'), stepping = !reading(), ids = new Set(stepping ? groups[i] : []);
+        stage.classList.toggle('stepping', stepping);
+        notes.forEach(li => { const on = stepping && +li.dataset.note === i; li.classList.toggle('on', on); on ? li.setAttribute('aria-current', 'step') : li.removeAttribute('aria-current'); });
+        if (!svg) return;
+        svg.classList.toggle('dk-stepping', stepping);
+        svg.querySelectorAll('g.node').forEach(g => g.classList.toggle('dk-on', ids.has(idOf(g))));
+        const pairs = new Set([...ids].flatMap(a => [...ids].map(c => `${a}_${c}`))), linked = new Set();
+        svg.querySelectorAll('path.flowchart-link').forEach(p => {
+          const on = pairs.has(edgeKey(p.id)); p.classList.toggle('dk-on', on); if (on) linked.add(p.id.replace(/^dk-diagram-\d+-/, ''));
+        });
+        svg.querySelectorAll('g.edgeLabel').forEach(l => l.classList.toggle('dk-on', linked.has(l.querySelector('[data-id]')?.dataset.id)));
+      }, { read: 'end' });
+      // after each (re)draw: say so when a step names a node the diagram doesn't have, then repaint the step
+      b.mark = () => {
+        const svg = b.querySelector('svg'); if (!svg) return;
+        const have = new Set([...svg.querySelectorAll('g.node')].map(idOf)), missing = [...new Set(groups.flat())].find(id => !have.has(id));
+        stage.querySelector(':scope > .td-error')?.remove();
+        if (missing) stage.insertAdjacentHTML('afterbegin', `<p class="td-error" role="alert">${esc(`mermaid: no node "${missing}" (steps use the ids written in the diagram's source)`)}</p>`);
+        st.go(st.i, true);
+      };
+    }
     const redraw = () => { clearTimeout(queued); queued = setTimeout(draw, 60); };
     // draw once the theme's fonts are in, so labels are measured in the face they're shown in
     const ready = () => {

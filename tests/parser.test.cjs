@@ -462,6 +462,19 @@ test('code groups keep each fence; a [label] after the language names its tab an
   assert.match(renderMarkdown('```js\nconst a = [1]\n```'), /^<pre class="code" data-lang="js"><code>const a = \[1\]/);   // brackets in the code are code
   assert.match(renderMarkdown('```md [x](y)\n```'), /data-label="x"/);
 });
+test('stepped mermaid lists node ids per step, with optional notes, and fails visibly', () => {
+  const ok = md('```mermaid {steps: a,b: First hop | b,c}\nflowchart LR\n  a --> b --> c\n```');
+  assert.match(ok, /^<div class="w-stepped"><div class="w-diagram" data-steps="\[\[&quot;a&quot;,&quot;b&quot;\],\[&quot;b&quot;,&quot;c&quot;\]\]">/);
+  assert.match(ok, /<ol class="w-diagram-notes"><li data-note="0" value="1">First hop<\/li><\/ol>/);
+  assert.doesNotMatch(md('```mermaid {steps: a | b}\nflowchart LR\n  a --> b\n```'), /w-diagram-notes/);
+  assert.match(md('```mermaid {source} {steps: a,b}\nflowchart LR\n  a --> b\n```'), /^<div class="w-with-source">[\s\S]*w-stepped/);
+  assert.doesNotMatch(md('```mermaid\nflowchart LR\n  a --> b\n```'), /w-stepped|data-steps/);
+  for (const bad of ['', 'a | ', 'a,,b', 'a b']) {
+    const html = md('```mermaid {steps: ' + bad + '}\nflowchart LR\n  a --> b\n```');
+    assert.match(html, /role="alert">mermaid: /); assert.doesNotMatch(html, /data-steps/); assert.match(html, /w-diagram-src/);
+  }
+  assert.match(md('```mermaid {steps: a: <b>x</b>}\nflowchart LR\n  a\n```'), /&lt;b&gt;x&lt;\/b&gt;/);
+});
 
 test('array fences render cells, step data and a step table', () => {
   const html = md('```array\n[1, 3, <5>]\nlo=0 hi=2\nlo=2 hi=2 *<5>\n```');
