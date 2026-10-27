@@ -90,6 +90,7 @@ import { runCell, liveCode } from './runnable.js';
  *   ::: live                            ```html / ```css / ```js fences: editors beside a sandboxed preview that redraws as you type (stacked in read view)
  *   ```json {explore open=2 highlight="a.b"}  collapsible JSON tree; open=N levels (or all) start open; ↓ opens and marks each highlighted path
  *   ```regex                            a pattern line then "test: text" lines (or /pattern/flags); ↓ explains one part at a time, tests show match or not
+ *   ```tokens {steps count}             text with | between tokens as coloured chips; {steps} reveals one per ↓, {count} shows the total (article always does)
  *   ```terminal                         "$ command" lines type out one per ↓, the rest is their output
  *   ```bitfield bits=32                 "0-3 Version" lines draw a packet/register layout; ↓ highlights each field; the article adds a field table
  *   ::: endpoint GET /users/{id}        method badge, highlighted path parameters and Markdown reference; article path is a permalink

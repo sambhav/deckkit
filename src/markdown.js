@@ -510,6 +510,19 @@ function jsonTree(raw, info) {
   };
   return `<figure class="w-json" role="group" aria-label="JSON explorer" data-source="${escape(source)}"${tag.length ? ` data-highlight="${escape(JSON.stringify(tag))}"` : ''}>${node(data, null, [], 0)}</figure>`;
 }
+// ```tokens: the author marks token boundaries with |, so no tokenizer ships. \| is a literal pipe.
+function tokenBlock(raw, info) {
+  const fail = message => `<p class="td-error" role="alert">${escape('tokens: ' + message)}</p><pre class="code"><code>${escape(raw)}</code></pre>`;
+  const match = info.match(/^tokens(?:\s+\{([^}]*)\})?$/);
+  const flags = (match?.[1] || '').split(/[\s,]+/).filter(Boolean);
+  if (!match || flags.some(f => f !== 'steps' && f !== 'count')) return fail('use a plain fence, {steps}, {count} or {steps count}');
+  const rows = raw.replace(/\n$/, '').split('\n').map(line => line.replace(/\\\|/g, '\0').split('|').map(t => t.replace(/\0/g, '|')).filter(t => t.trim()));
+  const total = rows.reduce((n, r) => n + r.length, 0);
+  if (!total) return fail('the block has no tokens; separate them with |');
+  let n = 0;
+  const html = rows.filter(r => r.length).map(r => `<span class="w-token-row">${r.map(t => `<span class="w-token" data-t="${n % 6}"${flags.includes('steps') ? ` data-step="${n}"` : ''}>${(n++, escape(t))}</span>`).join('')}</span>`).join('');
+  return `<div class="w w-tokens"${flags.includes('steps') ? ' data-build' : ''}${flags.includes('count') ? ' data-count' : ''} role="group" aria-label="${total} tokens">${html}<p class="w-tokens-count"><b>${total}</b> ${total === 1 ? 'token' : 'tokens'}</p></div>`;
+}
 // ```js [Node.js]: a bracketed label after the language (VitePress's convention) names the block's tab in a ::: code-group
 md.renderer.rules.fence = (tokens, i) => {
   const out = fence(tokens[i]), label = tokens[i].info.match(/^\s*[\w+-]+\s+\[([^\]\n]+)\]/)?.[1].trim();
@@ -522,6 +535,7 @@ function fence(token) {
   if (lang === 'log') return logBlock(token.content, info);
   if (lang === 'sequence') return sequenceHTML(source);
   if (/\{\s*explore(?=[\s}])/.test(info)) return jsonTree(token.content, info);
+  if (lang === 'tokens') return tokenBlock(token.content, info);
   if (lang === 'diff') return diff(source, info);
   if (lang === 'regex') return regexBlock(source, escape);
   if (lang === 'http') return httpExchange(source, info);

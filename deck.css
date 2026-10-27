@@ -1759,3 +1759,15 @@ aside.article { display: none; }
 :root:not([data-view=read]) .w-regex .rx-pattern > .rx.on { outline: 2px solid var(--accent); outline-offset: 2px; }
 :is([data-view=read], [data-tall]) .w-regex .rx-part > ul { display: grid; }
 :root:not([data-view=read]):not([data-tall]) .w-regex .rx-parts { grid-auto-flow: column; grid-template-rows: repeat(var(--rx-rows, 4), auto); grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .2em 1.2em; align-items: start; }
+/* tokens: ```tokens. Chips tinted from the accent over the background, so every theme and mode works */
+.w-tokens { display: flex; flex-direction: column; gap: .5em; font: var(--t-card)/1.4 var(--mono); }
+.w-token-row { display: flex; flex-wrap: wrap; gap: .3em; }
+.w-token { white-space: pre-wrap; padding: .15em .4em; border-radius: calc(var(--radius) / 2); color: var(--fg); background: color-mix(in srgb, var(--accent) 14%, var(--bg)); box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--accent) 45%, var(--bg)); }
+.w-token[data-t="1"] { background: color-mix(in srgb, var(--accent) 24%, var(--bg)); } .w-token[data-t="2"] { background: color-mix(in srgb, var(--accent) 8%, var(--surface-2)); }
+.w-token[data-t="3"] { background: color-mix(in srgb, var(--accent) 19%, var(--surface)); } .w-token[data-t="4"] { background: var(--surface-2); } .w-token[data-t="5"] { background: color-mix(in srgb, var(--accent) 30%, var(--bg)); }
+.w-tokens-count { margin: .3em 0 0; color: var(--muted); font: 14px/1.4 var(--sans); }
+.w-tokens-count b { color: var(--fg); }
+[data-view=present] .w-tokens:not([data-count]) .w-tokens-count { display: none; }
+.w-tokens[data-build] .w-token:not(.shown) { visibility: hidden; }
+[data-view=read] .w-tokens[data-build] .w-token:not(.shown) { visibility: visible; }
+@media print { .w-tokens[data-build] .w-token { visibility: visible !important; } }

@@ -461,6 +461,25 @@ test('code groups keep each fence; a [label] after the language names its tab an
   assert.match(renderMarkdown('```terminal [Shell]\n$ ls\n```'), /^<div data-label="Shell" class="w-term"/);
   assert.match(renderMarkdown('```js\nconst a = [1]\n```'), /^<pre class="code" data-lang="js"><code>const a = \[1\]/);   // brackets in the code are code
   assert.match(renderMarkdown('```md [x](y)\n```'), /data-label="x"/);
+
+
+test('tokens fences split on pipes, keep spaces and count', () => {
+  const html = md('```tokens {steps count}\nThe| quick| fox|’s| tok|en\\|x\nnext| line\n```');
+  assert.match(html, /class="w w-tokens" data-build data-count/);
+  assert.match(html, /aria-label="8 tokens"/);
+  assert.match(html, /data-step="7"[^>]*> line</);
+  assert.match(html, /> quick</);
+  assert.match(html, />en\|x</);
+  assert.equal((html.match(/class="w-token-row"/g) || []).length, 2);
+  assert.doesNotMatch(md('```tokens\na|b\n```'), /data-build|data-count/);
+});
+
+test('tokens diagnostics keep the source visible', () => {
+  for (const src of ['```tokens\n \n```', '```tokens {speed}\na|b\n```']) {
+    const html = md(src);
+    assert.match(html, /class="td-error" role="alert">tokens:/);
+    assert.doesNotMatch(html, /w-tokens/);
+  }
 });
 test('stepped mermaid lists node ids per step, with optional notes, and fails visibly', () => {
   const ok = md('```mermaid {steps: a,b: First hop | b,c}\nflowchart LR\n  a --> b --> c\n```');
