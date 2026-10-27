@@ -513,6 +513,7 @@ md.renderer.rules.fence = (tokens, i) => {
   const out = fence(tokens[i]), label = tokens[i].info.match(/^\s*[\w+-]+\s+\[([^\]\n]+)\]/)?.[1].trim();
   return label ? out.replace(/^<[\w-]+/, m => `${m} data-label="${escape(label)}"`) : out;
 };
+const OS = { macos: 'macos', mac: 'macos', osx: 'macos', linux: 'linux', windows: 'windows', win: 'windows' };
 function fence(token) {
   const info = token.info.trim().replace(/^([\w+-]+)\s+\[[^\]\n]+\]/, '$1'), lang = info.match(/^[\w+-]+/)?.[0] || '';
   const source = token.content.replace(/\n$/, ''), code = escape(source);
@@ -540,7 +541,8 @@ function fence(token) {
     return bad + (/\{\s*source\s*\}/.test(info) ? `<div class="w-with-source"><pre class="code"><code>${code}</code></pre>${stage}</div>` : stage);
   }
   const pins = token.meta?.pins, steps = !pins && info.match(/\{\s*steps:\s*([^}]*)\}/)?.[1];
-  return `<pre class="code"${lang ? ` data-lang="${lang}"` : ''}${steps ? ` data-steps="${escape(steps)}"` : ''}${pins ? ` data-pins="${pins.join(',')}"` : ''}><code>${code}</code></pre>`;
+  const os = OS[info.match(/^[\w+-]+\s+([A-Za-z]+)(?=\s|\{|$)/)?.[1]?.toLowerCase()];   // ```sh macos: the system a ::: install block's command is for
+  return `<pre class="code"${lang ? ` data-lang="${lang}"` : ''}${os ? ` data-os="${os}"` : ''}${steps ? ` data-steps="${escape(steps)}"` : ''}${pins ? ` data-pins="${pins.join(',')}"` : ''}><code>${code}</code></pre>`;
 }
 const linkOpen = md.renderer.rules.link_open;
 md.renderer.rules.link_open = (tokens, i, options, env, self) => {

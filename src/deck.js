@@ -38,6 +38,8 @@ import { runCell, liveCode } from './runnable.js';
  *                                       fetched only if the deck has code; <html data-highlight="off"> to skip it)
  *   ::: code-group + one fence each     language tabs; a pick switches every group in the deck and is remembered.
  *                                       ```js [Node.js] labels a tab; Deck.choice shares the stored pick with other widgets
+ *   ::: install + ```sh macos / linux / windows   one command per system, as tabs; the viewer's system is picked first
+ *                                       and a pick is remembered (Deck.choice group "os"), with a copy button on each
  *   ```lang {annotate} + a 1. 2. list   "# (1)" / "// (1)" line-end comments become numbered pins; ↓ highlights each line and its note
  *   ::: compare                         two images; draggable wipe, ↓ reveals 0 / 50 / 100%; article shows both
  *   ::: explorable                      [qps=1000]{range=100..10000} values and {qps*40/1000} arithmetic
@@ -280,6 +282,7 @@ import { runCell, liveCode } from './runnable.js';
     c.querySelectorAll('.w-seq').forEach(sequence);
     c.querySelectorAll('.w-tree').forEach(jsonTree);
     c.querySelectorAll('pre.code').forEach(copyable);
+    c.querySelectorAll('.install').forEach(install);
     c.querySelectorAll('.compare').forEach(box => beforeAfter(box, steps));
     [...c.querySelectorAll('.code-group')].reverse().forEach(codeGroup);
     c.querySelectorAll('.quiz').forEach(quiz);
@@ -641,6 +644,49 @@ import { runCell, liveCode } from './runnable.js';
       const i = { ArrowRight: (j + 1) % tabs.length, ArrowLeft: (j + tabs.length - 1) % tabs.length, Home: 0, End: tabs.length - 1 }[e.key];
       if (i == null) return;
       e.preventDefault(); e.stopPropagation(); choice.set('lang', keys[i]); tabs[i].focus();
+    });
+  }
+
+  // ::: install: one command per operating system (```sh macos, ```sh linux, ```powershell windows), one tab each.
+  // The viewer's own system is selected first; a pick is remembered (Deck.choice group "os"). Not a stepper.
+  const SYSTEMS = { macos: 'macOS', linux: 'Linux', windows: 'Windows' };
+  const mySystem = () => {
+    const ua = (navigator.userAgentData?.platform || navigator.platform || '') + ' ' + (navigator.userAgent || '');
+    return /iphone|ipad|mac/i.test(ua) ? 'macos' : /win/i.test(ua) ? 'windows' : /linux|x11|cros/i.test(ua) ? 'linux' : '';
+  };
+  function install(box) {
+    const fail = m => box.insertAdjacentHTML('afterbegin', `<p class="td-error" role="alert">install ${m}</p>`);
+    const panes = [];
+    for (const el of [...box.children]) {
+      if (el.matches('pre.code')) panes.push([el]);
+      else if (!el.matches('.td-error')) (panes.at(-1) || (panes[0] = [])).push(el);
+    }
+    if (!panes.length || !panes.some(p => p[0].matches('pre.code'))) return fail('needs fenced commands, one per system: ```sh macos, ```sh linux, ```powershell windows');
+    const keys = panes.map(p => p[0].dataset.os);
+    if (keys.includes(undefined)) return fail('needs a system after the language on every fence: ```sh macos, ```sh linux or ```powershell windows');
+    const twice = keys.find((k, j) => keys.indexOf(k) !== j);
+    if (twice) return fail(`has two ${SYSTEMS[twice]} blocks`);
+    const id = `td-install-${++widgetId}`;
+    const w = document.createElement('div');
+    w.className = `w w-install ${[...box.classList].filter(k => k !== 'install').join(' ')}`.trim();
+    w.innerHTML = `<div class="w-os" role="tablist" aria-label="Operating system">${keys.map((k, j) =>
+      `<button type="button" role="tab" id="${id}-tab-${j}" aria-controls="${id}-panel-${j}">${SYSTEMS[k]}</button>`).join('')}</div><div class="w-os-panes"></div>`;
+    for (const [j, g] of panes.entries())
+      w.lastChild.insertAdjacentHTML('beforeend', `<section class="w-os-pane" role="tabpanel" id="${id}-panel-${j}" aria-labelledby="${id}-tab-${j}" data-label="${SYSTEMS[keys[j]]}"></section>`), w.lastChild.lastChild.append(...g);
+    box.replaceWith(w);
+    const tabs = [...w.querySelector('.w-os').children], ps = [...w.lastChild.children];
+    const show = i => {
+      ps.forEach((p, j) => p.classList.toggle('on', j === i));
+      tabs.forEach((b, j) => { b.classList.toggle('on', j === i); b.setAttribute('aria-selected', j === i); b.tabIndex = j === i ? 0 : -1; });
+    };
+    show(Math.max(0, keys.indexOf(choice.get('os', keys) || mySystem())));
+    choice.on('os', v => { const j = keys.indexOf(v); if (j >= 0) show(j); });
+    tabs.forEach((b, j) => b.addEventListener('click', () => choice.set('os', keys[j])));
+    tabs[0].parentNode.addEventListener('keydown', e => {
+      const j = tabs.indexOf(e.target); if (j < 0) return;
+      const i = { ArrowRight: (j + 1) % tabs.length, ArrowLeft: (j + tabs.length - 1) % tabs.length, Home: 0, End: tabs.length - 1 }[e.key];
+      if (i == null) return;
+      e.preventDefault(); e.stopPropagation(); choice.set('os', keys[i]); tabs[i].focus();
     });
   }
 
@@ -2329,6 +2375,7 @@ import { runCell, liveCode } from './runnable.js';
       scrollToRelease(target);
     };
     addEventListener('hashchange', followUrl);
+    addEventListener('storage', choiceElsewhere);
     addEventListener('popstate', followUrl);   // Back and Forward after a link jump
     addEventListener('storage', choiceElsewhere);
     let resizing = false;
