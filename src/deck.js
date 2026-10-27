@@ -414,6 +414,7 @@ import { environmentDifferences } from './envdiff.js';
   // sidenotes: the mark toggles its note (a popover on the stage, inline in a narrow article); Esc or an outside click closes
   const closeNotes = except => document.querySelectorAll('.sn[data-open]').forEach(n => { if (n !== except) { delete n.dataset.open; n.firstChild.setAttribute('aria-expanded', 'false'); } });
   document.addEventListener('click', e => {
+    if (e.target.closest('.sn-body')) return;   // selecting or following a link in a note keeps it open
     const mark = e.target.closest('.sn-mark'), note = mark?.parentNode;
     closeNotes(note);
     if (!note) return;
@@ -424,6 +425,7 @@ import { environmentDifferences } from './envdiff.js';
       body.style.setProperty('--sn-shift', `${Math.max(m - r.left, Math.min(0, innerWidth - m - r.right))}px`);
     }
   });
+  document.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && e.target.closest?.('.sn-mark')) e.stopPropagation(); }, true);   // Space on a mark opens it; it must not advance the slide
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.querySelector('.sn[data-open]')) { closeNotes(); } });
   // ```diff: Copy takes the new code (context and added lines); {steps: hunks} or {steps: 1-2 | 3} highlight in turn
   function diffBlock(fig) {
