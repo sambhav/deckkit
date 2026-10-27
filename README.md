@@ -292,6 +292,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Changelog** | `::: changelog`, `### v0.4.0 · 2026-10-25` per release, `#### Added` / `#### Fixed` labels. One release per step; give the slide an `id:` for stable links |
 | **Link cards** | `::: links` around `- [Title](URL) Description` items: further-reading cards with the domain, no metadata requests |
 | **Image gallery** | `::: gallery` around images; ↓ highlights each, click opens a lightbox with captions |
+| **Citations** | `[@key]` in prose and a `::: references` list of `- key: Reference` lines. Citations number by first use as `[1]` links; hover shows the entry; `[@a; @b]` cites several |
 | **Image slides** | `layout: image` and `image: path.jpg` in the frontmatter: a full-bleed picture with the text over it |
 | **Video** | `![title](youtube, vimeo or .mp4 link)` embeds a player |
 | **Callouts** | `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]` |
