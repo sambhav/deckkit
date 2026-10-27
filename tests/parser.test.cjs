@@ -487,3 +487,17 @@ test('invalid array fences fail visibly and retain the source', () => {
   }
   assert.match(md('```array {x}\n[1]\n```'), /array: no options/);
 });
+
+test('bench fences rank results, scale whiskers and fail visibly with the source kept', () => {
+  const html = md('```bench unit=ms\nripgrep  12.1 ± 0.4\ngrep     98.3 ± 2.1\nag       31.0 +/- 1.0\n```');
+  assert.ok(html.indexOf('>ripgrep<') < html.indexOf('>ag<') && html.indexOf('>ag<') < html.indexOf('>grep<'));
+  assert.match(html, /fastest/); assert.match(html, /8\.124× slower/); assert.match(html, /12\.1 ± 0\.4 ms/);
+  assert.match(html, /<table>/);
+  const json = JSON.stringify({ results: [{ command: 'a <b>', mean: 0.5, stddev: 0.01 }, { command: 'c', mean: 0.25, stddev: 0 }] });
+  const fromJson = md('```bench unit=ms\n' + json + '\n```');
+  assert.match(fromJson, /250 ms/); assert.match(fromJson, /a &lt;b&gt;/); assert.match(fromJson, /2× slower/);
+  assert.match(md('```bench better=higher\nA 100\nB 50\n```'), /2× lower/);
+  for (const bad of ['```bench\n```', '```bench\nno numbers\n```', '```bench speed=1\nA 1\n```', '```bench\nA -1\n```', '```bench unit=ms\n{"results":[]}\n```', '```bench better=x\nA 1\n```'])
+    assert.match(md(bad), /role="alert">bench:/);
+  assert.match(md('```bench\nno numbers\n```'), /<pre class="code"><code>no numbers/);
+});

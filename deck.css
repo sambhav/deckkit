@@ -1481,3 +1481,29 @@ aside.article { display: none; }
 :is([data-view=read], [data-tall]) .w-prompt::after { content: none; }
 :is([data-view=read], [data-tall]) .w-prompt > .w-prompt-output[hidden] { display: none; }
 .md .w-prompt pre.code { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ```bench: ranked bars with variance whiskers; the data table and CSV button belong to the article. */
+.md .w-bench { margin: 0; display: grid; gap: var(--t-gap); min-width: 0; }
+.md .w-bench-chart { list-style: none; margin: 0; padding: 0; display: grid; gap: calc(var(--t-gap) * .7); }
+.w-bench-row { display: grid; grid-template-columns: minmax(6em, 14em) minmax(0, 1fr) auto auto; align-items: center; gap: .3em 1em; margin: 0; font-size: calc(var(--t-body) * .8); color: var(--fg); }
+.w-bench-name { font-weight: 600; overflow-wrap: anywhere; }
+.w-bench-track { position: relative; height: 1.4em; background: var(--surface); border-radius: var(--radius); }
+.w-bench-bar { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: inherit; opacity: .55; }
+.w-bench-row.best .w-bench-bar { opacity: 1; }
+.w-bench-whisker { position: absolute; top: 50%; height: 0; border-top: 2px solid var(--fg); }
+.w-bench-whisker::before, .w-bench-whisker::after { content: ""; position: absolute; top: -.4em; height: .8em; border-left: 2px solid var(--fg); }
+.w-bench-whisker::before { left: 0; }
+.w-bench-whisker::after { right: 0; }
+.w-bench-value { font: .9em var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.w-bench-factor { min-width: 6.5em; text-align: right; color: var(--accent-ink); font-weight: 700; white-space: nowrap; }
+.w-bench-table { display: none; max-width: 100%; overflow-x: auto; }
+.w-bench-download { justify-self: start; display: none; font: inherit; font-size: calc(var(--t-body) * .7); color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); min-height: 36px; padding: .4em .8em; cursor: pointer; }
+.w-bench :is(button, .w-bench-table):focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 3px; }
+[data-view=read] .w-bench-table { display: block; }
+[data-view=read] .w-bench-download { display: inline-block; }
+@media (max-width: 600px) {
+  .w-bench-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .w-bench-track { grid-column: 1 / -1; grid-row: 2; }
+  .w-bench-value { grid-row: 3; }
+  .w-bench-factor { grid-row: 3; min-width: 0; }
+}

@@ -3,6 +3,7 @@ import { changelogHTML } from './changelog.js';
 import { hotspotMarkup } from './hotspots.js';
 import { explorableInline, explorable } from './explorable.js';
 import { countValue, meterValue } from './meter.js';
+import { benchBlock } from './bench.js';
 import MarkdownIt from 'markdown-it';
 import { quadrant } from './quadrant.js';
 
@@ -456,6 +457,7 @@ function fence(token) {
   if (lang === 'http') return httpExchange(source, info);
   if (lang === 'array') return arrayBlock(source, info);
   if (lang === 'bitfield') return bitfield(source, info);
+  if (lang === 'bench') return benchBlock(source, info);
   if (/^(cast|asciicast)$/.test(lang)) return `<div class="w-term w-cast" data-inline="${code}"></div>`;
   if (lang === 'terminal') return `<div class="w-term" data-lines="${escape(JSON.stringify(source ? source.split('\n') : []))}"></div>`;
   const diagram = `<div class="w-diagram"><pre class="code w-diagram-src">${code}</pre></div>`;
