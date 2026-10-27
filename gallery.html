@@ -258,6 +258,21 @@ A ✓, ◐ or ✗ at the start of a cell becomes an icon in the theme's green, a
 :::
 
 ---
+id: w-bench
+---
+## Search tools, ranked
+
+```bench unit=ms
+ripgrep  12.1 ± 0.4
+ag       31.0 ± 1.0
+grep     98.3 ± 2.1
+```
+
+::: notes
+Paste hyperfine output as name, mean and spread lines, or hyperfine's export-json. The fastest result anchors the "slower" labels; the article adds a table and a CSV download.
+:::
+
+---
 section: Interactive content
 id: interactive
 ---
