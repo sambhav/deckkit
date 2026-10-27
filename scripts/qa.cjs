@@ -14,6 +14,7 @@
 //   focus      keyboard focus inside the component is visible (desktop)
 //   steps      the slide has the expected number of steps (--steps), and stepping never throws
 //
+// Checks run in parallel contexts (--jobs n, default: cores - 2).
 // Audit every slide of a page (no screenshots; themes switch in place, so it is fast):
 //   npm run qa   (node scripts/qa.cjs --all: gallery.html and index.html in parallel; --page a.html,b.html for others)
 const fs = require('node:fs');
@@ -93,7 +94,7 @@ async function open(browser, device, { theme, mode, view }) {
 }
 
 // Runs in the page: fit, contrast and touch-target checks for the slide's component.
-function inspect([id, selector, touch]) {
+function inspect([id, selector, touch, colours = true]) {
   const slide = typeof id === 'number' ? Deck.slides[id] : Deck.slides.find(s => s.dataset.id === id);
   const box = selector ? slide.querySelector(selector) : slide.querySelector('.content');
   const res = { missing: !box, alerts: slide.querySelectorAll('.td-error, [role=alert]').length, contrast: [], targets: [] };
@@ -157,7 +158,7 @@ function inspect([id, selector, touch]) {
     return { col };
   }
   const seenOpacity = new Map(), opacity = e => !e || e === document.body ? 1 : seenOpacity.get(e) ?? (seenOpacity.set(e, +getComputedStyle(e).opacity * opacity(e.parentElement)), seenOpacity.get(e));
-  const walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+  const walker = document.createTreeWalker(colours ? box : document.createElement('i'), NodeFilter.SHOW_TEXT);   // layout-only runs skip contrast
   const seen = new Set();
   for (let n; (n = walker.nextNode());) {
     const el = n.parentElement; if (!n.textContent.trim() || seen.has(el)) continue; seen.add(el);
@@ -268,13 +269,14 @@ async function compose(browser) {
 }
 
 async function audit(browser, page_) {
-  const runs = [['desktop', 'present', true], ['phone', 'read'],   // colours do not depend on the viewport: the theme sweep once, layout everywhere
+  // colours do not depend on the viewport: the theme sweep once on the stage, contrast once in the article (phone read), layout everywhere
+  const runs = [['desktop', 'present', true], ['phone', 'read', false, true],
     ['laptop', 'present'], ['ipad-portrait', 'present'], ['ipad-portrait', 'read'],
     ['ipad-landscape', 'present'], ['phone', 'present'], ['phone-small', 'read'], ['phone-landscape', 'present'], ['phone-landscape', 'read']];
   // the all-themes sweep is split into chunks so it runs across several contexts at once
   const chunk = (a, n) => Array.from({ length: Math.ceil(a.length / n) }, (_, i) => a.slice(i * n, i * n + n));
-  const tasks = runs.flatMap(([device, view, allThemes]) => (allThemes ? chunk(SWEEP.flatMap(t => [[t, 'light'], [t, 'dark']]), 4) : [[['clean', 'light'], ['paper', 'dark']]]).map(themes => [device, view, themes]));
-  return tasks.map(([device, view, themes]) => async () => {
+  const tasks = runs.flatMap(([device, view, allThemes, colours = allThemes]) => (allThemes ? chunk(SWEEP.flatMap(t => [[t, 'light'], [t, 'dark']]), 2) : [[['clean', 'light'], ['paper', 'dark']]]).map(themes => [device, view, themes, colours]));
+  return tasks.map(([device, view, themes, colours]) => async () => {
     const ctx = await browser.newContext({ ...DEVICES[device], reducedMotion: 'reduce' });
     const page = await ctx.newPage(), errors = [];
     page.on('pageerror', e => errors.push(e.message));
@@ -292,16 +294,16 @@ async function audit(browser, page_) {
         await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 3000))]);
       }, [theme, mode]);
       // every slide in one round trip
-      const results = await page.evaluate(async ([view, touch]) => {
+      const results = await page.evaluate(async ([view, touch, colours]) => {
         const out = [], frame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));   // let fit-to-stage settle
         for (let i = 0; i < Deck.slides.length; i++) {
           Deck.go(i, 999);
           if (view === 'read') Deck.slides[i].closest('.frame')?.scrollIntoView({ block: 'start' });
           await frame();
-          out.push({ name: Deck.slides[i].dataset.name || 'slide ' + (i + 1), ...window.__inspect([i, null, touch]) });
+          out.push({ name: Deck.slides[i].dataset.name || 'slide ' + (i + 1), ...window.__inspect([i, null, touch, colours]) });
         }
         return out;
-      }, [view, !!DEVICES[device].hasTouch]);
+      }, [view, !!DEVICES[device].hasTouch, colours]);
       results.forEach((r, i) => {
         const where = `${page_} ${device} ${view} ${theme}/${mode} #${i + 1} "${r.name}"`;
         if (r.alerts) fail(where, `${r.alerts} diagnostic(s)`);
@@ -317,7 +319,7 @@ async function audit(browser, page_) {
   });
 }
 // run tasks a few at a time (one browser, several contexts)
-async function pool(tasks, n = 4) {
+async function pool(tasks, n = +args.jobs || Math.max(4, require('node:os').availableParallelism() - 2)) {   // --jobs n overrides
   const queue = [...tasks];
   await Promise.all(Array.from({ length: n }, async () => { while (queue.length) await queue.shift()(); }));
 }
@@ -333,14 +335,15 @@ let base;
     if (args.all) await pool((await Promise.all(pages.map(p => audit(browser, p)))).flat());
     else {
       // Contrast and fit across the sampled themes in both modes, on desktop present and phone read.
+      // Every check opens its own context, so they run side by side.
+      const checks = [];
       for (const theme of SWEEP) for (const mode of ['light', 'dark']) {
-        await check(browser, 'desktop', { theme, mode, view: 'present' });
-        await check(browser, 'phone', { theme, mode, view: 'read' });
+        checks.push(() => check(browser, 'desktop', { theme, mode, view: 'present' }), () => check(browser, 'phone', { theme, mode, view: 'read' }));
       }
       // Every device class and view, with screenshots for the preview.
-      for (const [device, view, theme, mode] of SHOTS) await check(browser, device, { theme, mode, view }, true);
-      for (const device of Object.keys(DEVICES)) for (const view of ['present', 'read']) await check(browser, device, { theme: 'clean', mode: 'light', view });
-      await interaction(browser);
+      for (const [device, view, theme, mode] of SHOTS) checks.push(() => check(browser, device, { theme, mode, view }, true));
+      for (const device of Object.keys(DEVICES)) for (const view of ['present', 'read']) checks.push(() => check(browser, device, { theme: 'clean', mode: 'light', view }));
+      await pool([...checks, () => interaction(browser)]);
       await compose(browser);
     }
   } finally { await browser.close(); server.close(); }

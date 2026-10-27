@@ -42,7 +42,7 @@ import { environmentDifferences } from './envdiff.js';
  *   ::: changelog                       ### version · YYYY-MM-DD releases, #### group labels; one release per step, all in articles
  *   ::: timeline                        ### milestones; ↓ walks them; vertical on phones and in read view
  *   ::: quadrant x="Effort" y="Impact"  four ### quadrant labels, then optional - Label [0.2, 0.8] points
- *   ::: chat                            **user:** / **assistant:** / **tool** messages; ↓ reveals messages; tool rows expand
+ *   ::: chat                            **user:** / **assistant:** / **system:** / **tool** messages; ↓ reveals messages; tool rows expand
  *   ::: gallery                         Markdown images become a grid; ↓ highlights each, click opens a captioned lightbox
  *   ::: board                           ### columns with lists of cards; ↓ reveals each column, all shown in read view
  *   ::: glossary                       Term: Definition lines; first use tooltips in articles, glossary: inline opts slides in
@@ -54,7 +54,7 @@ import { environmentDifferences } from './envdiff.js';
  *   `spark:9,8,8,6,5,5`                inline SVG trend in prose or tables; accessible values, same in both views
  *   ::: envdiff                         a normal table: key then environment columns; ↓ or toggle shows differing rows only
  *   ::: stats                           big numbers: "- **42%** faster first response"
- *   > [!NOTE] / [!TIP] / [!WARNING]     callouts
+ *   > [!NOTE] / [!TIP] / [!WARNING]     callouts (also [!IMPORTANT], [!CAUTION])
  *   ```mermaid                          diagrams (Mermaid, fetched only if the deck has one; <html data-diagrams="off"> to skip);
  *                                       ```mermaid {source} sets the source beside the diagram; a click opens it full screen to zoom
  *   [text](#id)                         link to the slide whose frontmatter says id: …

@@ -156,7 +156,7 @@ Inline HTML works anywhere. `---` always starts a new slide, so use `#` headings
 
 | Key | Values |
 |---|---|
-| `layout` | `title`, `section`, `statement`, `center` or `default` |
+| `layout` | `title`, `section`, `statement`, `center`, `image` or `default` |
 | `section` | Shown in the top bar. It carries over until changed; a `section` slide sets it to its heading |
 | `kicker` | A small label above the heading |
 | `build` | `true` reveals each block after the heading, and each list item, one step at a time |
@@ -167,6 +167,7 @@ Inline HTML works anywhere. `---` always starts a new slide, so use `#` headings
 | `read` | `hide` leaves the slide out of the article. `text` shows only its prose in the article, not the slide |
 | `present` | `hide` makes an article-only slide: skipped when presenting |
 | `image` | A background picture. With `layout: image`, the text sits over it on a dark scrim |
+| `glossary` | `inline` annotates glossary terms on the slide too, not only in the article |
 
 </details>
 
@@ -218,66 +219,81 @@ Image and recording paths are relative to the HTML file.
 
 ## Widgets
 
-Quadrant matrices: `::: quadrant x="Effort" y="Impact"`, four `###` headings (top-left, top-right, bottom-left, bottom-right), then optional `- Label [0.2, 0.8]` points on normalized 0–1 axes. ↓ reveals points; article view groups every point by quadrant.
-Stepped derivations use `$$ {steps}` followed by TeX rows separated by `\\` and a closing `$$`. Align with `&`, and add explanations with `\text{…}`. ↓ or **Next equation** reveals one line at a time; article view shows the complete aligned derivation. KaTeX loads only when needed, with readable TeX when disabled or unavailable.
-- `::: meter value=72 max=100 label="Migration done" unit=%` (empty container) and `[1.2M]{count}`: ↓ animates each value once on cue; articles and reduced motion show final values. Meter max defaults to 100, requires 0 ≤ value ≤ max and a label; unit is optional short plain text. Counters accept signed decimals with optional k/M/B and %.
-
 <img src="docs/widgets.png" alt="Tabs, a chart, stepped code and a Mermaid diagram" width="900">
 
-Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and show everything in the article.
+Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and show everything in the article. The [gallery](https://sambhav.dev/talkdown/gallery.html) has live examples, grouped the same way.
+
+### Visual charts
 
 | Widget | Write |
 |---|---|
-| **Image gallery** | `::: gallery` around Markdown images; ↓ highlights each image, click opens a lightbox with arrow navigation and alt-text captions |
-| **Timer** | `::: timer 10m` around exercise instructions. ↓ or Start begins; Pause/Resume and Reset control it. Supports `30s`, `10m`, `1h30m` up to 24 hours; article shows duration text |
-| **Tabs** | `::: tabs`, then a `###` heading per tab. `::: toggle` is the same, styled as a switch |
-| **Walkthrough** | `::: steps`, then a `###` heading per step. Adds a counter, progress dots and Next |
-| **Explained table** | `{.explain}` after a table. The last column becomes the detail for the selected row |
-| **Sparklines** | A code span containing `spark:9,8,8,6,5,5` draws an inline trend in prose or tables. Finite numbers only; the accessible label lists every value |
-| **Marks** | ✓ ◐ ✗ at the start of a cell become icons in the theme's green, accent and red |
-| **Stepped code** | ` ```python {steps: 1-2 \| 3-4} ` lights up each group of lines in turn |
-| **Annotated code** | ` ```python {annotate} ` turns `# (1)` line-end comments into numbered pins, explained by the `1.` `2.` list right after the block; ↓ walks them |
-| **Logs** | ` ```log {steps: 3 | 5-6} ` numbers literal log lines, dims timestamps and styles severity levels. ↓ highlights line groups; articles mark all groups, and Copy preserves raw content |
-| **Diffs** | ` ```diff {steps: hunks} title="api.py" ` tints added and removed lines and highlights each `@@` hunk on ↓. `view=split` shows old beside new on the slide; **Copy** takes the new code |
-| **API endpoint** | `::: endpoint GET /v1/users/{id}` around a description and Markdown parameter table; path parameters are highlighted, with a permalink on the path in the article |
-| **HTTP exchange** | A ` ```http ` fence: request line and headers, a blank line, then `HTTP/1.1 200 OK` and the response. ↓ reveals the response; the article stacks both messages |
-| **Copy buttons** | Every code block gets a **Copy** button, shown on hover and always on touch screens |
-| **Before / after** | `::: compare` around two images with alt text; drag or use the range keys, ↓ reveals 0 / 50 / 100%; articles show both images |
-| **Quiz** | `::: quiz`: one `###` question, `- [ ]` choices and one `- [x]` answer. Add a blank line before explanation prose. ↓ reveals the answer; articles show the explanation and allow choices/reset. No answers are stored or sent. |
-| **Prompt / output** | `::: prompt model="any-model" temperature=0`, then `### Prompt` and `### Output`. Both options are optional; ↓ reveals the output, and the article stacks both cards |
-| **Flip cards** | `::: flip`: the `###` heading is the front, the rest is the back |
-| **Flow / stack** | `::: flow` or `::: stack` around a bulleted list. `::: flow vertical` points down; `build: true` or `{.step}` reveals boxes on ↓. Article view shows all boxes |
-| **Changelog** | `::: changelog`, `### v0.4.0 · 2026-10-25` per release, `#### Added` / `#### Fixed` labels and Markdown notes. One release per step; all linked in article view. Give the slide an `id:` for stable links |
-
-| **Timeline** | `::: timeline`, then a `###` heading per milestone. Vertical on phones |
-| **Explorable numbers** | `::: explorable` around prose with `[qps=1000]{range=100..10000}` and `{qps*40/1000}`. Native sliders update arithmetic in both views; optional `step=100` inside the range braces |
-| **Stats** | `::: stats` around a list like `- **42%** faster first response` |
-| **Callouts** | `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]` |
-| **Diagrams** | ` ```mermaid `: flowcharts, networks, sequence, architecture, state, charts and more. Add `{source}` to show the text beside it. Readers can click a diagram to open it full screen and zoom |
 | **Charts** | `::: chart type=line` around a table or CSV block. Twelve types; see [Charts](#charts) |
+| **Quadrant** | `::: quadrant x="Effort" y="Impact"`, four `###` headings (top-left, top-right, bottom-left, bottom-right), then optional `- Label [0.2, 0.8]` points on 0–1 axes. ↓ reveals points; the article groups them by quadrant |
+| **Stats** | `::: stats` around a list like `- **42%** faster first response` |
+| **Meter / counter** | `::: meter value=72 max=100 label="Migration done" unit=%` (empty block) or `[1.2M]{count}` in text. ↓ animates once; articles show final values. `max` defaults to 100 |
+| **Sparklines** | A code span like `spark:9,8,8,6,5,5` draws an inline trend in prose or tables |
+| **Marks** | ✓ ◐ ✗ at the start of a cell become icons in the theme's green, accent and red |
+
+### Interactive content
+
+| Widget | Write |
+|---|---|
+| **Tabs** | `::: tabs`, then a `###` heading per tab. `::: toggle` is the same, styled as a switch |
+| **Accordion** | `::: accordion`, then a `###` heading per item; ↓ opens them in turn |
+| **Walkthrough** | `::: steps`, then a `###` heading per step. Adds a counter, progress dots and Next |
+| **Flip cards** | `::: flip`: the `###` heading is the front, the rest is the back |
+| **Before / after** | `::: compare` around two images with alt text; drag or use the range keys, ↓ reveals 0 / 50 / 100% |
+| **Image hotspots** | `::: hotspots`, one image, then `- [12%, 30%] Label` bullets (x/y from left/top). ↓ walks numbered pins; the article shows the legend |
+| **Quiz** | `::: quiz`: one `###` question, `- [ ]` choices and one `- [x]` answer, then optional explanation after a blank line. ↓ reveals the answer; nothing is stored or sent |
+| **Explorable numbers** | `::: explorable` around prose with `[qps=1000]{range=100..10000 step=100}` and `{qps*40/1000}`. Sliders update the arithmetic in both views |
+| **Glossary** | `::: glossary` with one `Term: Definition` per line. Articles annotate the first use per slide and end with the definitions; frontmatter `glossary: inline` annotates the slide too |
+| **Explained table** | `{.explain}` after a table. The last column becomes the detail for the selected row |
+| **Timer** | `::: timer 10m` around instructions. ↓ or Start begins; Pause and Reset control it. `30s` to `24h` |
+
+### Code and diagrams
+
+| Widget | Write |
+|---|---|
+| **Copy buttons** | Every code block gets a **Copy** button, shown on hover and always on touch screens |
+| **Stepped code** | ` ```python {steps: 1-2 \| 3-4} ` lights up each group of lines in turn |
+| **Annotated code** | ` ```python {annotate} ` turns `# (1)` comments into numbered pins, explained by the `1.` `2.` list after the block; ↓ walks them |
+| **Terminal** | A ` ```terminal ` block: each `$ command` types out on ↓, and the lines after it are its output |
+| **Recordings** | `![title](demo.cast)` plays an [asciinema](https://asciinema.org/) recording without the player. A file needs http; a ` ```cast ` block plays anywhere |
+| **Logs** | ` ```log {steps: 3 \| 5-6} ` numbers log lines, dims timestamps and styles levels. ↓ highlights line groups; Copy keeps the raw log |
+| **Diffs** | ` ```diff {steps: hunks} title="api.py" ` tints changes and highlights each `@@` hunk on ↓. `view=split` shows old beside new; **Copy** takes the new code |
+| **HTTP exchange** | A ` ```http ` fence: request and headers, a blank line, then `HTTP/1.1 200 OK` and the response. ↓ reveals the response |
+| **API endpoint** | `::: endpoint GET /v1/users/{id}` around a description and parameter table; path parameters are highlighted, with a permalink in the article |
+| **Prompt / output** | `::: prompt model="any-model" temperature=0` (both optional), then `### Prompt` and `### Output`. Side by side on the stage; ↓ reveals the output |
+| **Chat transcript** | `::: chat` with lines starting `**user:**`, `**assistant:**`, `**system:**` or `**tool**`. ↓ reveals messages; tool calls expand |
+| **Environment diff** | `::: envdiff` around a table: a key column plus two or more environments. Differing values are highlighted; ↓ or Differences only hides the rest |
+| **Keyboard shortcuts** | `[[Ctrl+Shift+P]]` renders keycaps. `[[Mod+K]]` shows ⌘ on Apple platforms and Ctrl elsewhere; `Plus` is the + key |
+| **Diagrams** | ` ```mermaid `: flowcharts, sequence, architecture, state and more. `{source}` shows the text beside it; click to zoom |
+| **Flow / stack** | `::: flow` or `::: stack` around a list. `::: flow vertical` points down; `build: true` or `{.step}` reveals boxes on ↓ |
+| **Device frames** | `::: browser url="https://example.com"`, `::: window title="Terminal"` or `::: phone` around an image, code or Markdown |
+| **Maths** | `$x^2$` inline or a `$$ … $$` block, typeset by [KaTeX](https://katex.org/) |
+| **Stepped equations** | `$$ {steps}`, TeX rows separated by `\\`, then `$$`. Align with `&`, explain with `\text{…}`; ↓ reveals one row at a time |
+
+### Presentation components
+
+| Widget | Write |
+|---|---|
+| **Feature cards** | `::: features`, then a `###` heading per card. An `:icon:` or image at the start of the heading becomes its icon. Up to three per row |
+| **Speaker card** | `::: speaker` around an optional photo, one `### Name`, role and links. A compact author box in the article |
+| **Timeline** | `::: timeline`, then a `###` heading per milestone. Vertical on phones |
+| **Roadmap board** | `::: board`, then a `###` heading and list of cards per column. ↓ reveals columns; keep to 2–4 short columns |
+| **Changelog** | `::: changelog`, `### v0.4.0 · 2026-10-25` per release, `#### Added` / `#### Fixed` labels. One release per step; give the slide an `id:` for stable links |
+| **Link cards** | `::: links` around `- [Title](URL) Description` items: further-reading cards with the domain, no metadata requests |
+| **Image gallery** | `::: gallery` around images; ↓ highlights each, click opens a lightbox with captions |
+| **Image slides** | `layout: image` and `image: path.jpg` in the frontmatter: a full-bleed picture with the text over it |
+| **Video** | `![title](youtube, vimeo or .mp4 link)` embeds a player |
+| **Callouts** | `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]` |
 | **Pull quotes** | A `>` quote whose last line starts with `—` becomes a large quote with that attribution |
 | **Checklists** | `- [x] done` and `- [ ] to do` |
 | **Footnotes** | `text[^1]` and a `[^1]: source` line anywhere on the slide; set small at its foot |
-| **Maths** | `$x^2$` inline or a `$$ … $$` block, typeset by [KaTeX](https://katex.org/) |
-| **Image slides** | `layout: image` and `image: path.jpg` in the frontmatter: a full-bleed picture with the text over it |
-| **Terminal** | A ` ```terminal ` block: each `$ command` line types out on ↓, and the lines after it are its output |
-| **Recordings** | `![title](demo.cast)` plays an [asciinema](https://asciinema.org/) recording in the same window, without the asciinema player. A file needs the page served over http; paste the recording into a ` ```cast ` block to play it anywhere |
-| **Device frames** | `::: browser url="https://example.com"`, `::: window title="Terminal"` or `::: phone` around an image, code or Markdown; theme colours, with all content visible in the article |
-| **Video** | `![title](youtube, vimeo or .mp4 link)` embeds a player |
-| **Accordion** | `::: accordion`, then a `###` heading per item; ↓ opens them in turn |
-| **Glossary** | `::: glossary` with one plain `Term: Definition` per line. Articles annotate the first whole-word use per slide and end with expanded definitions; slide frontmatter `glossary: inline` opts the stage in. Hover, focus or tap terms |
-| **Speaker card** | `::: speaker` around an optional photo, one `### Name`, role and Markdown links. A compact author box in the article |
-| **Environment diff** | `::: envdiff` around a normal table: key column plus at least two environments. Differing rows have highlighted values; ↓ or Differences only hides identical rows. Article view shows every row; tables scroll on phones. No options. |
-| **Link cards** | `::: links` around `- [Title](URL) Description` items: a grid of further-reading cards with the domain; one column on phones and no metadata requests |
-| **Feature cards** | `::: features`, then a `###` heading per card. An `:icon:` or image at the start of the heading becomes its icon. Up to three per row; set `--n` on `.w-features` for more |
-| **Image hotspots** | `::: hotspots`, one Markdown image, then `- [12%, 30%] Label` bullets (x/y from left/top, 0–100%). ↓ walks numbered pins; article view shows the full legend. No options |
-| **Chat transcript** | `::: chat` with lines starting `**user:**`, `**assistant:**`, `**system:**` or `**tool**`. ↓ reveals messages; tool calls expand with native disclosure. Articles show all messages. No options |
-| **Roadmap board** | `::: board`, then a `###` heading and list of cards per column. ↓ reveals columns; article view shows all cards and stacks columns on phones. Keep slides to 2–4 short columns; no options |
+| **Icons** | `:rocket:` anywhere: any [Lucide](https://lucide.dev/icons) icon, in the theme's colours |
 | **Agenda** | An empty `::: agenda` lists every section slide, each linking to it |
-| **Audience questions** | `::: ask url="https://example.com/questions"` shows a large QR and destination in slides; an “Ask a question” link in articles. Use an empty block and an absolute HTTP(S) URL. |
+| **Audience questions** | `::: ask url="https://example.com/questions"` (empty block): a large QR on the slide, a link in the article |
 | **QR code** | `::: qr` draws a QR code of the deck's link, or of a URL written inside it |
-| **Keyboard shortcuts** | `[[Ctrl+Shift+P]]` renders inline keycaps. `[[Mod+K]]` shows ⌘ on Apple platforms and Ctrl elsewhere; use `Plus` for the + key. Same in slides and articles |
-| **Icons** | `:rocket:` anywhere: any of the [Lucide](https://lucide.dev/icons) icons, drawn in the theme's colours. A feature card's heading can also start with `![](icon.svg)` |
 
 ```md
 ::: tabs
