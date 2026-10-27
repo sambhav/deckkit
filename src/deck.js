@@ -94,6 +94,7 @@ import { citeFormats } from './cite.js';
  *   ```json {explore open=2 highlight="a.b"}  collapsible JSON tree; open=N levels (or all) start open; ↓ opens and marks each highlighted path
  *   ```regex                            a pattern line then "test: text" lines (or /pattern/flags); ↓ explains one part at a time, tests show match or not
  *   ```tokens {steps count}             text with | between tokens as coloured chips; {steps} reveals one per ↓, {count} shows the total (article always does)
+ *   ```trace                            "name  start-ms  duration-ms" lines, indent nests; waterfall bars, ↓ reveals spans in order, click selects one
  *   ```terminal                         "$ command" lines type out one per ↓, the rest is their output
  *   ```bitfield bits=32                 "0-3 Version" lines draw a packet/register layout; ↓ highlights each field; the article adds a field table
  *   ::: endpoint GET /users/{id}        method badge, highlighted path parameters and Markdown reference; article path is a permalink
@@ -326,6 +327,7 @@ import { citeFormats } from './cite.js';
     c.querySelectorAll('.w-bench').forEach(benchDownload);
     c.querySelectorAll('.w-seq').forEach(sequence);
     c.querySelectorAll('.w-json').forEach(jsonTree);
+    c.querySelectorAll('.w-trace').forEach(traceSteps);
     c.querySelectorAll('pre.code').forEach(copyable);
     c.querySelectorAll('.install').forEach(install);
     c.querySelectorAll('.compare').forEach(box => beforeAfter(box, steps));
@@ -1083,6 +1085,17 @@ import { citeFormats } from './cite.js';
     image.addEventListener('load', loaded); loaded();
     image.addEventListener('error', failed);
     if (image.complete && !image.naturalWidth) failed();
+  }
+
+  // ```trace — waterfall rows in authored order: ↓ reveals one more span, clicking a row jumps to it
+  function traceSteps(w) {
+    const rows = [...w.querySelectorAll('.w-trace-row')], detail = w.querySelector('.w-trace-detail'), cells = [...w.querySelectorAll('.w-trace-table tbody tr')];
+    const st = steps(w, rows.length, i => {
+      rows.forEach((r, j) => { r.classList.toggle('shown', j <= i); r.classList.toggle('current', j === i); r.setAttribute('aria-pressed', j === i); });
+      const c = cells[i].children;
+      detail.textContent = `${c[0].textContent}: starts ${c[1].textContent}, lasts ${c[2].textContent}, ends ${c[3].textContent}`;
+    }, { read: 'end' });
+    rows.forEach((r, i) => r.addEventListener('click', () => st.go(i)));
   }
 
   function quadrantSteps(w) {

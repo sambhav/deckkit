@@ -186,6 +186,7 @@ The article.
 - Runnable JavaScript: ` ```js {run} ` is editable with a **Run** button (↓ also runs it) and shows `console` output; it runs in a sandboxed iframe with no access to the page. Top-level `await` works; a run stops after 5 seconds.
 - Live preview: `::: live` containing ` ```html `, ` ```css ` and ` ```js ` fences (one of each at most). Editors on the left, a sandboxed rendered preview on the right that redraws as you type; stacked in read view.
 - Token visualiser: a ` ```tokens ` fence; write the text with `|` between tokens (`The| quick| fox|’s| tok|en`), keeping spaces inside tokens; `\|` is a literal pipe, a new line starts a new row. Options in braces: `{steps}` reveals one token per ↓, `{count}` shows the total in slides (the article always does). No tokenizer ships, so the author decides the boundaries.
+- Trace timeline: a ```` ```trace ```` fence, one span per line as `name  start  duration` (ms). Indent with spaces to nest (children indented more than their parent); no options. Renders waterfall bars; ↓ reveals spans in order, clicking a row selects it. Article shows every span plus a table. Bad lines render an error.
 
 ### Presentation components
 

@@ -10,6 +10,7 @@ import { benchBlock } from './bench.js';
 import MarkdownIt from 'markdown-it';
 import { quadrant } from './quadrant.js';
 import { venn } from './venn.js';
+import { trace } from './trace.js';
 
 import { shortcut } from './keyboard-shortcuts.js';
 import { chatTranscript } from './chat.js';
@@ -252,7 +253,7 @@ md.core.ruler.after('block', 'talkdown_annotate', state => {
   const alert = e => `<p class="td-error" role="alert">${escape(e)}</p>\n`;
   for (let i = 0; i < t.length; i++) {
     const fence = t[i], lang = fence.info.trim().match(/^[\w+-]+/)?.[0] || '';
-    if (fence.type !== 'fence' || !/\{\s*annotate\s*\}/.test(fence.info) || /^(terminal|cast|asciicast|mermaid|log)$/.test(lang)) continue;
+    if (fence.type !== 'fence' || !/\{\s*annotate\s*\}/.test(fence.info) || /^(terminal|cast|asciicast|mermaid|log|trace)$/.test(lang)) continue;
     // without its list the block is left as written (this also covers an unclosed fence that swallowed the rest)
     if (!(t[i + 1]?.type === 'ordered_list_open' && t[i + 1].level === fence.level)) {
       t.splice(i, 0, html(alert('{annotate} needs a numbered list right after the code block, one item per (n) marker'))); i++; continue;
@@ -537,6 +538,7 @@ function fence(token) {
   if (lang === 'sequence') return sequenceHTML(source);
   if (/\{\s*explore(?=[\s}])/.test(info)) return jsonTree(token.content, info);
   if (lang === 'tokens') return tokenBlock(token.content, info);
+  if (lang === 'trace') return trace(token.content, info);
   if (lang === 'diff') return diff(source, info);
   if (lang === 'regex') return regexBlock(source, escape);
   if (lang === 'http') return httpExchange(source, info);
