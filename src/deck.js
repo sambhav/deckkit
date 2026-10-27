@@ -1067,6 +1067,8 @@ import { runCell, liveCode } from './runnable.js';
     svg.append(path); span.prepend(svg);
     if (!('markStep' in span.dataset)) { span.classList.add('on'); return; }
     steps(span, 2, i => span.classList.toggle('on', i > 0), { read: 'end' });
+  }
+
   // ::: venn — ↓ reveals each region's text in turn; the circles and set names are always there
   function vennSteps(w) {
     const regions = [...w.querySelectorAll('[data-region]')];
