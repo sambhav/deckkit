@@ -1,0 +1,21 @@
+const assert = require('node:assert/strict');
+module.exports = async function verifyVenn(page, base) {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(base + '/gallery.html?view=present#w-venn');
+  await page.evaluate(() => Talkdown.ready.then(() => {}));
+  assert.equal(await page.evaluate(() => Deck.slide.dataset.id), 'w-venn');
+  const w = page.locator('.slide[data-id="w-venn"] .w-venn');
+  assert.equal(await w.locator('.w-venn-circle').count(), 3);
+  assert.equal(await w.locator('[data-region].shown').count(), 0);
+  await page.keyboard.press('ArrowDown');
+  assert.equal(await w.locator('[data-region].shown').count(), 1);
+  await page.keyboard.press('s');
+  assert.match(await page.locator('#src').textContent(), /::: venn/);
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => Deck.setView('read'));
+  assert.equal(await w.locator('[data-region].shown').count(), 4, 'the article shows every region');
+  assert.equal(await w.locator('.w-venn-list li').count(), 4);
+  assert.equal(await w.locator('.w-venn-list').isVisible(), true);
+  await page.setViewportSize({ width: 320, height: 740 });
+  assert.equal(await w.evaluate(el => el.scrollWidth <= el.clientWidth + 1), true, 'the diagram fits a phone article');
+};
