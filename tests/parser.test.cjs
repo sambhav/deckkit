@@ -461,7 +461,7 @@ test('code groups keep each fence; a [label] after the language names its tab an
   assert.match(renderMarkdown('```terminal [Shell]\n$ ls\n```'), /^<div data-label="Shell" class="w-term"/);
   assert.match(renderMarkdown('```js\nconst a = [1]\n```'), /^<pre class="code" data-lang="js"><code>const a = \[1\]/);   // brackets in the code are code
   assert.match(renderMarkdown('```md [x](y)\n```'), /data-label="x"/);
-
+});
 
 test('tokens fences split on pipes, keep spaces and count', () => {
   const html = md('```tokens {steps count}\nThe| quick| fox|’s| tok|en\\|x\nnext| line\n```');
