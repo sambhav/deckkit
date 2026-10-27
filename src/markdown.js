@@ -1,4 +1,5 @@
 import { promptPair } from './prompt.js';
+import { versus } from './versus.js';
 import { changelogHTML } from './changelog.js';
 import { hotspotMarkup } from './hotspots.js';
 import { explorableInline, explorable } from './explorable.js';
@@ -719,6 +720,7 @@ function compile(tokens, env) {
           } catch (error) { html += `<p class="td-error" role="alert">${escape(error.message)}</p><p>${escape(token.content)}</p>${content}`; }
         }
         else if (name === 'prompt') { html += promptPair(body, options, classes, part => compile(part, env)); }
+        else if (name === 'versus') { html += versus(body, options, classes, part => compile(part, env)); }
         else if (name === 'changelog') {
           try { html += changelogHTML(body, ts => compile(ts, env), options, classes); }
           catch (error) { html += `<p class="td-error" role="alert">changelog: ${escape(error.message)}</p>` + compile(body, env); }
@@ -766,7 +768,7 @@ function compile(tokens, env) {
             ? deviceFrame(name, options, classes, content)
             : `<div class="${escape([name, ...classes].join(' '))}"${attrs}>${content}</div>`;
         }
-      } catch (error) { html += `<p class="td-error" role="alert">${escape(error.message)}</p>`; if (/^(?:timer|prompt)(?:\s|$)/.test(token.content)) html += compile(body, env); }
+      } catch (error) { html += `<p class="td-error" role="alert">${escape(error.message)}</p>`; if (/^(?:timer|prompt|versus)(?:\s|$)/.test(token.content)) html += compile(body, env); }
       i = end;
     } else if (token.type === 'td_column') { flush(); html += columns ? '</div><div>' : '<div class="cols"><div>'; columns = true; }
     else if (token.type === 'td_slide') { flush(); html += '<hr>'; }

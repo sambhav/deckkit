@@ -1,0 +1,21 @@
+const assert = require('node:assert/strict');
+module.exports = async function verifyVersus(page, base) {
+  const source = ['id: v', '---', '## Compare', '::: versus', '> Prompt: Explain p99.', '### Model A', 'Short.', '### Model B', 'A much longer answer. '.repeat(8), '### Model C', 'Mid.', '### Verdict', 'A wins.', ':::'].join('\n');
+  await page.route('**/versus-fixture.html*', route => route.fulfill({ contentType: 'text/html; charset=utf-8', body: '<!doctype html><html data-fonts="off" data-highlight="off" data-icons="off"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + source + '</script></body></html>' }));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(base + '/versus-fixture.html?view=present');
+  await page.waitForFunction(() => window.Deck?.slides.length === 1);
+  const cols = page.locator('.w-versus-col'), verdict = page.locator('.w-versus-verdict');
+  const shown = async () => (await Promise.all([0, 1, 2].map(i => cols.nth(i).evaluate(e => !e.classList.contains('pending'))))).concat(await verdict.evaluate(e => !e.classList.contains('pending')));
+  assert.deepEqual(await shown(), [true, false, false, false]);
+  const widths = await cols.evaluateAll(els => els.map(e => Math.round(e.getBoundingClientRect().width)));
+  assert.ok(Math.max(...widths) - Math.min(...widths) <= 1, 'columns are equal width: ' + widths);
+  for (let k = 0; k < 3; k++) await page.keyboard.press('ArrowDown');
+  assert.deepEqual(await shown(), [true, true, true, true]);
+  const heights = await cols.evaluateAll(els => els.map(e => Math.round(e.getBoundingClientRect().height)));
+  assert.ok(Math.max(...heights) - Math.min(...heights) <= 1, 'columns are equal height: ' + heights);
+  await page.evaluate(() => Deck.setView('read'));
+  assert.deepEqual(await shown(), [true, true, true, true]);
+  await page.setViewportSize({ width: 320, height: 740 });
+  assert.equal(await page.locator('.w-versus').evaluate(el => el.scrollWidth <= el.clientWidth + 1), true, 'fits phone');
+};

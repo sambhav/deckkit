@@ -941,6 +941,25 @@ Edit either side; the preview redraws a moment later. On a phone and in the arti
 :::
 
 ---
+id: w-versus
+---
+## Same prompt, two models
+
+::: versus
+> Prompt: Explain p99 latency to a PM.
+### Model A
+The **99th percentile**: 99 of 100 requests finish at least this fast. It is the slow tail that users notice.
+### Model B
+p99 is a statistical latency percentile computed over a rolling window of observed request durations.
+### Verdict
+A is shorter, plainer and still correct.
+:::
+
+::: notes
+Each step brings in the next model's answer, then the verdict. The article stacks every answer under the shared prompt.
+:::
+
+---
 section: Presentation components
 id: content
 ---
