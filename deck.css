@@ -678,7 +678,7 @@ td.mk-only, th.mk-only { text-align: center; }
 .md blockquote.callout { border-left-width: 3px; background: var(--surface); border-radius: 0 var(--radius) var(--radius) 0; padding: .8em 1.1em; --tone: var(--blue); border-left-color: var(--tone); }
 .md blockquote.callout p { font-size: calc(var(--t-body) * .85); font-weight: 400; line-height: var(--t-leading); letter-spacing: 0; }
 .callout-label { font: 600 var(--t-kicker) var(--mono); letter-spacing: .08em; text-transform: uppercase; color: color-mix(in oklab, var(--tone) 70%, var(--fg)); margin-bottom: .3em; }   /* the bar keeps the pure tone; small text needs AA contrast */
-.callout-tip { --tone: var(--green); } .callout-warning, .callout-caution { --tone: var(--orange); } .callout-important { --tone: var(--accent-ink); border-left-color: var(--accent); }
+.md blockquote.callout-tip { --tone: var(--green); } .md blockquote:is(.callout-warning, .callout-caution) { --tone: var(--orange); } .md blockquote.callout-important { --tone: var(--accent-ink); border-left-color: var(--accent); }
 
 /* the article scale (~1.25 from a 19px body): read view, and Markdown slides presented on a phone held upright */
 :is([data-view=read], [data-tall=fluid]) {

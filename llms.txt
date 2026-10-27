@@ -1,49 +1,28 @@
 # talkdown
 
-> talkdown is a small, no-install slide engine and Markdown format built for agents. A deck is one HTML file with Markdown in a `<script type="text/markdown">` block, loaded through https://sambhav.dev/talkdown/latest.js for automatic runtime updates, or direct deck.css/deck.js links for offline or pinned decks. Slides are the default on desktop and mobile. Article view turns shared speaker notes into prose; phones have visible Previous/Next buttons that move through steps and then slides, without extra inline navigation bars, and a menu containing Slides / Article, Home, and a section/slide picker. Native scrolling and browser gestures remain enabled; there is no custom swipe or edge-tap navigation. A `?view=read#section-id` link opens the article at a named section. The runtime supplies layout and interaction, keeping the authored source compact and editable by hand. Link cards use `::: links` around `- [Title](URL) Description` items, showing authored titles, domains and descriptions without metadata requests. Browser (`::: browser url="…"`), window (`::: window title="…"`) and phone (`::: phone`) frames wrap screenshots, code or Markdown in theme-aware CSS chrome. Simple `::: flow` and `::: stack` blocks turn bulleted lists into theme-native process boxes or top-to-bottom layers, without external rendering. `::: flow vertical` points down; slide `build: true` or item `{.step}` markers reveal boxes on ↓ and article view shows all items. Inline keyboard shortcuts use `[[Ctrl+Shift+P]]` and `[[Enter]]`; `[[Mod+K]]` shows Command on Apple platforms and Control elsewhere, with accessible key names in both views. Write `Plus` for the + key. Inline code spans such as `spark:9,8,8,6,5,5` render text-sized sparklines in prose and tables, with all values in their accessible label. `::: envdiff` compares a normal Markdown table (key plus at least two environment columns); differing values are bold and underlined, ↓ or a toggle hides identical rows, and article view keeps every row. No options. Built-in components share the selected theme, and custom HTML and JavaScript can join the deck's navigation. Charts cover bar, horizontal bar, line, donut, heatmap, scatter, bubble, waterfall, timeline, Sankey, treemap and range, all from one Markdown table or CSV. Readers can click a Mermaid diagram or a chart to open it full screen and zoom. A `<div id="bar">` in the page (a `.title` plus links) replaces the default top bar.
+> talkdown is a small, no-install slide engine and Markdown format built for agents. A deck is one HTML file with Markdown in a `<script type="text/markdown">` block, loaded through https://sambhav.dev/talkdown/latest.js for automatic runtime updates, or direct deck.css/deck.js links for offline or pinned decks. The same source presents as 16:9 slides and reads as an article, where speaker notes become prose. Built-in widgets share the selected theme (23 themes, each light and dark), and custom HTML and JavaScript can join the deck's navigation.
 
-Speaker cards use `::: speaker` around an optional photo, one `### Name`, role text and Markdown links; the same card becomes a compact article author box.
-
-Write notes in `::: notes` / `::: say` / `::: read` blocks and charts in `::: chart` containers with plain numbers. Use one HTML file by default; a referenced Markdown file works when served over HTTP.
+Write notes in `::: notes` / `::: say` / `::: read` blocks and charts in `::: chart` containers with plain numbers. Use one HTML file by default; a referenced Markdown file works when served over HTTP. On phones, Previous/Next buttons move through steps and then slides; native scrolling stays enabled. A `?view=read#section-id` link opens the article at a named section. A `<div id="bar">` in the page (a `.title` plus links) replaces the default top bar. Custom scripts use `Talkdown.onReady(Deck => { ... })`.
 
 ## Agent instructions
 
-- [talkdown skill](https://sambhav.dev/talkdown/skills/talkdown/SKILL.md): how to write a deck: boilerplate, syntax, widgets, themes, rules, example. Read this first.
+- [talkdown skill](https://sambhav.dev/talkdown/skills/talkdown/SKILL.md): how to write a deck: boilerplate, syntax, every widget with its options, themes, rules and an example. Read this first.
 - [talkdown skill (jsDelivr)](https://cdn.jsdelivr.net/gh/sambhav/talkdown@main/skills/talkdown/SKILL.md): same file, via CDN.
+
+## Widgets
+
+Grouped as in the skill, the README and the gallery. Stateful widgets step with ↓ and show everything in the article.
+
+- Visual charts: `::: chart` (bar, horizontal bar, line, donut, heatmap, scatter, bubble, waterfall, timeline, Sankey, treemap, range) from one Markdown table or CSV; `::: quadrant`; `::: stats`; `::: meter` and `[1.2M]{count}`; inline `spark:9,8,8,6,5,5` sparklines; ✓ ◐ ✗ table marks.
+- Interactive content: `::: tabs`, `::: toggle`, `::: accordion`, `::: steps`, `::: flip`, `::: compare` (before/after), `::: hotspots`, `::: quiz`, `::: explorable`, `::: glossary`, `{.explain}` tables, `::: timer`.
+- Code and diagrams: copy buttons, stepped and annotated code, `terminal` fences, asciinema recordings, `log` and `diff` fences, `http` exchanges, `::: endpoint`, `::: prompt`, `::: chat`, `::: envdiff`, `[[Ctrl+K]]` keycaps, Mermaid, `::: flow` / `::: stack`, `::: browser` / `::: window` / `::: phone` frames, KaTeX maths and `$$ {steps}` equations.
+- Presentation components: `::: features`, `::: speaker`, `::: timeline`, `::: board`, `::: changelog`, `::: links`, `::: gallery`, image slides, video, callouts, pull quotes, checklists, footnotes, Lucide `:icons:`, `::: agenda`, `::: ask`, `::: qr`.
 
 ## Docs and examples
 
-- Quadrant matrices: `::: quadrant x="Effort" y="Impact"`, four consecutive `###` headings in top-left, top-right, bottom-left, bottom-right order, then optional `- Label [0.2, 0.8]` points (coordinates 0–1, increasing right/up). ↓ reveals points or empty quadrants; articles include a grouped point list.
-
-- Roadmap boards: `::: board` with `###` column headings and Markdown lists of cards. ↓ reveals columns in slides; articles show every card, with columns stacked on phones. Syntax and examples are in the skill and widget gallery.
-
-- [README](https://github.com/sambhav/talkdown/blob/main/README.md): setup instructions, authoring recommendations, syntax, widgets and themes.
-- [Live demo](https://sambhav.dev/talkdown/): a short presentation about why the format exists, followed by live component examples and an authoring tour.
-- [Widget gallery](https://sambhav.dev/talkdown/gallery.html): every widget and chart type, live, with its Markdown.
+- [README](https://github.com/sambhav/talkdown/blob/main/README.md): setup, authoring, syntax, widgets and themes.
+- [Live demo](https://sambhav.dev/talkdown/): why the format exists, then live component examples and an authoring tour.
+- [Widget gallery](https://sambhav.dev/talkdown/gallery.html): live widgets and chart types, grouped by category, each with its Markdown (press S).
 - [Starter deck](https://sambhav.dev/talkdown/examples/starter.html): a minimal template to copy.
 
-
-latest.js loads the current release each time a page opens, so published decks never need updating. Custom scripts use Talkdown.onReady(Deck => { ... }). For offline or pinned decks, link deck.js and deck.css directly (download them from sambhav.dev/talkdown or a GitHub release).
-
-HTTP exchanges use a `http` fence: request line, headers/body, a blank line, then the response status line and headers/body. Present view reveals the response on ↓; article view stacks both with Copy buttons.
-
-API endpoint references use `::: endpoint GET /v1/users/{id}` around a description and optional Markdown parameter table. Both views show all content; the article path is a permalink. Use an uppercase standard HTTP method and slash-prefixed path; `{name}` highlights parameters. No options.
-
-- Image hotspots: `::: hotspots` around one Markdown image and `- [12%, 30%] Label` bullets; percentages measure x/y from left/top, 0–100%. The first numbered pin starts active, ↓ selects each next pin, and article view shows all pins with a numbered legend. Labels support inline formatting and links; no options.
-
-Before/after images use `::: compare` around two Markdown images with alt text. Presentations have a draggable, keyboard-accessible wipe with 0 / 50 / 100% steps; articles show both complete images and captions, stacked on phones.
-- Chat transcripts: `::: chat` with `**user:**`, `**assistant:**`, `**system:**` or `**tool**` lines. Messages reveal one per slide step; articles show every message and expandable tool calls. See the skill and widget gallery.
-Glossaries use `::: glossary` around plain `Term: Definition` lines, once per unique case-sensitive term. Articles annotate first whole-word uses per slide with hover/focus/tap definitions and end with an expanded Glossary. Slide frontmatter `glossary: inline` opts stage annotations in; links and code stay intact.
-Explorable numbers use `::: explorable` around prose with `[qps=1000]{range=100..10000}` declarations and `{qps*40/1000}` results. Native sliders update container-local arithmetic in slides and articles. Optional `step=100` goes inside the range braces; arithmetic allows parentheses and + - * / %, without JavaScript or page access.
-Knowledge checks use `::: quiz`: one `###` question, at least two task-list choices and exactly one `- [x]` answer. Leave a blank line before explanation prose. ↓ reveals the answer; article view includes the full explanation, interactive feedback and Reset. Nothing is stored or sent.
-Image gallery: `::: gallery` around Markdown images; stepped grid in slides, responsive grid and captioned lightbox in articles. See the skill for syntax.
-Stepped derivations use `$$ {steps}` with TeX rows separated by `\\` and alignment cells separated by `&`; `\text{…}` adds explanations. ↓ reveals each row and accents the current equation; article view shows all equations.
-Countdowns: `::: timer 10m` wraps exercise instructions; ↓ starts, buttons pause/reset, article shows duration text. See the talkdown skill for syntax.
-Audience Q&A uses an empty `::: ask url="https://example.com/questions"` container: a large QR with a readable destination in slides and an “Ask a question” link in articles. Use an absolute HTTP(S) URL without credentials; the link works when QR rendering is unavailable.
-Animated values: `::: meter value=72 max=100 label="Migration done" unit=%` (empty container) and `[1.2M]{count}`. Each animates on ↓; read view shows final values.
-
-Log viewers use a `log` fence with optional `{steps: 3 | 5-6}` line groups: numbered lines, dim timestamps and theme-native severity labels. Long logs scroll in slides; articles expand and mark every group. Copy preserves raw content.
-
-Release notes use `::: changelog`, `### v0.4.0 · 2026-10-25` headings and `#### Added` / `#### Fixed` labels: one release per step, all linked in article view. A slide `id:` keeps release links stable when slides move.
-
-Prompt/output pairs use `::: prompt model="any-model" temperature=0` with `### Prompt` and `### Output`: optional parameter badge, one output reveal step, and both cards stacked in the article.
+latest.js loads the current release each time a page opens, so published decks never need updating. For offline or pinned decks, link deck.js and deck.css directly (download them from sambhav.dev/talkdown or a GitHub release).
