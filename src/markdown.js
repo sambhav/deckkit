@@ -253,7 +253,7 @@ md.core.ruler.after('block', 'talkdown_annotate', state => {
   const alert = e => `<p class="td-error" role="alert">${escape(e)}</p>\n`;
   for (let i = 0; i < t.length; i++) {
     const fence = t[i], lang = fence.info.trim().match(/^[\w+-]+/)?.[0] || '';
-    if (fence.type !== 'fence' || !/\{\s*annotate\s*\}/.test(fence.info) || /^(terminal|cast|asciicast|mermaid|log|trace)$/.test(lang)) continue;
+    if (fence.type !== 'fence' || !/\{\s*annotate\s*\}/.test(fence.info) || /^(terminal|cast|asciicast|mermaid|log|trace|tree)$/.test(lang)) continue;
     // without its list the block is left as written (this also covers an unclosed fence that swallowed the rest)
     if (!(t[i + 1]?.type === 'ordered_list_open' && t[i + 1].level === fence.level)) {
       t.splice(i, 0, html(alert('{annotate} needs a numbered list right after the code block, one item per (n) marker'))); i++; continue;
@@ -551,6 +551,7 @@ function fence(token) {
     return `<div class="w w-run"><pre class="code"><code>${code}</code></pre></div>`;
   }
   if (lang === 'terminal') return `<div class="w-term" data-lines="${escape(JSON.stringify(source ? source.split('\n') : []))}"></div>`;
+  if (lang === 'tree') return tree(source, info);
   if (lang === 'mermaid') {
     // {steps: client,edge: note | edge,origin}: each group lists node ids (and so the edges between them) to light on ↓
     const spec = info.match(/\{\s*steps:([^}]*)\}/)?.[1], plan = spec != null && mermaidSteps(spec);
@@ -563,6 +564,42 @@ function fence(token) {
   const pins = token.meta?.pins, steps = !pins && info.match(/\{\s*steps:\s*([^}]*)\}/)?.[1];
   const os = OS[info.match(/^[\w+-]+\s+([A-Za-z]+)(?=\s|\{|$)/)?.[1]?.toLowerCase()];   // ```sh macos: the system a ::: install block's command is for
   return `<pre class="code"${lang ? ` data-lang="${lang}"` : ''}${os ? ` data-os="${os}"` : ''}${steps ? ` data-steps="${escape(steps)}"` : ''}${pins ? ` data-pins="${pins.join(',')}"` : ''}><code>${code}</code></pre>`;
+}
+// ```tree {steps}: one file or folder per line, nested by indentation (pasted `tree` output works too: its box-drawing
+// characters count as indentation). A trailing / or children make a folder. A leading "+ ", "- " or "* " marks the
+// entry added, removed or highlighted, and "  # text" after a name is a note. Folders with children become buttons.
+const TREE_ICONS = {   // Lucide's file, folder and folder-open, inlined so a tree never waits on the network
+  file: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>',
+  shut: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+  open: '<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>',
+};
+const treeIcon = k => `<svg class="t-ico t-${k}" viewBox="0 0 24 24" aria-hidden="true">${TREE_ICONS[k]}</svg>`;
+function tree(source, info) {
+  const fail = text => `<p class="td-error" role="alert">${escape(text)}</p>` + (source.trim() ? `<pre class="code"><code>${escape(source)}</code></pre>` : '');
+  const options = info.slice(4).trim(), odd = options.replace(/\{\s*steps\s*\}/, '').trim();
+  if (odd) return fail(`tree: unknown option "${odd}" (the only option is {steps})`);
+  const root = { children: [], col: -1 }, stack = [root], lines = source.split('\n');
+  for (let j = 0; j < lines.length; j++) {
+    // `tree` output: its │ ├── └── (or ASCII | |-- `--) drawing counts as indentation, and its closing count line is dropped
+    const line = lines[j].replace(/\t/g, '    ').replace(/^(?:[│|][ \u00a0]{3}|[ \u00a0]{4})*[├└|`](?:──|--)[ \u00a0]|^(?:[│|][ \u00a0]{3}|[ \u00a0]{4})+(?=\S)/, p => ' '.repeat(p.length));
+    if (!line.trim() || /^\d+ director(y|ies)(, \d+ files?)?$/.test(line.trim())) continue;
+    const m = line.match(/^( *)(?:([+*-]) +)?(.*?)(?:\s+#\s*(.*))?$/), name = m[3].trim();
+    if (!name || /^#(\s|$)/.test(name)) return fail(`tree: line ${j + 1} has no file or folder name`);
+    const node = { name: name.replace(/\/+$/, '') || '/', dir: name.endsWith('/'), mark: m[2], note: m[4]?.trim(), col: m[1].length, children: [] };
+    while (stack.at(-1).col >= node.col) stack.pop();
+    stack.at(-1).children.push(node); stack.push(node);
+  }
+  if (!root.children.length) return fail('tree: the block is empty');
+  const KIND = { '+': ['t-add', 'ins', 'added'], '-': ['t-del', 'del', 'removed'], '*': ['t-hi', 'mark', 'highlighted'] };
+  const item = n => {
+    const [cls, tag, says] = KIND[n.mark] || ['', 'span'], fold = n.children.length > 0, dir = n.dir || fold;
+    const label = (fold ? treeIcon('shut') + treeIcon('open') : treeIcon(dir ? 'shut' : 'file')) + `<${tag} class="t-name">${escape(n.name)}</${tag}>` + (says ? `<span class="t-sr"> (${says})</span>` : '');
+    return `<li class="${dir ? 't-dir' : 't-file'}${cls ? ' ' + cls : ''}"><div class="t-row">`
+      + (fold ? `<button type="button" class="t-item" aria-expanded="true">${label}</button>` : `<span class="t-item">${label}</span>`)
+      + (n.note ? `<span class="t-note">${md.renderInline(n.note)}</span>` : '') + '</div>'
+      + (fold ? `<ul>${n.children.map(item).join('')}</ul>` : '') + '</li>';
+  };
+  return `<div class="w-tree"${options ? ' data-steps' : ''}><ul>${root.children.map(item).join('')}</ul></div>`;
 }
 const linkOpen = md.renderer.rules.link_open;
 md.renderer.rules.link_open = (tokens, i, options, env, self) => {

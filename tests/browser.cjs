@@ -78,12 +78,13 @@ async function verify(page, base) {
     '```js {steps: 1-9999999999 | invalid | 4-2}', 'hello', '```', '',
     '::: flip', '### Front', 'Back', ':::', '',
     '---', '## Annotated', '```js {annotate}', 'open() // (1)', 'run()', 'close() /* (2) */', '```', '1. Opens.', '2. Closes.', '',
+    '---', '## Tree', '```tree {steps}', 'src/', '  lib/', '    a.js', '  b.js  # note', 'c.md', '```', '',
     '---', '## End',
   ].join('\n');
   await page.route('**/regression.html*', r => r.fulfill({ contentType: 'text/html', body:
     '<!doctype html><html data-fonts="off" data-highlight="off" data-diagrams="off" data-icons="off"><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + fixture + '</script></body></html>' }));
   await page.goto(base + '/regression.html?view=present');
-  await page.waitForFunction(() => window.Deck?.slides.length === 3);
+  await page.waitForFunction(() => window.Deck?.slides.length === 4);
   check((await page.locator('pre code').first().textContent()).includes('[^demo]: keep in code'), 'Footnote definitions in fenced code must survive');
   check(!(await page.locator('.notes').first().textContent()).includes('not notes'), 'Code comments must not become notes');
   check((await page.locator('.notes').first().textContent()).includes('inline code'), 'Inline code inside notes must survive extraction');
@@ -111,6 +112,22 @@ async function verify(page, base) {
   check(await annotated.locator('.w-notes > li.on').textContent() === 'Opens.', 'Clicking a pin must jump to its note');
   await page.evaluate(() => Deck.setView('read'));
   check(await annotated.locator('.ln.on').evaluate(l => getComputedStyle(l).backgroundColor) === 'rgba(0, 0, 0, 0)', 'Read view must not keep the present-view line highlight');
+  await page.evaluate(() => Deck.setView('present'));
+  // ```tree {steps}: ↓ opens one folder at a time; folders are buttons that work from the keyboard; read view opens all
+  await page.evaluate(() => Deck.go(2, 0));
+  const tree = page.locator('.w-tree'), folders = tree.locator('button.t-item'), shown = () => tree.locator('.t-name:visible').allTextContents();
+  check(JSON.stringify(await shown()) === JSON.stringify(['src', 'c.md']), 'A stepped tree must start with its folders closed');
+  await page.keyboard.press('ArrowDown');
+  check(JSON.stringify(await shown()) === JSON.stringify(['src', 'lib', 'b.js', 'c.md']) && await folders.first().getAttribute('aria-expanded') === 'true', 'Down must open the first folder');
+  await folders.nth(1).focus();
+  await page.keyboard.press('Space');
+  check((await shown()).includes('a.js') && await page.evaluate(() => Deck.cur) === 2, 'Space on a folder must open it without leaving the slide');
+  await folders.first().click();
+  check(JSON.stringify(await shown()) === JSON.stringify(['src', 'c.md']), 'Clicking an open folder must close it');
+  await folders.first().click();
+  check((await shown()).includes('a.js'), 'A click must toggle only its own folder, leaving the folders inside as they were');
+  await page.evaluate(() => Deck.setView('read'));
+  check((await shown()).length === 5, 'Read view must show the whole tree');
   await page.evaluate(() => Deck.setView('present'));
   const csv = ['Label,Before,After', '"A, B",10,5', '"two', 'lines",20,10'].join('\n');
   const charts = [
@@ -221,9 +238,9 @@ async function verify(page, base) {
   });
   check(await picked(1) === 'Go' && await picked(0) === 'JavaScript', 'A pick made in another window must switch the groups that have it');
   // JSON explorer: ↓ opens the path to each highlight; the article opens everything; Copy keeps the raw JSON.
-  const tree = '## Tree\n```json {explore highlight="a.b[1]"}\n{"a":{"b":[1,2]},"c":3}\n```';
+  const jsonDeck = '## Tree\n```json {explore highlight="a.b[1]"}\n{"a":{"b":[1,2]},"c":3}\n```';
   await page.route('**/json-tree.html*', r => r.fulfill({ contentType: 'text/html', body:
-    '<!doctype html><html data-fonts="off" data-highlight="off"><head><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + tree + '</script></body></html>' }));
+    '<!doctype html><html data-fonts="off" data-highlight="off"><head><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + jsonDeck + '</script></body></html>' }));
   await page.goto(base + '/json-tree.html?view=present');
   await page.waitForFunction(() => window.Deck?.slides.length === 1);
   const rows = page.locator('.w-json [data-path="a.b[1]"]');
