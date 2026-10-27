@@ -288,6 +288,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Sequence diagram** | ` ```sequence ` with `Browser -> Server: Hello` lines; `-->` is a reply, `note: text` adds a note, `note over A,B: text` spans lifelines. ↓ draws the next message; articles add a numbered list |
 | **Runnable JS** | ` ```js {run} ` is editable; **Run** (or ↓) shows `console` output from a sandboxed iframe with no page access, and the article keeps it |
 | **Live preview** | `::: live` around ` ```html `, ` ```css ` and ` ```js ` fences: editors beside a sandboxed preview that redraws as you type, stacked in the article |
+| **Token visualiser** | ` ```tokens {steps count} `: text with `\|` between tokens becomes coloured chips. `steps` reveals one per ↓; `count` shows the total (the article always does) |
 
 ### Presentation components
 

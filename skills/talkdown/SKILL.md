@@ -184,6 +184,7 @@ The article.
 - Sequence diagram: ` ```sequence ` with one `Sender -> Receiver: message` per line (`-->` for a reply, `A -> A` for a self call); participants appear in order of first use. `note: text` attaches to the previous message; `note over A,B: text` spans lifelines. ↓ draws one message per step; article view shows the full diagram plus a numbered message list. Native HTML, no Mermaid; no options.
 - Runnable JavaScript: ` ```js {run} ` is editable with a **Run** button (↓ also runs it) and shows `console` output; it runs in a sandboxed iframe with no access to the page. Top-level `await` works; a run stops after 5 seconds.
 - Live preview: `::: live` containing ` ```html `, ` ```css ` and ` ```js ` fences (one of each at most). Editors on the left, a sandboxed rendered preview on the right that redraws as you type; stacked in read view.
+- Token visualiser: a ` ```tokens ` fence; write the text with `|` between tokens (`The| quick| fox|’s| tok|en`), keeping spaces inside tokens; `\|` is a literal pipe, a new line starts a new row. Options in braces: `{steps}` reveals one token per ↓, `{count}` shows the total in slides (the article always does). No tokenizer ships, so the author decides the boundaries.
 
 ### Presentation components
 
