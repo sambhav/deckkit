@@ -231,6 +231,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 |---|---|
 | **Charts** | `::: chart type=line` around a table or CSV block. Twelve types; see [Charts](#charts) |
 | **Quadrant** | `::: quadrant x="Effort" y="Impact"`, four `###` headings (top-left, top-right, bottom-left, bottom-right), then optional `- Label [0.2, 0.8]` points on 0–1 axes. ↓ reveals points; the article groups them by quadrant |
+| **Venn** | `::: venn`, two or three `###` set headings, then `- A & B: label` lines for each overlap (`- A: label` for one set alone). ↓ reveals each region; the article keeps the diagram and lists the regions |
 | **Stats** | `::: stats` around a list like `- **42%** faster first response` |
 | **Meter / counter** | `::: meter value=72 max=100 label="Migration done" unit=%` (empty block) or `[1.2M]{count}` in text. ↓ animates once; articles show final values. `max` defaults to 100 |
 | **Magnitude** | `::: magnitude unit=s` around a table of label and positive number (`0.5e-9`, `150e-6`). Log-scale bars with readable ns/µs/ms/s labels; ↓ reveals rows, articles add the table |

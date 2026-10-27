@@ -129,6 +129,7 @@ Q2,340
 :::
 ````
 - Quadrant: `::: quadrant x="Effort" y="Impact"`, four consecutive `###` headings in top-left, top-right, bottom-left, bottom-right order, then optional `- Label [0.2, 0.8]` points. Coordinates range from 0 to 1, increasing right/up; 0.5 belongs to the right/top. ↓ reveals points (or quadrants when empty). Article shows the full matrix and points grouped by quadrant. Keep labels short and use a few points per slide. Axis labels default to X/Y; no other options.
+- Venn: `::: venn`, two or three `###` set headings, then `- A & B: label` list items for overlaps (`- A: label` adds text to one set alone; names match the headings, case-insensitive). No options. ↓ reveals each region's text; the article shows the diagram plus a list of regions. Keep labels to a few words.
 - Stats: `::: stats` around `- **42%** faster first response`.
 - Meter / counter: `::: meter value=72 max=100 label="Migration done" unit=%` (empty container) and `[1.2M]{count}`: ↓ animates each value once on cue; articles and reduced motion show final values. Meter max defaults to 100, requires 0 ≤ value ≤ max and a label; unit is optional short plain text. Counters accept signed decimals with optional k/M/B and %.
 - Magnitude: `::: magnitude unit=s` around one Markdown table, label then positive number (`0.5e-9`, `150e-6`). Draws log-scale bars with readable ns/µs/ms/s labels (other units get SI prefixes; `unit` is optional); ↓ reveals row by row, articles show everything plus the table. Zero, negative or non-numeric cells give a visible error.
