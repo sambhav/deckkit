@@ -1,0 +1,31 @@
+// ```mermaid {steps: …}: needs the real Mermaid (fetched from the CDN like any deck), so it waits for the diagram to draw
+module.exports = async function verifySteppedMermaid(page, base) {
+  const check = (ok, message) => { if (!ok) throw new Error(message); };
+  const source = 'id: sm\n---\n## Hops\n```mermaid {steps: client,edge: Ask the edge | edge,origin_x | origin_x,db: Read it}\nflowchart LR\n  client --> edge --> origin_x --> db\n```\n---\n## Next\n---\n## Bad\n```mermaid {steps: client,nowhere}\nflowchart LR\n  client --> edge\n```';
+  await page.route('**/stepped-mermaid.html*', route => route.fulfill({ contentType: 'text/html; charset=utf-8', body: '<!doctype html><html data-fonts="off" data-highlight="off" data-icons="off"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + source + '</script></body></html>' }));
+  await page.goto(base + '/stepped-mermaid.html?view=present');
+  await page.waitForFunction(() => window.Deck?.slides.length === 3 && document.querySelectorAll('.w-diagram.drawn').length === 2, null, { timeout: 60000 });
+  const lit = () => page.evaluate(() => [...document.querySelectorAll('.slide.active .w-diagram svg g.node.dk-on')].map(g => g.textContent.trim()).join(','));
+  const edges = () => page.locator('.slide.active .w-diagram path.flowchart-link.dk-on').count();
+  check(await lit() === 'client,edge' && await edges() === 1, 'The first step must light its two nodes and the edge between them, got ' + await lit());
+  check(await page.locator('.slide.active .w-stepped').evaluate(el => el.classList.contains('stepping')), 'Present view dims the rest');
+  check(await page.locator('.slide.active .w-diagram-notes li.on').textContent() === 'Ask the edge', 'The current step\'s note must be marked');
+  await page.keyboard.press('ArrowDown');
+  check(await lit() === 'edge,origin_x', 'Down must move to the next step, got ' + await lit());
+  check(await edges() === 1, 'Step two lights one edge');
+  await page.keyboard.press('ArrowDown');
+  check(await lit() === 'origin_x,db' && await edges() === 1, 'Ids with underscores must light their edge');
+  check(await page.evaluate(() => Deck.cur) === 0, 'Steps stay on the slide until the last one is shown');
+  await page.keyboard.press('ArrowDown');
+  check(await page.evaluate(() => Deck.cur) === 1, 'Down after the last step moves on');
+  await page.evaluate(() => { Deck.go(0, 0); document.documentElement.dataset.mode = 'dark'; });
+  await page.waitForFunction(() => document.querySelectorAll('.w-diagram.drawn').length === 2);
+  check(await lit() === 'client,edge', 'A theme redraw must keep the current step');
+  await page.evaluate(() => Deck.setView('read'));
+  check(await page.locator('.w-diagram svg.dk-stepping').count() === 0 && await page.locator('.w-diagram svg g.node.dk-on').count() === 0, 'The article shows the whole diagram undimmed');
+  check(await page.locator('.w-stepped:not(.stepping) .w-diagram-notes li:not(.on)').count() === 2, 'The article lists every note, none dimmed');
+  const bad = page.locator('.w-stepped .td-error');
+  check(await bad.count() === 1 && /nowhere/.test(await bad.textContent()), 'An unknown node id must be reported, naming it');
+  await page.evaluate(() => { Deck.setView('present'); Deck.go(0, 0); });
+  return { steppedMermaid: true };
+};

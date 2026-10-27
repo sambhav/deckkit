@@ -454,6 +454,17 @@ function arrayBlock(raw, info) {
   const list = `<div class="w-array-cells" role="list" aria-label="Array">${cells.map((c, i) => `<div class="w-array-cell" role="listitem"><span class="w-array-v">${escape(c)}</span><span class="w-array-i">${i}</span><span class="w-array-p"></span></div>`).join('')}</div>`;
   const table = rows.length ? `<table class="w-array-table"><thead><tr><th>Step</th>${names.map(n => `<th>${escape(n)}</th>`).join('')}<th>Found</th></tr></thead><tbody>${rows.map((r, i) => `<tr><td>${i + 1}</td>${names.map(n => `<td>${n in r.p ? r.p[n] : ''}</td>`).join('')}<td>${r.f.map(escape).join(', ')}</td></tr>`).join('')}</tbody></table>` : '';
   return `<figure class="w w-array"${rows.length ? ` data-array="${escape(JSON.stringify(rows))}"` : ''}>${list}${table}</figure>`;
+// "a,b: note | b,c" becomes [{ ids: [a, b], note }, { ids: [b, c] }]; a group's note follows its first colon
+function mermaidSteps(spec) {
+  const groups = spec.split('|').map(g => {
+    const colon = g.indexOf(':'), list = colon < 0 ? g : g.slice(0, colon);
+    return { ids: list.split(',').map(x => x.trim()).filter(Boolean), note: colon < 0 ? '' : g.slice(colon + 1).trim(), raw: list };
+  });
+  const empty = groups.findIndex(g => !g.ids.length || g.raw.split(',').some(x => !x.trim()));
+  if (empty >= 0) return { error: `step ${empty + 1} needs node ids, like {steps: client,edge | edge,origin}` };
+  const space = groups.find(g => g.ids.some(x => /\s/.test(x)));
+  if (space) return { error: `node ids have no spaces, not "${space.ids.find(x => /\s/.test(x))}"` };
+  return { groups };
 }
 // ```json {explore open=2 highlight="user.roles"}: a collapsible tree built from nested <details>, so it works without JavaScript.
 // open=N starts N levels expanded (or all); highlight lists comma-separated paths (a.b[0].c) that ↓ opens and marks in turn.
@@ -518,8 +529,16 @@ function fence(token) {
     return `<div class="w w-run"><pre class="code"><code>${code}</code></pre></div>`;
   }
   if (lang === 'terminal') return `<div class="w-term" data-lines="${escape(JSON.stringify(source ? source.split('\n') : []))}"></div>`;
+  if (lang === 'mermaid') {
+    // {steps: client,edge: note | edge,origin}: each group lists node ids (and so the edges between them) to light on ↓
+    const spec = info.match(/\{\s*steps:([^}]*)\}/)?.[1], plan = spec != null && mermaidSteps(spec);
+    const bad = plan?.error ? `<p class="td-error" role="alert">${escape('mermaid: ' + plan.error)}</p>` : '';
+    const notes = plan?.groups?.some(g => g.note) ? `<ol class="w-diagram-notes">${plan.groups.map((g, k) => g.note ? `<li data-step="${k}">${escape(g.note)}</li>` : '').join('')}</ol>` : '';
+    const diagram = `<div class="w-diagram"${plan?.groups ? ` data-steps="${escape(JSON.stringify(plan.groups.map(g => g.ids)))}"` : ''}><pre class="code w-diagram-src">${code}</pre></div>`;
+    const stage = plan?.groups ? `<div class="w-stepped">${diagram}${notes}</div>` : diagram;
+    return bad + (/\{\s*source\s*\}/.test(info) ? `<div class="w-with-source"><pre class="code"><code>${code}</code></pre>${stage}</div>` : stage);
+  }
   const diagram = `<div class="w-diagram"><pre class="code w-diagram-src">${code}</pre></div>`;
-  if (lang === 'mermaid') return /\{\s*source\s*\}/.test(info) ? `<div class="w-with-source"><pre class="code"><code>${code}</code></pre>${diagram}</div>` : diagram;
   const pins = token.meta?.pins, steps = !pins && info.match(/\{\s*steps:\s*([^}]*)\}/)?.[1];
   return `<pre class="code"${lang ? ` data-lang="${lang}"` : ''}${steps ? ` data-steps="${escape(steps)}"` : ''}${pins ? ` data-pins="${pins.join(',')}"` : ''}><code>${code}</code></pre>`;
 }
