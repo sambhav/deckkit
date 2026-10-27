@@ -1,0 +1,22 @@
+module.exports = async function verifyMagnitude(page, base) {
+  const check = (ok, message) => { if (!ok) throw new Error(message); };
+  const source = 'id: mag\n---\n## Latency\n::: magnitude unit=s\n| Op | Time |\n|---|---|\n| L1 hit | 0.5e-9 |\n| SSD read | 150e-6 |\n| RTT | 0.15 |\n:::\n---\n## Bad\n::: magnitude\n| Op | Time |\n|---|---|\n| Zero | 0 |\n:::';
+  await page.route('**/magnitude-fixture.html*', r => r.fulfill({ contentType: 'text/html', body: '<!doctype html><html data-fonts="off" data-icons="off" data-highlight="off"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + source + '</script></body></html>' }));
+  await page.goto(base + '/magnitude-fixture.html?view=present');
+  await page.waitForFunction(() => window.Deck?.slides.length === 2);
+  const rows = page.locator('.w-magnitude .w-mag-rows > li');
+  check(await rows.count() === 3, 'Magnitude must draw one row per table row');
+  check(await rows.nth(0).locator('.w-mag-value').textContent() === '500 ps', 'Values must use readable units');
+  check(await rows.nth(1).isVisible() === false || await rows.nth(1).locator('.w-mag-value').isHidden(), 'Later rows wait for a step');
+  await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown');
+  check(await rows.nth(2).locator('.w-mag-value').isVisible(), 'Down must reveal every row');
+  check(await rows.nth(2).locator('.w-mag-value').textContent() === '150 ms', 'Last row must read 150 ms');
+  check(await page.locator('.w-mag-table').isHidden(), 'The table stays out of the present view');
+  await page.keyboard.press('r');
+  check(await page.locator('.w-mag-table').isVisible(), 'Read view must show the data table');
+  check(await rows.nth(0).locator('.w-mag-value').isVisible(), 'Read view must show every row');
+  await page.goto(base + '/magnitude-fixture.html?view=read');
+  await page.waitForFunction(() => window.Deck?.slides.length === 2);
+  check(await page.locator('.w-magnitude .w-mag-rows > li:last-child .w-mag-value').isVisible(), 'Read view must open fully expanded');
+  check(await page.locator('.td-error', { hasText: 'Row 2' }).count() === 1, 'Zero values must show a visible error');
+};

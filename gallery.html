@@ -273,6 +273,26 @@ Paste hyperfine output as name, mean and spread lines, or hyperfine's export-jso
 :::
 
 ---
+id: w-magnitude
+---
+## Latency, nine orders of magnitude
+
+::: magnitude unit=s
+| Operation | Time |
+|---|---|
+| L1 cache hit | 0.5e-9 |
+| Main memory read | 100e-9 |
+| SSD random read | 150e-6 |
+| Same-datacentre round trip | 500e-6 |
+| Disk seek | 10e-3 |
+| Cross-region round trip | 0.15 |
+:::
+
+::: notes
+Linear bars would hide everything but the last row. On a log scale each tick is ten times the last, and the labels switch between ns, µs, ms and s. Press down to reveal each operation; article readers also get the table.
+:::
+
+---
 section: Interactive content
 id: interactive
 ---
