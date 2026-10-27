@@ -1,6 +1,7 @@
 import { activateExplorable } from './explorable.js';
 import { renderMarkdown, renderInline, slideChunks } from './markdown.js';
 import { glossary } from './glossary.js';
+import { citations } from './citations.js';
 import { timerRemaining } from './timer.js';
 import { parseCSV, chartDataset, csvDownload } from './data.js';
 import { magnitudeModel } from './magnitude.js';
@@ -50,6 +51,7 @@ import { runCell, liveCode } from './runnable.js';
  *   ```sequence                         A -> B: msg / A --> B: reply / note: text; ↓ draws the next message; articles add a numbered list
  *   ::: gallery                         Markdown images become a grid; ↓ highlights each, click opens a captioned lightbox
  *   ::: board                           ### columns with lists of cards; ↓ reveals each column, all shown in read view
+ *   [@key] and ::: references          "- key: Reference" list; [@key] becomes a numbered [1] link, hover shows the entry
  *   ::: glossary                       Term: Definition lines; first use tooltips in articles, glossary: inline opts slides in
  *   ::: speaker                         optional photo, ### name, role and Markdown links; compact author box in read view
  *   ::: links                           a list of [Title](URL) descriptions becomes further-reading cards; no network fetches
@@ -1831,6 +1833,10 @@ import { runCell, liveCode } from './runnable.js';
       link.setAttribute('aria-label', 'Permalink to ' + label);
     });
     const finishGlossary = glossary(stage);
+    citations(stage, entry => {
+      if (reading()) return entry?.scrollIntoView({ block: 'center' });
+      const target = entry?.closest('.slide'); if (target) go(slides().indexOf(target));
+    });
     // an author's own <div id="bar"> (a .title plus any links) becomes the top bar; talkdown adds the section and tools
     const own = $('bar');
     if (own && !stage.contains(own)) stage.prepend(own);
