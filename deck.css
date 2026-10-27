@@ -357,6 +357,7 @@ p, li { font-size: 16px; line-height: 1.5; }
 .md .content > *, .md .card > *, .w-pane > * { min-width: 0; }
 .md .content > * + *, .md .cols > div > * + *, .md .card > * + * { margin-top: var(--t-gap); }
 .md .content > .kicker + * { margin-top: 0; }
+.md .content > :not(.kicker) + .w { margin-top: var(--t-gap); }   /* widgets that reset margin still keep the gap below the heading */
 .md .kicker { font-size: var(--t-kicker); }
 .md h1 { font-size: var(--t-h1); line-height: 1.02; letter-spacing: -.025em; }
 .md h2 { font-size: var(--t-h2); line-height: 1.08; letter-spacing: -.02em; margin-bottom: 0; }
@@ -507,12 +508,13 @@ td.mk-only, th.mk-only { text-align: center; }
 .w-endpoint-path:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 [data-view=read] .w-endpoint-path:hover { text-decoration: underline; }
 .md .w-endpoint-body > :last-child { margin-bottom: 0; }
-.md .w-endpoint-body table { width: 100%; font-size: var(--t-card); table-layout: fixed; }
-.w-endpoint-body :is(td, th) { overflow-wrap: anywhere; }
+.md .w-endpoint-body table { width: 100%; font-size: var(--t-card); }
+.w-endpoint-body :is(td, th) { overflow-wrap: break-word; }
 
 /* HTTP exchanges: paired messages on the stage, stacked in articles and tall layouts. */
 .md .w-http { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--t-gap); margin-inline: 0; margin-bottom: 0; }
-.w-http > section { min-width: 0; }
+.w-http > section { min-width: 0; display: flex; flex-direction: column; }
+.md .w-http > section > pre.code { flex: 1; }
 .w-http header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .7em; margin-bottom: .65em; font: 600 var(--t-card)/1.35 var(--sans); color: var(--fg); }
 .w-http-badge { padding: .2em .55em; border: 1px solid var(--line); border-radius: var(--radius); font: 600 .85em/1.4 var(--mono); color: var(--fg); background: var(--accent-soft); overflow-wrap: anywhere; }
 .w-http[data-status=success] .w-http-response .w-http-badge { background: color-mix(in srgb, var(--green) 13%, var(--bg)); border-color: color-mix(in srgb, var(--green) 45%, var(--line)); }
@@ -620,7 +622,7 @@ td.mk-only, th.mk-only { text-align: center; }
 .w-release { grid-area: 1 / 1; visibility: hidden; min-width: 0; padding: var(--t-gap); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow-wrap: anywhere; scroll-margin-top: 90px; }
 .w-release.on { visibility: visible; }
 .md .w-release > h3 { margin: 0 0 var(--t-gap); }
-.w-release-link { display: flex; flex-wrap: wrap; align-items: center; gap: .7em; min-height: 44px; color: var(--fg); text-decoration: none; font-size: var(--t-card); }
+.w-release-link { background: none; display: flex; flex-wrap: wrap; align-items: center; gap: .7em; min-height: 44px; color: var(--fg); text-decoration: none; font-size: var(--t-card); }
 .w-release-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .w-release-version { padding: .25em .6em; border-radius: var(--radius); background: var(--accent-soft); color: var(--fg); font: 600 var(--t-card) var(--mono); }
 .w-release-link time { color: var(--fg); font: 400 var(--t-small) var(--mono); }
@@ -640,6 +642,7 @@ td.mk-only, th.mk-only { text-align: center; }
 .md .w-flow { display: flex; flex-wrap: wrap; align-items: stretch; }
 .md :is(.w-flow, .w-stack) > li { position: relative; min-width: 0; padding: .8em 1em; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--fg); font-size: var(--t-card); }
 .md .w-flow > li { flex: 1 1 8em; }
+@media (min-width: 601px) { :root:not([data-tall]) .md .w-flow:not(.vertical) > li > :is(strong:first-child, p:first-child > strong:first-child) { display: block; margin-bottom: .2em; } }   /* side by side: the name on its own line */
 .md :is(.w-flow, .w-stack) > li { overflow-wrap: anywhere; }
 .md :is(.w-flow, .w-stack) > li::before { content: none; }
 .md .w-flow > li + li::after { content: '→'; position: absolute; right: calc(100% + .15em); top: 50%; transform: translateY(-50%); width: calc(var(--t-gap) - .3em); text-align: center; color: var(--accent-ink); }
@@ -751,12 +754,16 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
   background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23888' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E") right 9px center / 11px no-repeat; }
 .w-chart-tools select:focus-visible, .w-chart-tools button:focus-visible, .w-chart-table:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .w-chart-box .w-chart { --chart-h: 230px; }
-/* Preserve readable SVG text; dense charts scroll inside the figure on phones. */
-.w-visual-chart { max-width: 100%; max-height: 400px; overflow: auto; overscroll-behavior: contain; }
+/* Preserve readable SVG text; dense charts scroll inside the figure on phones, with edge shadows showing there is more. */
+.w-visual-chart { max-width: 100%; max-height: 400px; overflow: auto; overscroll-behavior: contain;
+  background: linear-gradient(to right, var(--bg) 40%, transparent) left / 24px 100% local, linear-gradient(to left, var(--bg) 40%, transparent) right / 24px 100% local,
+    radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--fg) 22%, transparent), transparent) left / 12px 100% scroll,
+    radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--fg) 22%, transparent), transparent) right / 12px 100% scroll;
+  background-repeat: no-repeat; }
 .w-visual-svg { display: block; width: 100%; min-width: var(--visual-width); max-width: var(--visual-max-width); height: auto; margin-inline: auto; font-family: var(--sans); }
 .w-visual-chart:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* on the stage a native chart scales to the room under the heading, centred; narrow screens keep the scroll above */
-:root:not([data-view=read]):not([data-tall]) .w-visual-chart:not(:has(.w-visual-tall)) { max-height: none; overflow: visible; }
+:root:not([data-view=read]):not([data-tall]) .w-visual-chart:not(:has(.w-visual-tall)) { max-height: none; overflow: visible; background: none; }
 :root:not([data-view=read]):not([data-tall]) .w-visual-svg:not(.w-visual-tall) { min-width: 0; max-width: calc(var(--visual-width) * 1.5); max-height: var(--visual-h, 420px); }   /* grow to the room, up to 1.5x */
 /* a timeline chart shares its class with the ::: timeline widget; keep the widget's grid and rule off it */
 .w-chart.w-timeline { display: flow-root; padding-top: 0; }
@@ -815,6 +822,7 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 .w-dot { position: absolute; width: .75em; height: .75em; border-radius: 50%; background: var(--surface); border: 2.5px solid var(--c); transform: translate(-50%, 50%); }
 .w-dot b { display: none; bottom: 100%; left: 50%; transform: translate(-50%, -.5em); }
 .w-dot.last b, .w-dot:hover b { display: block; }
+.w-dot.below b { bottom: auto; top: 100%; transform: translate(-50%, .5em); }
 .w-line .w-x { position: absolute; top: 100%; transform: translateX(-50%); margin-top: .75em; white-space: nowrap; }
 .w-donut { display: flex; align-items: center; gap: 3.5em; }
 .w-ring { position: relative; width: var(--chart-h); max-width: 100%; aspect-ratio: 1; flex: none; }
@@ -872,6 +880,7 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 .md .w-derive tr.current { color: var(--accent-ink); background: var(--accent-soft); }
 .w-derive tr.unrevealed { visibility: hidden; }
 .w-derive .katex-display { margin: 0; }
+.w-derive :is(.katex-display, .katex-display > .katex) { text-align: inherit; }   /* KaTeX centres display maths; the & columns align instead */
 .w-derive-controls { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .8em; margin-top: .7em; font-size: .65em; color: var(--muted); }
 .w-derive-controls button { min-height: 32px; padding: .35em .7em; font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; }
 .w-derive-controls button:disabled { color: var(--muted); cursor: default; }
@@ -980,7 +989,7 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 .w-speaker-body { min-width: 0; flex: 1; }
 .md .w-speaker-photo { flex: 0 0 auto; width: calc(var(--t-body) * 5); margin: 0; }
 .md .w-speaker-photo img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 50%; }
-.md .w-speaker-photo figcaption { margin-top: .6em; font-size: calc(var(--t-body) * .55); line-height: 1.4; color: var(--muted); text-align: center; overflow-wrap: anywhere; }
+.md .w-speaker-photo figcaption { margin-top: .6em; font-size: calc(var(--t-body) * .55); line-height: 1.4; color: var(--muted); text-align: center; overflow-wrap: break-word; hyphens: auto; }
 .md .w-speaker h3 { font-size: calc(var(--t-body) * 1.4); margin: 0; }
 .md .w-speaker-body > * + * { margin-top: .5em; }
 .md .w-speaker-body > p { color: var(--muted); font-size: calc(var(--t-body) * .85); line-height: 1.5; }
@@ -1157,7 +1166,7 @@ aside.article { display: none; }
 :is([data-view=read], [data-tall]) .md .w-timeline > li::before { left: -30px; top: 4px; }
 [data-view=read] .md .w-timeline > li { color: var(--fg); cursor: default; }
 [data-view=read] .md .w-timeline > li::before { background: var(--accent); border-color: var(--accent); box-shadow: none; }
-:is([data-view=read], [data-tall]) .w-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+:is([data-view=read], [data-tall]) .w-stats { grid-template-columns: repeat(var(--n-narrow, 2), minmax(0, 1fr)); }
 :is([data-view=read], [data-tall]) .w-diagram.drawn svg { max-height: none; }
 
 @media (max-width: 760px) {
@@ -1207,7 +1216,7 @@ aside.article { display: none; }
 
 /* Before/after: complete figures are the fallback; only presentations use the wipe. */
 .w-before-after { --compare-position: 0%; width: 100%; min-width: 0; }
-.w-compare-stage { position: relative; overflow: hidden; aspect-ratio: 16 / 7; max-height: 330px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); cursor: ew-resize; touch-action: pan-y; }
+.w-compare-stage { position: relative; width: 100%; overflow: hidden; aspect-ratio: 16 / 7; max-height: 330px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); cursor: ew-resize; touch-action: pan-y; }
 .w-compare-stage img { display: block; width: 100%; height: 100%; max-height: none; object-fit: contain; margin: 0; }
 .w-compare-stage img + img { position: absolute; inset: 0; background: var(--surface); clip-path: inset(0 calc(100% - var(--compare-position)) 0 0); }
 .w-compare-divider { position: absolute; top: 0; bottom: 0; left: clamp(2px, var(--compare-position), calc(100% - 2px)); width: 3px; transform: translateX(-50%); background: var(--accent); pointer-events: none; }
@@ -1376,13 +1385,23 @@ aside.article { display: none; }
 [data-view=read] .w-envdiff-tools { display: none; }
 [data-view=read] .w-envdiff[data-only-differences=true] .envdiff-same { display: table-row; }
 
-/* ::: prompt — both cards stay in reading order; only the output is stepped. */
-.md .w-prompt { display: grid; gap: var(--t-gap); min-width: 0; margin-bottom: 0; }
+/* ::: prompt — on the stage the cards sit side by side at equal size; the output's slot is held (dashed) until it is revealed.
+   Articles and tall layouts stack both cards in reading order. */
+.md .w-prompt { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto 1fr; gap: var(--t-gap); min-width: 0; margin-bottom: 0; }
 .w-prompt > section { min-width: 0; padding: var(--t-gap); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow-wrap: anywhere; }
 .w-prompt > section > h3 { margin: 0 0 .6em; color: var(--muted); font-size: var(--t-card); }
 .w-prompt > section > :last-child { margin-bottom: 0; }
-.md .w-prompt-params { margin: 0; justify-self: start; padding: .25em .65em; border: 1px solid var(--line); border-radius: var(--radius); background: var(--accent-soft); color: var(--fg); font: 500 var(--t-card)/1.4 var(--mono); overflow-wrap: anywhere; max-width: 100%; box-sizing: border-box; }
-.w-prompt-reveal { justify-self: start; min-height: 44px; padding: .4em .8em; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); color: var(--fg); font: inherit; font-size: var(--t-card); cursor: pointer; }
+.md .w-prompt-params { grid-area: 1 / 1; align-self: center; margin: 0; justify-self: start; padding: .25em .65em; border: 1px solid var(--line); border-radius: var(--radius); background: var(--accent-soft); color: var(--fg); font: 500 var(--t-card)/1.4 var(--mono); overflow-wrap: anywhere; max-width: 100%; box-sizing: border-box; }
+.w-prompt-reveal { grid-area: 1 / 2; align-self: center; justify-self: end; min-height: 44px; padding: .4em .8em; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); color: var(--fg); font: inherit; font-size: var(--t-card); cursor: pointer; }
 .w-prompt-reveal:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.w-prompt > [hidden] { display: none; }
+.w-prompt-input { grid-area: 2 / 1; }
+.w-prompt-output { grid-area: 2 / 2; position: relative; }
+.w-prompt::after { content: ''; grid-area: 2 / 2; border: 1px dashed var(--line); border-radius: var(--radius); }
+.w-prompt > .w-prompt-output[hidden] { display: block; visibility: hidden; }
+.w-prompt > .w-prompt-reveal[hidden] { display: none; }
+:is([data-view=read], [data-tall]) .md .w-prompt { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+:is([data-view=read], [data-tall]) .w-prompt > * { grid-area: auto; }
+:is([data-view=read], [data-tall]) .w-prompt-reveal { justify-self: start; }
+:is([data-view=read], [data-tall]) .w-prompt::after { content: none; }
+:is([data-view=read], [data-tall]) .w-prompt > .w-prompt-output[hidden] { display: none; }
 .md .w-prompt pre.code { white-space: pre-wrap; overflow-wrap: anywhere; }
