@@ -125,12 +125,19 @@ function sidenote(state, silent) {
 }
 md.inline.ruler.before('link', 'sidenote', sidenote);
 
+const MARKS = ['underline', 'circle', 'box', 'highlight', 'strike', 'bracket'];
 // Talkdown's small inline additions sit on top of the standard Markdown lexer.
 md.inline.ruler.before('emphasis', 'talkdown_inline', (state, silent) => {
   const text = state.src.slice(state.pos); let match, html, used;
   if ((match = text.match(/^\[([^\]\n]*)\]\{count\}/))) {
     try { const n = countValue(match[1]); html = `<span class="w-countup" data-value="${n.value}" data-precision="${n.precision}" data-suffix="${escape(n.suffix)}" role="img" aria-label="${escape(match[1])}"><span aria-hidden="true">${escape(match[1])}</span></span>`; }
     catch (error) { html = `<span class="td-error" role="alert">${escape(error.message)}</span> ${escape(match[1])}`; }
+  }
+  else if ((match = text.match(/^\[([^\[\]\n]+)\]\{((?:\s*\.[\w-]+)+)\s*\}/)) && /\.(?:underline|circle|box|highlight|strike|bracket)\b/.test(match[2])) {
+    const names = match[2].match(/[\w-]+/g), kinds = names.filter(n => MARKS.includes(n));
+    const bad = names.filter(n => n !== 'step' && !MARKS.includes(n));
+    if (kinds.length > 1 || bad.length) html = `<span class="td-error" role="alert">mark: use one of ${MARKS.join(', ')}, plus optional .step${bad.length ? ` (not .${escape(bad[0])})` : ''}.</span> ${escape(match[1])}`;
+    else html = `<span class="ink ink-${kinds[0]}"${names.includes('step') ? ' data-mark-step' : ''}>${md.renderInline(match[1])}</span>`;
   }
   else if ((match = text.match(/^\[\^([\w-]+)\]/))) html = `<sup class="fn">${escape(match[1])}</sup>`;
   else if ((match = text.match(/^:([a-z][a-z0-9]*(?:-[a-z0-9]+)*):/))) html = `<i class="ico" data-icon="${match[1]}" aria-hidden="true"></i>`;
@@ -178,7 +185,7 @@ md.core.ruler.before('inline', 'talkdown_attributes', state => {
       const li = state.tokens.slice(0, i).findLast(t => t.type === 'list_item_open');
       li?.attrSet('data-task', task[1] === ' ' ? 'todo' : 'done'); token.content = token.content.slice(task[0].length);
     }
-    const match = token.content.match(attrPattern); if (!match) continue;
+    const match = token.content.match(attrPattern); if (!match || (match.index && token.content[match.index - 1] === ']' && !match[0].startsWith(' ') && new RegExp(`\\.(?:${MARKS.join('|')})\\b`).test(match[1]))) continue;
     token.content = token.content.slice(0, match.index);
     let owner = state.tokens[i - 1];
     if (!token.content.trim() && i >= 2 && state.tokens[i + 1]?.type === 'paragraph_close') {
