@@ -623,7 +623,7 @@ td.mk-only, th.mk-only { text-align: center; }
 .w-diagram .dk-ink-fill { fill: var(--accent-ink); }
 :is(.w-tabs, .w-toggle) .w-diagram.drawn svg { --diagram-h: 270px; }
 .cols .w-diagram.drawn svg { --diagram-h: 360px; }
-:is(.w-tabs, .w-toggle) .w-pane:has(> .w-diagram) { padding: .7em 1em; }
+:is(.w-tabs, .w-toggle) .w-pane:has(> :is(.w-diagram, .w-stepped)) { padding: .7em 1em; }
 /* {source}: the Mermaid text beside its diagram on the stage, above it on phones and in read view */
 .w-with-source { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.3fr); gap: 32px; align-items: center; }
 .md .w-with-source > pre.code { font-size: calc(var(--t-code) * .72); padding: 1em 1.2em; }
@@ -663,6 +663,17 @@ td.mk-only, th.mk-only { text-align: center; }
 @media print { :is(.w-diagram.drawn, .w-chart-box > .w-chart)::after { display: none; } }
 /* Mermaid sizes boxes by measuring labels at 16px off-slide; keep slide typography out so they render exactly as measured */
 .w-diagram.drawn svg :is(p, span, div, li) { font-size: 18px !important; line-height: 1.5 !important; letter-spacing: normal !important; margin: 0 !important; padding: 0; color: inherit; max-width: none; }
+/* ```mermaid {steps: …}: the step's nodes and edges stay lit, the rest of the diagram dims; notes beneath are numbered stages */
+.w-stepped { display: grid; gap: var(--t-gap); min-width: 0; }
+.dk-stepping :is(g.node, path.flowchart-link, g.edgeLabel):not(.dk-on) { opacity: .22; }
+.dk-stepping :is(g.node, path.flowchart-link, g.edgeLabel) { transition: opacity .25s; }
+.dk-stepping path.flowchart-link.dk-on { stroke: var(--accent) !important; stroke-width: 3.5px !important; }
+.dk-stepping g.node.dk-on :is(rect, circle, ellipse, polygon, path) { stroke: var(--accent) !important; stroke-width: 2.5px !important; }
+.w-diagram-notes { margin: 0; padding-left: 1.5em; color: var(--muted); font-size: var(--t-card); display: grid; gap: .3em; }
+.w-diagram-notes li::marker { color: var(--accent-ink); font-weight: 600; }
+.w-stepped.stepping .w-diagram-notes li { transition: color .25s; }
+.w-stepped.stepping .w-diagram-notes li.on { color: var(--fg); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .dk-stepping :is(g.node, path.flowchart-link, g.edgeLabel), .w-diagram-notes li { transition: none !important; } }
 /* stats: big numbers */
 .w-meter { display: grid; gap: calc(var(--t-gap) * .5); padding: var(--t-gap); border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); min-width: 0; }
 .w-meter-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .4em 1em; overflow-wrap: anywhere; }

@@ -276,6 +276,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Environment diff** | `::: envdiff` around a table: a key column plus two or more environments. Differing values are highlighted; ↓ or Differences only hides the rest |
 | **Keyboard shortcuts** | `[[Ctrl+Shift+P]]` renders keycaps. `[[Mod+K]]` shows ⌘ on Apple platforms and Ctrl elsewhere; `Plus` is the + key |
 | **Diagrams** | ` ```mermaid `: flowcharts, sequence, architecture, state and more. `{source}` shows the text beside it; click to zoom |
+| **Stepped diagrams** | ` ```mermaid {steps: client,edge \| edge,origin} ` lights each group of node ids, and the edges between them, on ↓. Add `: a note` after a group for numbered stages; the article shows the whole diagram |
 | **Flow / stack** | `::: flow` or `::: stack` around a list. `::: flow vertical` points down; `build: true` or `{.step}` reveals boxes on ↓ |
 | **Device frames** | `::: browser url="https://example.com"`, `::: window title="Terminal"` or `::: phone` around an image, code or Markdown |
 | **Maths** | `$x^2$` inline or a `$$ … $$` block, typeset by [KaTeX](https://katex.org/) |
