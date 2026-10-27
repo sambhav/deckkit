@@ -299,6 +299,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Footnotes** | `text[^1]` and a `[^1]: source` line anywhere on the slide; set small at its foot |
 | **Sidenotes** | `text.[>a margin note]` inline: a numbered mark that opens a popover; in the article, a note in the margin beside the line on wide screens, a tap-to-open note on phones |
 | **Icons** | `:rocket:` anywhere: any [Lucide](https://lucide.dev/icons) icon, in the theme's colours |
+| **Emphasis marks** | `[closer to users]{.circle .step}`: a hand-drawn `.underline`, `.circle`, `.box`, `.highlight`, `.strike` or `.bracket` around a phrase. `.step` draws it in on ↓; articles show it drawn |
 | **Agenda** | An empty `::: agenda` lists every section slide, each linking to it |
 | **Audience questions** | `::: ask url="https://example.com/questions"` (empty block): a large QR on the slide, a link in the article |
 | **QR code** | `::: qr` draws a QR code of the deck's link, or of a URL written inside it |
