@@ -469,7 +469,7 @@ test('array fences render cells, step data and a step table', () => {
   assert.equal((html.match(/class="w-array-cell"/g) || []).length, 3);
   assert.match(html, /&lt;5&gt;/);
   assert.equal((html.match(/<tr><td>\d/g) || []).length, 2);
-  assert.match(md('```array\n[1, 2]\n```'), /<figure class="w w-array"><ol/);
+  assert.match(md('```array\n[1, 2]\n```'), /<figure class="w w-array"><div class="w-array-cells"/);
 });
 
 test('invalid array fences fail visibly and retain the source', () => {

@@ -400,7 +400,7 @@ function arrayBlock(raw, info) {
     for (const v of found) if (!cells.includes(v)) return fail(`step ${n + 1}: *${v} is not in the data`);
     rows.push({ p: pointers, f: found });
   }
-  const list = `<ol class="w-array-cells" aria-label="Array">${cells.map((c, i) => `<li class="w-array-cell"><span class="w-array-v">${escape(c)}</span><span class="w-array-i">${i}</span><span class="w-array-p"></span></li>`).join('')}</ol>`;
+  const list = `<div class="w-array-cells" role="list" aria-label="Array">${cells.map((c, i) => `<div class="w-array-cell" role="listitem"><span class="w-array-v">${escape(c)}</span><span class="w-array-i">${i}</span><span class="w-array-p"></span></div>`).join('')}</div>`;
   const table = rows.length ? `<table class="w-array-table"><thead><tr><th>Step</th>${names.map(n => `<th>${escape(n)}</th>`).join('')}<th>Found</th></tr></thead><tbody>${rows.map((r, i) => `<tr><td>${i + 1}</td>${names.map(n => `<td>${n in r.p ? r.p[n] : ''}</td>`).join('')}<td>${r.f.map(escape).join(', ')}</td></tr>`).join('')}</tbody></table>` : '';
   return `<figure class="w w-array"${rows.length ? ` data-array="${escape(JSON.stringify(rows))}"` : ''}>${list}${table}</figure>`;
 }
