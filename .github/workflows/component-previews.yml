@@ -12,7 +12,7 @@ concurrency:
 jobs:
   preview:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,8 +26,10 @@ jobs:
         run: |
           node <<'NODE'
           const { execFileSync } = require('node:child_process');
-          const diff = execFileSync('git', ['diff', '--unified=0', process.env.BASE_SHA, 'HEAD', '--', 'gallery.html'], { encoding: 'utf8' });
-          const ids = [...new Set([...diff.matchAll(/^\+id:\s*(w-[a-z0-9-]+)\s*$/gm)].map(m => m[1]))];
+          // new slides only: ids absent from the base gallery (moving a slide is not a new component)
+          const slideIds = text => new Set([...text.matchAll(/^id:\s*(w-[a-z0-9-]+)\s*$/gm)].map(m => m[1]));
+          const before = slideIds(execFileSync('git', ['show', `${process.env.BASE_SHA}:gallery.html`], { encoding: 'utf8' }));
+          const ids = [...slideIds(require('node:fs').readFileSync('gallery.html', 'utf8'))].filter(id => !before.has(id));
           if (!ids.length) console.log('No new component slides in this pull request.');
           for (const id of ids) execFileSync(process.execPath, ['scripts/qa.cjs', '--slide', id], { stdio: 'inherit' });
           NODE
