@@ -188,6 +188,8 @@ Presenting and reading want different things, so you can control each:
 
 `{.present-only}` and `{.read-only}` do the same for a single block, and work in HTML slides too.
 
+The article always shows a thin reading-progress bar at the top. Add `data-read-progress` to `<html>` (`<html data-read-progress>`) to also float a section list beside the text on screens 1480px wide or more: it lists the deck's sections (or each slide when there is one section), highlights the one being read and jumps on click. Slides are unchanged.
+
 ```md
 ---
 read: text

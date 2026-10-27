@@ -2,7 +2,7 @@
 
 > talkdown is a small, no-install slide engine and Markdown format built for agents. A deck is one HTML file with Markdown in a `<script type="text/markdown">` block, loaded through https://sambhav.dev/talkdown/latest.js for automatic runtime updates, or direct deck.css/deck.js links for offline or pinned decks. The same source presents as 16:9 slides and reads as an article, where speaker notes become prose. Built-in widgets share the selected theme (23 themes, each light and dark), and custom HTML and JavaScript can join the deck's navigation.
 
-Write notes in `::: notes` / `::: say` / `::: read` blocks and charts in `::: chart` containers with plain numbers. Use one HTML file by default; a referenced Markdown file works when served over HTTP. On phones, Previous/Next buttons move through steps and then slides; native scrolling stays enabled. A `?view=read#section-id` link opens the article at a named section. A `<div id="bar">` in the page (a `.title` plus links) replaces the default top bar. Custom scripts use `Talkdown.onReady(Deck => { ... })`.
+Write notes in `::: notes` / `::: say` / `::: read` blocks and charts in `::: chart` containers with plain numbers. Use one HTML file by default; a referenced Markdown file works when served over HTTP. On phones, Previous/Next buttons move through steps and then slides; native scrolling stays enabled. A `?view=read#section-id` link opens the article at a named section; `<html data-read-progress>` adds a section list beside long articles on wide screens. A `<div id="bar">` in the page (a `.title` plus links) replaces the default top bar. Custom scripts use `Talkdown.onReady(Deck => { ... })`.
 
 ## Agent instructions
 

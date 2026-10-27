@@ -21,6 +21,7 @@ import { runCell, liveCode } from './runnable.js';
  *
  * Themes: <html data-theme="rose"> (data-theme-dark="clean" for a different look in dark mode), 23 of them, each with a light and a dark mode and its own typefaces (fetched for the
  * active theme; <html data-fonts="off"> keeps system fonts). <html data-theme-picker> adds a picker to the top bar.
+ * Article: a thin reading-progress bar always shows; <html data-read-progress> adds a section list beside the text on wide screens that follows the reader.
  * Top bar: <div id="bar"><div class="title">Name</div><a href="…">Link</a></div> in the page replaces the default title.
  *
  * Steps. A slide's steps come from its steppers, run in document order (↓ advances the first unfinished one):
@@ -1543,7 +1544,33 @@ import { runCell, liveCode } from './runnable.js';
     if ($('src').classList.contains('on')) fillSource();
     handlers.slide.forEach(f => f(s, cur));
     if (reading()) writeHash('#' + (cur + 1)); else if (portrait.matches) fit();
+    markRail();
     mobileState();
+  }
+  // <html data-read-progress>: a section list beside the article (wide screens) that follows the reader
+  let railItems = [];
+  function buildRail() {
+    if (!('readProgress' in root.dataset) || $('rail')) return;
+    const shown = slides().map((s, i) => [s, i]).filter(([s]) => available(s, 'read'));
+    const chapters = new Set(shown.map(([s]) => s.dataset.section || '')).size > 1;   // sections when there are several, else one entry per slide
+    let last;
+    const items = shown.filter(([s]) => { const k = s.dataset.section || '', first = k !== last || s.classList.contains('layout-section'); last = k; return !chapters || first; });
+    if (items.length < 2) return;
+    const nav = document.createElement('nav'), ol = document.createElement('ol');
+    nav.id = 'rail'; nav.setAttribute('aria-label', 'Sections');
+    railItems = items.map(([s, i]) => {
+      const li = document.createElement('li'), a = document.createElement('a');
+      a.href = '#' + (i + 1);
+      a.textContent = (chapters ? s.dataset.section : s.dataset.name) || s.querySelector('h1, h2')?.textContent || 'Untitled';
+      a.onclick = e => { e.preventDefault(); go(i, undefined, true); };
+      li.append(a); ol.append(li);
+      return { i, a };
+    });
+    nav.append(ol); document.body.append(nav);
+  }
+  function markRail() {
+    const on = railItems.findLast(r => r.i <= cur) || railItems[0];
+    for (const r of railItems) r === on ? r.a.setAttribute('aria-current', 'location') : r.a.removeAttribute('aria-current');
   }
   const fillNotes = () => { $('mNotes').innerHTML = slide().querySelector('.notes')?.innerHTML || ''; $('mNotes').scrollTop = 0; };   // the speaker's notes
 
@@ -1880,6 +1907,7 @@ import { runCell, liveCode } from './runnable.js';
     });
     finishGlossary?.();
     frames = [...document.querySelectorAll('.frame')];
+    buildRail();
 
     stage.insertAdjacentHTML('beforeend', `
       <div id="progress"></div>
