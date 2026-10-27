@@ -351,6 +351,45 @@ function httpExchange(source, info) {
     + panel('Request', request[1], lines.slice(0, at - 1).join('\n'), 'request')
     + panel('Response', status + (response[2]?.trim() ? ' ' + response[2].trim() : ''), lines.slice(at).join('\n'), 'response') + '</figure>';
 }
+// A bit layout: one "0-3 Name" (or "7 Flag") line per field. Fields wrap into rows of `bits` cells; gaps render as reserved.
+function bitfield(source, info) {
+  const fail = message => `<p class="td-error" role="alert">${escape('bitfield: ' + message)}</p><pre class="code"><code>${escape(source)}</code></pre>`;
+  let spec; try { spec = directive(info); } catch (e) { return fail(e.message); }
+  const { options, classes } = spec, unknown = [...Object.keys(options).filter(k => k !== 'bits'), ...classes];
+  if (unknown.length) return fail('unknown option ' + unknown[0] + '; the only option is bits=N');
+  const bits = options.bits == null ? 32 : /^\d+$/.test(options.bits) ? +options.bits : 0;
+  if (bits < 1 || bits > 64) return fail('bits must be a whole number from 1 to 64');
+  const fields = [];
+  for (const [n, line] of source.split('\n').entries()) {
+    if (!line.trim()) continue;
+    const m = line.match(/^\s*(\d+)(?:\s*-\s*(\d+))?\s+(\S.*?)\s*$/);
+    if (!m) return fail(`line ${n + 1} must look like "0-3 Name" or "7 Flag"`);
+    const from = +m[1], to = m[2] == null ? from : +m[2];
+    if (to < from) return fail(`line ${n + 1}: write the lower bit first, as in ${to}-${from}`);
+    if (to >= 4096) return fail(`line ${n + 1}: bit ${to} is out of range`);
+    fields.push({ from, to, name: m[3] });
+  }
+  if (!fields.length) return fail('add one field per line, for example 0-3 Version');
+  const sorted = [...fields].sort((a, b) => a.from - b.from);
+  for (let i = 1; i < sorted.length; i++) if (sorted[i].from <= sorted[i - 1].to) return fail(`"${sorted[i - 1].name}" and "${sorted[i].name}" overlap at bit ${sorted[i].from}`);
+  const total = Math.ceil((sorted.at(-1).to + 1) / bits) * bits, index = new Map(fields.map((f, i) => [f, i]));
+  const range = (a, b) => a === b ? String(a) : `${a}\u2013${b}`;
+  const cells = (from, to, name, i) => {
+    const out = [];
+    for (let at = from; at <= to;) {
+      const end = Math.min(to, (Math.floor(at / bits) + 1) * bits - 1), row = Math.floor(at / bits);
+      out.push({ row, html: `<span class="bf-cell${i == null ? ' bf-gap' : ''}${at > from ? ' bf-cont' : ''}"${i == null ? '' : ` data-field="${i}"`} style="grid-column:${at % bits + 1} / span ${end - at + 1}"><span class="bf-bits">${range(at, end)}</span><span class="bf-name">${escape(i == null ? 'unused' : name)}</span></span>` });
+      at = end + 1;
+    }
+    return out;
+  };
+  const parts = []; let next = 0;
+  for (const f of sorted) { if (f.from > next) parts.push(...cells(next, f.from - 1, '', null)); parts.push(...cells(f.from, f.to, f.name, index.get(f))); next = f.to + 1; }
+  if (next < total) parts.push(...cells(next, total - 1, '', null));
+  const rows = Array.from({ length: total / bits }, (_, r) => `<div class="bf-row" style="--bits:${bits}">${parts.filter(p => p.row === r).map(p => p.html).join('')}</div>`);
+  const table = `<table class="bf-table"><thead><tr><th>Bits</th><th>Width</th><th>Field</th></tr></thead><tbody>${sorted.map(f => `<tr><td>${range(f.from, f.to)}</td><td>${f.to - f.from + 1}</td><td>${escape(f.name)}</td></tr>`).join('')}</tbody></table>`;
+  return `<figure class="w w-bitfield" aria-label="${escape(`${bits}-bit layout with ${fields.length} fields`)}" data-fields="${fields.length}"><div class="bf-grid">${rows.join('')}</div>${table}</figure>`;
+}
 // Logs remain literal code; only an optional leading timestamp and severity are decorated.
 function logBlock(raw, info) {
   const source = raw.replace(/\n$/, ''), lines = source.split('\n');
@@ -416,6 +455,7 @@ function fence(token) {
   if (lang === 'diff') return diff(source, info);
   if (lang === 'http') return httpExchange(source, info);
   if (lang === 'array') return arrayBlock(source, info);
+  if (lang === 'bitfield') return bitfield(source, info);
   if (/^(cast|asciicast)$/.test(lang)) return `<div class="w-term w-cast" data-inline="${code}"></div>`;
   if (lang === 'terminal') return `<div class="w-term" data-lines="${escape(JSON.stringify(source ? source.split('\n') : []))}"></div>`;
   const diagram = `<div class="w-diagram"><pre class="code w-diagram-src">${code}</pre></div>`;
