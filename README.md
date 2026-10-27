@@ -263,6 +263,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Annotated code** | ` ```python {annotate} ` turns `# (1)` comments into numbered pins, explained by the `1.` `2.` list after the block; ↓ walks them |
 | **Code groups** | `::: code-group` around one fence per language makes language tabs. A pick switches every group in the deck and is remembered; ` ```js [Node.js] ` names a tab |
 | **Terminal** | A ` ```terminal ` block: each `$ command` types out on ↓, and the lines after it are its output |
+| **Install by system** | `::: install` around one fence per system: ` ```sh macos `, ` ```sh linux `, ` ```powershell windows `. OS tabs with the viewer's own system selected first; a pick is remembered. Each block has a **Copy** button |
 | **Recordings** | `![title](demo.cast)` plays an [asciinema](https://asciinema.org/) recording without the player. A file needs http; a ` ```cast ` block plays anywhere |
 | **Logs** | ` ```log {steps: 3 \| 5-6} ` numbers log lines, dims timestamps and styles levels. ↓ highlights line groups; Copy keeps the raw log |
 | **Diffs** | ` ```diff {steps: hunks} title="api.py" ` tints changes and highlights each `@@` hunk on ↓. `view=split` shows old beside new; **Copy** takes the new code |

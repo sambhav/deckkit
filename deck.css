@@ -604,6 +604,28 @@ td.mk-only, th.mk-only { text-align: center; }
   .w-cg-pane + .w-cg-pane { margin-top: 1em; }
   .w-cg-pane::before { content: attr(data-label); display: block; margin-bottom: .3em; font: 600 calc(var(--t-code) * .85) var(--mono); color: var(--muted); }
 }
+/* ::: install: one tab per operating system on a rule above the command; the panes stack so switching never moves the slide */
+.w-os { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: calc(var(--t-gap) * .45); }
+.w-os button { min-width: 44px; min-height: 32px; padding: .35em .85em; margin-bottom: -1px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted);
+  font: 500 calc(var(--t-code) * .92) var(--mono); cursor: pointer; transition: color .15s, border-color .15s; }
+.w-os button:hover { color: var(--fg); }
+@media (pointer: coarse) { .w-os button { min-height: 44px; } }
+.w-os button.on { color: var(--fg); border-bottom-color: var(--accent); }
+.w-os button:focus-visible { outline-offset: -2px; border-radius: 4px 4px 0 0; }
+.w-os-panes { display: grid; }
+.w-os-pane { grid-area: 1 / 1; visibility: hidden; min-width: 0; }
+.w-os-pane.on { visibility: visible; }
+.w-os-pane > * + * { margin-top: calc(var(--t-gap) * .5); }
+.w-install > .td-error { margin-bottom: .5em; }
+[data-view=read] .w-os-panes { display: block; }
+[data-view=read] .w-os-pane:not(.on) { display: none; }   /* an article shows the reader's system, with the switcher above */
+@media print {
+  .w-os { display: none; }
+  .w-os-panes { display: block; }
+  .w-os-pane { display: block !important; visibility: visible; }
+  .w-os-pane + .w-os-pane { margin-top: 1em; }
+  .w-os-pane::before { content: attr(data-label); display: block; margin-bottom: .3em; font: 600 calc(var(--t-code) * .85) var(--mono); color: var(--muted); }
+}
 @media (prefers-reduced-motion: reduce) { .md pre.code .ln { transition: none; } }
 .w-flip { position: relative; display: grid; cursor: pointer; perspective: 1000px; min-height: 8.5em; }
 .w-face { grid-area: 1 / 1; backface-visibility: hidden; border-radius: var(--radius); padding: 1em 1.2em; border: 1px solid var(--line); background: var(--surface);

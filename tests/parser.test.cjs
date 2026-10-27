@@ -546,3 +546,11 @@ test('json explorer diagnostics keep the source visible', () => {
   }
   assert.doesNotMatch(md('```json\n{"a":1}\n```'), /w-tree/);
 });
+
+test('install fences carry their system', () => {
+  const html = md('::: install\n```sh macos\nbrew install x\n```\n```sh win {steps: 1}\nwinget install x\n```\n```sh\nplain\n```\n:::');
+  assert.match(html, /^<div class="install"><pre class="code" data-lang="sh" data-os="macos">/);
+  assert.match(html, /data-lang="sh" data-os="windows" data-steps="1"/);
+  assert.match(html, /<pre class="code" data-lang="sh"><code>plain/);
+  assert.doesNotMatch(md('```sh now\nx\n```'), /data-os/);
+});
