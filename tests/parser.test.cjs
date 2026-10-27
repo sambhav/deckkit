@@ -512,7 +512,7 @@ test('emphasis marks wrap inline text and report bad names', () => {
 
 test('json explorer renders nested details, opens N levels and marks highlight paths', () => {
   const html = md('```json {explore open=2 highlight="user.roles[1], ok"}\n{"user":{"id":7,"roles":["a","<b>"]},"ok":true,"e":{}}\n```');
-  assert.match(html, /class="w-tree"/);
+  assert.match(html, /class="w-json"/);
   assert.equal((html.match(/<details/g) || []).length, 3);
   assert.equal((html.match(/<details[^>]* open/g) || []).length, 2);
   assert.match(html, /data-highlight="\[&quot;user\.roles\[1\]&quot;,&quot;ok&quot;\]"/);
@@ -531,5 +531,5 @@ test('json explorer diagnostics keep the source visible', () => {
     assert.match(html, /class="td-error" role="alert"/); assert.match(html, message);
     assert.match(html, /<pre class="code">/);
   }
-  assert.doesNotMatch(md('```json\n{"a":1}\n```'), /w-tree/);
+  assert.doesNotMatch(md('```json\n{"a":1}\n```'), /w-json/);
 });

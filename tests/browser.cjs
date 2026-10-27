@@ -226,12 +226,12 @@ async function verify(page, base) {
     '<!doctype html><html data-fonts="off" data-highlight="off"><head><link rel="stylesheet" href="deck.css"><script src="deck.js"></script></head><body><script type="text/markdown">' + tree + '</script></body></html>' }));
   await page.goto(base + '/json-tree.html?view=present');
   await page.waitForFunction(() => window.Deck?.slides.length === 1);
-  const rows = page.locator('.w-tree [data-path="a.b[1]"]');
+  const rows = page.locator('.w-json [data-path="a.b[1]"]');
   check(!(await rows.isVisible()), 'The JSON tree must start with the highlighted path collapsed');
   await page.keyboard.press('ArrowDown');
   check(await rows.isVisible() && await rows.evaluate(el => el.classList.contains('on')), 'Down must open and mark the highlighted JSON path');
   await page.keyboard.press('r');
-  check(await page.locator('.w-tree details:not([open])').count() === 0, 'The article must open the whole JSON tree');
+  check(await page.locator('.w-json details:not([open])').count() === 0, 'The article must open the whole JSON tree');
   await page.keyboard.press('r');
   // HTTP exchanges reveal only the response on ↓; articles show both and Copy preserves each raw message.
   const exchange = '## HTTP\n```http\nGET /users HTTP/1.1\nAccept: application/json\n\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n{"id":7}\n```';

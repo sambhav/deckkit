@@ -494,7 +494,7 @@ function jsonTree(raw, info) {
     return `<details class="tn"${attrs}${depth < levels ? ' open' : ''}><summary>${key(k)}<span class="tp">${o}</span><span class="tsum"> ${n} ${arr ? (n === 1 ? 'item' : 'items') : (n === 1 ? 'key' : 'keys')} </span><span class="tp">${c}</span></summary>`
       + `<div class="tc">${entries.map(([ek, ev]) => node(ev, ek, [...segs, String(ek)], depth + 1)).join('')}</div><span class="tp tclose">${c}</span></details>`;
   };
-  return `<figure class="w-tree" role="group" aria-label="JSON explorer" data-source="${escape(source)}"${tag.length ? ` data-highlight="${escape(JSON.stringify(tag))}"` : ''}>${node(data, null, [], 0)}</figure>`;
+  return `<figure class="w-json" role="group" aria-label="JSON explorer" data-source="${escape(source)}"${tag.length ? ` data-highlight="${escape(JSON.stringify(tag))}"` : ''}>${node(data, null, [], 0)}</figure>`;
 }
 // ```js [Node.js]: a bracketed label after the language (VitePress's convention) names the block's tab in a ::: code-group
 md.renderer.rules.fence = (tokens, i) => {

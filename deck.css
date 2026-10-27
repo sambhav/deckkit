@@ -381,7 +381,7 @@ p, li { font-size: 16px; line-height: 1.5; }
   font: 600 12px var(--sans); color: var(--muted); cursor: pointer; opacity: 0; transition: opacity .15s, color .15s, border-color .15s; }
 .w-copy::after { content: "Copy"; }
 .w-copy[data-copied]::after { content: "Copied"; }
-.md pre.code:hover .w-copy, .md .w-diff:hover > .w-copy, .md .w-tree:hover > .w-copy, .w-copy:focus-visible { opacity: 1; }
+.md pre.code:hover .w-copy, .md .w-diff:hover > .w-copy, .md .w-json:hover > .w-copy, .w-copy:focus-visible { opacity: 1; }
 #src .w-copy { position: static; opacity: 1; }
 .w-copy:hover { color: var(--fg); border-color: var(--accent); }
 @media (hover: none) { .w-copy { opacity: 1; } }
@@ -1629,23 +1629,23 @@ aside.article { display: none; }
 :is([data-view=read], [data-tall]) .w-versus-cols { grid-template-columns: minmax(0, 1fr); }
 [data-tall] .w-versus .pending { display: none; }
 /* ```json {explore}: collapsible tree */
-.md .w-tree { position: relative; margin-inline: 0; padding: 1em 1.2em; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+.md .w-json { position: relative; margin-inline: 0; padding: 1em 1.2em; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
   font: var(--t-code)/1.6 var(--mono); color: var(--fg); max-height: calc(var(--t-code) * 20); overflow: auto; }
-[data-view=read] .md .w-tree { max-height: none; overflow: visible; }
-.w-tree :is(.tc, .tclose) { margin-left: 1.4em; }
-.w-tree .tclose { display: block; margin-left: 0; }
-.w-tree .tn { margin: 0; }
-.w-tree .tl { padding-left: 1.2em; overflow-wrap: anywhere; }
-.w-tree summary { position: relative; display: block; min-height: 1.6em; padding-left: 1.2em; border-radius: .25em; cursor: pointer; list-style: none; }
-.w-tree summary::-webkit-details-marker { display: none; }
-.w-tree summary::before { content: ""; position: absolute; left: .15em; top: .5em; border: .3em solid transparent; border-left: .45em solid var(--muted); transition: transform .12s; }
-.w-tree details[open] > summary::before { transform: rotate(90deg) translate(.1em, .15em); }
-.w-tree details[open] > summary .tsum, .w-tree details[open] > summary > .tp:last-child { display: none; }
-.w-tree summary:hover { background: var(--accent-soft); }
-.w-tree summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.w-tree .tk { color: var(--fg); font-weight: 600; }
-.w-tree .tp, .w-tree .tsum { color: var(--muted); }
-.w-tree .tv-string { color: var(--fg); }
-.w-tree .tv-number, .w-tree .tv-boolean, .w-tree .tv-null { color: var(--fg); font-style: italic; }
-.w-tree .tn.on > summary, .w-tree .tl.on { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
-@media (prefers-reduced-motion: reduce) { .w-tree summary::before { transition: none; } }
+[data-view=read] .md .w-json { max-height: none; overflow: visible; }
+.w-json :is(.tc, .tclose) { margin-left: 1.4em; }
+.w-json .tclose { display: block; margin-left: 0; }
+.w-json .tn { margin: 0; }
+.w-json .tl { padding-left: 1.2em; overflow-wrap: anywhere; }
+.w-json summary { position: relative; display: block; min-height: 1.6em; padding-left: 1.2em; border-radius: .25em; cursor: pointer; list-style: none; }
+.w-json summary::-webkit-details-marker { display: none; }
+.w-json summary::before { content: ""; position: absolute; left: .15em; top: .5em; border: .3em solid transparent; border-left: .45em solid var(--muted); transition: transform .12s; }
+.w-json details[open] > summary::before { transform: rotate(90deg) translate(.1em, .15em); }
+.w-json details[open] > summary .tsum, .w-json details[open] > summary > .tp:last-child { display: none; }
+.w-json summary:hover { background: var(--accent-soft); }
+.w-json summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.w-json .tk { color: var(--fg); font-weight: 600; }
+.w-json .tp, .w-json .tsum { color: var(--muted); }
+.w-json .tv-string { color: var(--fg); }
+.w-json .tv-number, .w-json .tv-boolean, .w-json .tv-null { color: var(--fg); font-style: italic; }
+.w-json .tn.on > summary, .w-json .tl.on { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+@media (prefers-reduced-motion: reduce) { .w-json summary::before { transition: none; } }
