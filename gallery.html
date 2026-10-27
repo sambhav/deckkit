@@ -960,6 +960,23 @@ Each step brings in the next model's answer, then the verdict. The article stack
 :::
 
 ---
+id: w-tree
+---
+## Explore a payload
+
+```json {explore open=2 highlight="user.roles, limits.rate"}
+{
+  "user": { "id": 7, "roles": ["admin", "editor"] },
+  "limits": { "rate": 100 },
+  "ok": true
+}
+```
+
+::: notes
+Press down to open and mark each highlighted path. The article opens the whole tree, and Copy keeps the original JSON.
+:::
+
+---
 section: Presentation components
 id: content
 ---

@@ -83,6 +83,7 @@ import { runCell, liveCode } from './runnable.js';
  *   ```array                            [1, 3, 5] then lines like lo=0 hi=2 *5: ↓ moves the named pointers; *v marks a found value; article is a step table
  *   ```js {run}                         editable JavaScript with a Run button (↓ runs it) and its console output; runs in a sandboxed iframe
  *   ::: live                            ```html / ```css / ```js fences: editors beside a sandboxed preview that redraws as you type (stacked in read view)
+ *   ```json {explore open=2 highlight="a.b"}  collapsible JSON tree; open=N levels (or all) start open; ↓ opens and marks each highlighted path
  *   ```terminal                         "$ command" lines type out one per ↓, the rest is their output
  *   ```bitfield bits=32                 "0-3 Version" lines draw a packet/register layout; ↓ highlights each field; the article adds a field table
  *   ::: endpoint GET /users/{id}        method badge, highlighted path parameters and Markdown reference; article path is a permalink
@@ -275,6 +276,7 @@ import { runCell, liveCode } from './runnable.js';
     c.querySelectorAll('.w-bitfield').forEach(bitfield);
     c.querySelectorAll('.w-bench').forEach(benchDownload);
     c.querySelectorAll('.w-seq').forEach(sequence);
+    c.querySelectorAll('.w-tree').forEach(jsonTree);
     c.querySelectorAll('pre.code').forEach(copyable);
     c.querySelectorAll('.compare').forEach(box => beforeAfter(box, steps));
     [...c.querySelectorAll('.code-group')].reverse().forEach(codeGroup);
@@ -431,7 +433,7 @@ import { runCell, liveCode } from './runnable.js';
   }
   document.addEventListener('click', e => {
     const b = e.target.closest('.w-copy'); if (!b) return;
-    const pre = b.closest('pre, .w-diff'); if (pre) copyText(sources.get(pre) ?? pre.firstChild.textContent, b);
+    const pre = b.closest('pre, .w-diff, .w-tree'); if (pre) copyText(sources.get(pre) ?? pre.firstChild.textContent, b);
   });
   // sidenotes: the mark toggles its note (a popover on the stage, inline in a narrow article); Esc or an outside click closes
   const closeNotes = except => document.querySelectorAll('.sn[data-open]').forEach(n => { if (n !== except) { delete n.dataset.open; n.firstChild.setAttribute('aria-expanded', 'false'); } });
@@ -531,6 +533,23 @@ import { runCell, liveCode } from './runnable.js';
       // Move only the log's viewport; scrolling a step must never move the slide or article.
       const target = i > 0 && !reading() ? lines.find(l => groups[i - 1].has(+l.dataset.line)) : null;
       if (target) pre.scrollTop = Math.max(0, target.offsetTop - pre.clientHeight / 3);
+    }, { read: 'end' });
+  }
+  // ```json {explore}: nested <details>; each ↓ opens the path to the next highlight and marks it. Article view opens everything.
+  function jsonTree(fig) {
+    sources.set(fig, fig.dataset.source); delete fig.dataset.source;
+    fig.insertAdjacentHTML('beforeend', '<button type="button" class="w-copy" aria-label="Copy the JSON"></button>');
+    // Space toggles a focused summary natively; keep it from advancing the slide
+    fig.addEventListener('keydown', e => { if (e.key === ' ') e.stopPropagation(); });
+    const nodes = [...fig.querySelectorAll('.tn')], base = new Map([...fig.querySelectorAll('details')].map(d => [d, d.open]));
+    const paths = JSON.parse(fig.dataset.highlight || '[]'), at = path => nodes.find(n => n.dataset.path === path);
+    const marked = paths.map(at), lit = new Set(marked);
+    steps(fig, paths.length + 1, i => {
+      const on = reading() ? lit : new Set(marked.slice(0, i));
+      nodes.forEach(n => n.classList.toggle('on', on.has(n)));
+      for (const [d, was] of base) d.open = reading() || was || [...on].some(n => d.contains(n));
+      const target = !reading() && i > 0 ? marked[i - 1] : null;   // keep the newest highlight in view inside the tree
+      if (target) { const box = fig.getBoundingClientRect(), row = target.getBoundingClientRect(); if (row.top < box.top || row.bottom > box.bottom) fig.scrollTop += row.top - box.top - fig.clientHeight / 3; }
     }, { read: 'end' });
   }
   function codeSteps(pre) {
