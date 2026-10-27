@@ -889,6 +889,25 @@ kbd { font: 12.5px var(--mono); padding: 2px 7px; border: 1px solid var(--line);
 .md .footnotes p { font-size: calc(var(--t-body) * .58); line-height: 1.45; color: var(--muted); }
 .md .footnotes sup { font: 600 .9em var(--mono); color: var(--accent-ink); margin-right: .3em; }
 
+/* sidenotes: text.[>a margin note] */
+.md .content { counter-reset: sn; }
+.sn { position: relative; counter-increment: sn; }
+.sn-mark { all: unset; box-sizing: border-box; cursor: pointer; display: inline-block; vertical-align: super; line-height: 1; min-width: 32px; min-height: 32px; margin: -14px -21px -14px 0; text-align: left; padding: 8px 2px; font: 600 .6em var(--mono); color: var(--accent-ink); }
+.sn-mark::before { content: counter(sn); }
+.sn-mark:hover { text-decoration: underline; }
+.sn-mark:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; border-radius: 4px; }
+.sn-body { display: none; font: var(--t-small) / 1.45 var(--sans); color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: .6em .8em; text-align: left; font-weight: 400; font-style: normal;
+  position: absolute; z-index: 5; top: 1.9em; left: calc(50% + var(--sn-shift, 0px)); transform: translateX(-50%); width: max-content; max-width: min(24em, 80vw); box-shadow: 0 8px 24px -10px color-mix(in srgb, var(--fg) 40%, transparent); }
+.sn[data-open] > .sn-body { display: block; }
+.sn-body::before { content: counter(sn) "  "; font: 600 .85em var(--mono); color: var(--accent-ink); }
+/* article: an open note reads inline; on wide screens every note sits in the margin beside its line */
+[data-view=read] .sn-body { position: static; transform: none; width: auto; max-width: none; box-shadow: none; background: var(--accent-soft); border: 0; padding: .1em .4em; margin-left: .3em; }
+[data-view=read] .sn[data-open] > .sn-body { display: inline; }
+@media (min-width: 1200px) {
+  [data-view=read] .sn-mark { cursor: default; pointer-events: none; }
+  [data-view=read] .sn-body { display: block; float: right; clear: right; width: 220px; margin: .2em -250px .6em 0; padding: 0 0 0 .8em; background: none; border-left: 2px solid var(--line); font-size: var(--t-small); color: var(--muted); line-height: 1.45; }
+}
+
 /* maths (KaTeX) */
 .md .math-block { font-size: calc(var(--t-body) * 1.15); overflow-x: auto; }
 .md .math .katex { font-size: 1.05em; }

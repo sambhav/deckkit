@@ -65,6 +65,7 @@ import { environmentDifferences } from './envdiff.js';
  *   > quote, then a "— Name" line       a pull quote with its attribution
  *   - [x] done / - [ ] to do            a checklist
  *   text[^1] and a "[^1]: source" line  footnotes, set small at the foot of the slide
+ *   text.[>a margin note]              sidenote: numbered mark that opens a popover; in the article, beside the line on wide screens
  *   $$ {steps} … $$                   aligned equations separated by \\: ↓ reveals each line; article shows all
  *   $x^2$ and $$ … $$                   maths (KaTeX, fetched only if the deck has some; <html data-math="off"> to skip)
  *   layout: image + image: url          a full-bleed picture with the text over it
@@ -410,6 +411,22 @@ import { environmentDifferences } from './envdiff.js';
     const b = e.target.closest('.w-copy'); if (!b) return;
     const pre = b.closest('pre, .w-diff'); if (pre) copyText(sources.get(pre) ?? pre.firstChild.textContent, b);
   });
+  // sidenotes: the mark toggles its note (a popover on the stage, inline in a narrow article); Esc or an outside click closes
+  const closeNotes = except => document.querySelectorAll('.sn[data-open]').forEach(n => { if (n !== except) { delete n.dataset.open; n.firstChild.setAttribute('aria-expanded', 'false'); } });
+  document.addEventListener('click', e => {
+    if (e.target.closest('.sn-body')) return;   // selecting or following a link in a note keeps it open
+    const mark = e.target.closest('.sn-mark'), note = mark?.parentNode;
+    closeNotes(note);
+    if (!note) return;
+    const open = note.toggleAttribute('data-open'); mark.setAttribute('aria-expanded', String(open));
+    const body = note.lastChild; body.style.removeProperty('--sn-shift');
+    if (open && getComputedStyle(body).position === 'absolute') {   // keep the popover inside the viewport
+      const r = body.getBoundingClientRect(), m = 8;
+      body.style.setProperty('--sn-shift', `${Math.max(m - r.left, Math.min(0, innerWidth - m - r.right))}px`);
+    }
+  });
+  document.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && e.target.closest?.('.sn-mark')) e.stopPropagation(); }, true);   // Space on a mark opens it; it must not advance the slide
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.querySelector('.sn[data-open]')) { closeNotes(); } });
   // ```diff: Copy takes the new code (context and added lines); {steps: hunks} or {steps: 1-2 | 3} highlight in turn
   function diffBlock(fig) {
     // one Copy button for the figure (unified and split are two views of the same code)
