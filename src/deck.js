@@ -280,7 +280,7 @@ import { runCell, liveCode } from './runnable.js';
     c.querySelectorAll('.w-bitfield').forEach(bitfield);
     c.querySelectorAll('.w-bench').forEach(benchDownload);
     c.querySelectorAll('.w-seq').forEach(sequence);
-    c.querySelectorAll('.w-tree').forEach(jsonTree);
+    c.querySelectorAll('.w-json').forEach(jsonTree);
     c.querySelectorAll('pre.code').forEach(copyable);
     c.querySelectorAll('.install').forEach(install);
     c.querySelectorAll('.compare').forEach(box => beforeAfter(box, steps));
@@ -438,7 +438,7 @@ import { runCell, liveCode } from './runnable.js';
   }
   document.addEventListener('click', e => {
     const b = e.target.closest('.w-copy'); if (!b) return;
-    const pre = b.closest('pre, .w-diff, .w-tree'); if (pre) copyText(sources.get(pre) ?? pre.firstChild.textContent, b);
+    const pre = b.closest('pre, .w-diff, .w-json'); if (pre) copyText(sources.get(pre) ?? pre.firstChild.textContent, b);
   });
   // sidenotes: the mark toggles its note (a popover on the stage, inline in a narrow article); Esc or an outside click closes
   const closeNotes = except => document.querySelectorAll('.sn[data-open]').forEach(n => { if (n !== except) { delete n.dataset.open; n.firstChild.setAttribute('aria-expanded', 'false'); } });
