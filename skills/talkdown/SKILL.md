@@ -173,6 +173,8 @@ The article.
 - Stepped equations: `$$ {steps}` on its own line, TeX rows separated by `\\`, then `$$`. Use `&` to align cells and `\text{…}` for explanations. ↓ or **Next equation** reveals each row; article view shows every equation. Existing KaTeX loading and `data-math="off"` work unchanged.
 - Array stepper: a ` ```array ` fence. Line 1 is the data (`[1, 3, 5, 7]`, comma-separated, max 40 cells); each later line is one step of `name=index` pointers (0-based, in range), plus optional `*value` to mark found cells (the value must be in the data). ↓ moves the pointers; article is a table with one row per step. No options; bad input shows an error.
 - Sequence diagram: ` ```sequence ` with one `Sender -> Receiver: message` per line (`-->` for a reply, `A -> A` for a self call); participants appear in order of first use. `note: text` attaches to the previous message; `note over A,B: text` spans lifelines. ↓ draws one message per step; article view shows the full diagram plus a numbered message list. Native HTML, no Mermaid; no options.
+- Runnable JavaScript: ` ```js {run} ` is editable with a **Run** button (↓ also runs it) and shows `console` output; it runs in a sandboxed iframe with no access to the page. Top-level `await` works; a run stops after 5 seconds.
+- Live preview: `::: live` containing ` ```html `, ` ```css ` and ` ```js ` fences (one of each at most). Editors on the left, a sandboxed rendered preview on the right that redraws as you type; stacked in read view.
 
 ### Presentation components
 

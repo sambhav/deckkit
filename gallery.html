@@ -882,6 +882,45 @@ Press down to draw each message; notes appear with the message before them. The 
 :::
 
 ---
+id: w-run
+---
+## Change it and run it
+
+```js {run}
+const xs = [3, 1, 2];
+console.log(xs.toSorted());
+console.log(xs.map(x => x * 2));
+```
+
+::: notes
+Edit the code, then press Run or down to see the console output. It runs in a sandboxed frame with no access to the page; the article keeps the output once it has run.
+:::
+
+---
+id: w-live
+---
+## Code and what it renders
+
+::: live
+```html
+<button class="pill">Hi talkdown</button>
+```
+```css
+.pill {
+  padding: .5em 1.2em;
+  border: 0;
+  border-radius: 99px;
+  background: royalblue;
+  color: white;
+}
+```
+:::
+
+::: notes
+Edit either side; the preview redraws a moment later. On a phone and in the article the code sits above the result.
+:::
+
+---
 section: Presentation components
 id: content
 ---
