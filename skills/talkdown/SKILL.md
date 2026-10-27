@@ -180,6 +180,7 @@ The article.
 - Callouts: `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]`.
 - Pull quotes: a `>` quote whose last line is `> — Name`.
 - Audience questions: `::: ask url="https://example.com/questions"` + closing `:::` (empty block). Absolute HTTP(S) URL, without credentials. Large QR and destination in slides; plain “Ask a question” link in articles. Link remains usable if QR loading fails.
+- Sidenotes: `text.[>Measured over 14 days.]` inline (Markdown and links allowed inside, brackets must balance). Numbered mark; click or Enter opens a popover. Article: margin note on wide screens, tap-to-open inline on phones. Use for asides; use `[^1]` for sources.
 - Also: `- [x]` checklists, `text[^1]` + `[^1]: source` footnotes, `$x^2$` / `$$..$$` maths, `:rocket:` Lucide icons, `::: agenda` (links every section), `::: qr` (QR of the deck URL), `![](youtube-or-.mp4-link)` video, `![](demo.cast)` recording.
 
 ## Themes and mode

@@ -101,6 +101,28 @@ md.inline.ruler.before('link', 'talkdown_shortcut', (state, silent) => {
 });
 md.inline.ruler.before('link', 'explorable', explorableInline);
 
+// [>note text] is a sidenote: a numbered mark that opens a popover, or sits in the margin of the article on wide screens.
+// Brackets inside balance, so a Markdown link works in a note; an unclosed "[>" stays literal.
+function sidenote(state, silent) {
+  const src = state.src;
+  if (src.charCodeAt(state.pos) !== 0x5B || src.charCodeAt(state.pos + 1) !== 0x3E) return false;
+  let depth = 1, i = state.pos + 2;
+  for (; i < src.length && depth; i++) {
+    const c = src[i];
+    if (c === '\\') i++; else if (c === '[') depth++; else if (c === ']') depth--;
+  }
+  if (depth) return false;
+  const body = src.slice(state.pos + 2, i - 1).trim();
+  if (!silent) {
+    const token = state.push('html_inline', '', 0);
+    token.content = body && !/\[>/.test(body)
+      ? `<span class="sn"><button type="button" class="sn-mark" aria-expanded="false" aria-label="Note"></button><span class="sn-body" role="note">${md.renderInline(body)}</span></span>`
+      : `<span class="td-error" role="alert">Sidenote: write the note after [&gt; and close it with ].</span>`;
+  }
+  state.pos = i; return true;
+}
+md.inline.ruler.before('link', 'sidenote', sidenote);
+
 // Talkdown's small inline additions sit on top of the standard Markdown lexer.
 md.inline.ruler.before('emphasis', 'talkdown_inline', (state, silent) => {
   const text = state.src.slice(state.pos); let match, html, used;
