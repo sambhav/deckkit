@@ -168,6 +168,7 @@ Inline HTML works anywhere. `---` always starts a new slide, so use `#` headings
 | `present` | `hide` makes an article-only slide: skipped when presenting |
 | `image` | A background picture. With `layout: image`, the text sits over it on a dark scrim |
 | `glossary` | `inline` annotates glossary terms on the slide too, not only in the article |
+| `author` · `date` · `tags` | A byline under the slide's title: `By` author, `YYYY-MM-DD` date, reading time from the article text, and `[a, b]` tags. Adds `<meta>` and OpenGraph tags |
 
 </details>
 
@@ -296,6 +297,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 |---|---|
 | **Feature cards** | `::: features`, then a `###` heading per card. An `:icon:` or image at the start of the heading becomes its icon. Up to three per row |
 | **Speaker card** | `::: speaker` around an optional photo, one `### Name`, role and links. A compact author box in the article |
+| **Byline** | `author:`, `date:` and `tags: [a, b]` in the title slide's frontmatter. A byline with reading time under the title, plus `<meta>` and OpenGraph tags |
 | **Timeline** | `::: timeline`, then a `###` heading per milestone. Vertical on phones |
 | **Roadmap board** | `::: board`, then a `###` heading and list of cards per column. ↓ reveals columns; keep to 2–4 short columns |
 | **Changelog** | `::: changelog`, `### v0.4.0 · 2026-10-25` per release, `#### Added` / `#### Fixed` labels. One release per step; give the slide an `id:` for stable links |
