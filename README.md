@@ -290,6 +290,7 @@ Each widget is a few lines of Markdown. Interactive ones step with ↑ ↓ and s
 | **Runnable JS** | ` ```js {run} ` is editable; **Run** (or ↓) shows `console` output from a sandboxed iframe with no page access, and the article keeps it |
 | **Live preview** | `::: live` around ` ```html `, ` ```css ` and ` ```js ` fences: editors beside a sandboxed preview that redraws as you type, stacked in the article |
 | **Token visualiser** | ` ```tokens {steps count} `: text with `\|` between tokens becomes coloured chips. `steps` reveals one per ↓; `count` shows the total (the article always does) |
+| **Trace timeline** | ` ```trace ` with `name  start-ms  duration-ms` per line; indentation nests spans. Waterfall bars, ↓ reveals spans in order, click selects one; the article adds a span table |
 
 ### Presentation components
 

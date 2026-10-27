@@ -1060,6 +1060,23 @@ The author marks the token boundaries with a pipe, so no tokenizer is bundled. E
 :::
 
 ---
+id: w-trace
+---
+## Agent trace
+
+```trace
+agent.run            0    4200
+  llm.plan           0     900
+  tool.search      900    2100
+    http.get       950    1800
+  llm.answer      3000    1200
+```
+
+::: notes
+Indentation nests spans, and the bars show when each one started and how long it ran. Press ↓ to reveal spans in order, or click a row; the article adds a table of every span.
+:::
+
+---
 section: Presentation components
 id: content
 ---
